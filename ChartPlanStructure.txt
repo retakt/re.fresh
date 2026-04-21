@@ -1,0 +1,175 @@
+RE/                          ← Your project root
+│
+├── .convex/                 ← DELETE THIS (Convex backend, we're replacing with Supabase)
+├── convex/                  ← DELETE THIS (Convex config/functions, not needed)
+├── node_modules/            ← Keep but never touch (auto-generated dependencies)
+│
+├── src/                     ← YOUR MAIN WORKING FOLDER - everything you edit is here
+│   │
+│   ├── components/          ← Reusable UI pieces
+│   │   ├── layout/
+│   │   │   ├── navbar.tsx   ← TOP navigation bar (logo, menu links, dark mode toggle)
+│   │   │   └── footer.tsx   ← BOTTOM footer ("© 2026 re.Takt. Built with care.")
+│   │   │
+│   │   ├── providers/       ← App-wide context (theme provider, auth provider will go here)
+│   │   │
+│   │   ├── ui/              ← Small reusable components (buttons, cards, inputs, etc.)
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   └── ...others
+│   │   │
+│   │   └── rich-text-editor.tsx ← Editor component for blog/tutorial writing
+│   │
+│   ├── hooks/               ← Custom React hooks (reusable logic)
+│   │   └── (your hooks)     ← e.g., useAuth, useTheme will go here
+│   │
+│   ├── lib/
+│   │   └── utils.ts         ← Helper functions (className merging, etc.)
+│   │
+│   ├── pages/               ← Each PAGE of your website
+│   │   ├── home.tsx         ← The grid you see (Blog, Music, Tutorials, About, Files)
+│   │   ├── blog.tsx         ← Blog listing page
+│   │   ├── music.tsx        ← Music page
+│   │   ├── tutorials.tsx    ← Tutorials page
+│   │   ├── about.tsx        ← About page
+│   │   └── files.tsx        ← Files/downloads page
+│   │
+│   ├── App.tsx              ← ROUTER - controls which page loads at which URL
+│   ├── main.tsx             ← Entry point - starts the whole React app
+│   └── index.css            ← Global styles (fonts, colors, base CSS)
+│
+├── index.html               ← HTML shell (just loads React, rarely touched)
+├── .env                     ← Environment variables (API keys - never commit this)
+├── .env.local               ← Local environment variables
+├── .gitignore               ← Tells git which files to ignore
+├── package.json             ← Project dependencies list
+├── vite.config.ts           ← Build tool config (Vite = fast dev server)
+├── tsconfig.json            ← TypeScript settings
+└── components.json          ← shadcn/ui component config
+
+
+
+
+
+re.Takt - Project Checkpoint
+What's Built
+Core Infrastructure
+
+    Framework: React + Vite + TypeScript
+    Styling: Tailwind CSS v4 + Plus Jakarta Sans font
+    Backend: Supabase (Auth + Database + Storage + Edge Functions)
+    Routing: React Router v6
+    Animations: Motion/React
+
+Layout System
+
+    Sticky top navbar (logo + theme toggle + admin/login button)
+    Left sidebar on desktop (nav links + version)
+    Bottom tab bar on mobile (Home/Blog/Music/Tutorials/Files)
+    Footer always visible
+    Max width 5xl centered
+
+Pages Built
+Page 	Route 	Status
+Home 	/ 	Done - hero + content links + tools grid
+Blog list 	/blog 	Done - loads from Supabase, tag filter
+Blog post 	/blog/:slug 	Done - full post render
+Music 	/music 	Done - filter by type, clickable tags
+Album 	/music/album/:name 	Done - album detail page
+Tutorials 	/tutorials 	Done - clickable tags/difficulty
+Tutorial post 	/tutorials/:slug 	Done - full content render
+About 	/about 	Basic
+Files 	/files 	Done - download list
+Login 	/login 	Done - Supabase auth
+404 	* 	Done
+Admin Pages (all protected)
+Page 	Route 	Status
+Admin dashboard 	/admin 	Done
+Posts list 	/admin/posts 	Done
+Post editor 	/admin/posts/new /admin/posts/edit/:id 	Done - rich text editor
+Music manager 	/admin/music 	Done - year/tags/release type
+Tutorials manager 	/admin/tutorials 	Done - difficulty/category
+Files manager 	/admin/files 	Done - drag & drop upload
+Members manager 	/admin/members 	Done - invite via edge function
+Auth & Roles
+
+    Supabase Auth (email/password)
+    profiles table with role field (admin / member)
+    ProtectedRoute component
+    Admin sees edit buttons on all public pages
+    Invite system via Supabase Edge Function (invite-user)
+    Members can write posts and tutorials only
+
+Database Tables
+
+posts       - id, title, slug, content, excerpt, cover_image, published, tags[], created_at, updated_at
+music       - id, title, artist, album, genre, tags[], year, release_type, spotify_url, soundcloud_url, youtube_url, cover_image, description, published, created_at
+tutorials   - id, title, slug, content, excerpt, category, difficulty, cover_image, published, created_at
+files       - id, name, description, file_url, file_type, file_size, category, published, created_at
+profiles    - id, email, role, created_at
+
+Storage
+
+    Supabase Storage bucket: uploads
+    Public read, authenticated write
+    Used for file uploads + cover images
+
+Components
+
+src/components/
+  layout/
+    navbar.tsx          - top bar, logo, theme toggle, admin button
+    sidebar.tsx         - desktop left nav
+    bottom-nav.tsx      - mobile tab bar
+    footer.tsx          - site footer
+  providers/
+    theme.tsx           - dark/light mode
+    default.tsx         - wraps all providers
+  ui/                   - shadcn components
+  FileUpload.tsx        - drag & drop to Supabase storage
+  ImageUpload.tsx       - image upload + URL mode
+  RichTextEditor.tsx    - Tiptap editor
+  ProtectedRoute.tsx    - auth guard
+
+Edge Functions
+
+supabase/functions/
+  invite-user/index.ts  - sends email invite, admin-only, has CORS headers
+
+Planned / Not Done Yet
+High Priority
+
+    [ ] Rich text editor - image embed, YouTube embed, file insert
+    [ ] Tutorial editor - same rich editor as posts (currently textarea)
+    [ ] Member permissions enforced - members can only create posts/tutorials, not music/files
+    [ ] Admin inline editing - edit button on public pages opens editor in place
+    [ ] Post tags actually saved to DB and rendered on post detail page
+
+Medium Priority
+
+    [ ] NSFW page (/nsfw linked in footer)
+    [ ] About page - proper content, not placeholder
+    [ ] Music player - embed SoundCloud/Spotify/YouTube inline on music page
+    [ ] Search - global search across posts/tutorials/music
+    [ ] Pagination or infinite scroll on blog/music/tutorials
+
+Tools (all coming soon tiles on homepage)
+
+    [ ] Background Remover
+    [ ] YouTube Downloader
+    [ ] Instagram Saver
+    [ ] Hugging Face browser
+    [ ] Reddit viewer
+    [ ] Sampletter
+    [ ] Face Swap
+    [ ] AI Tools hub
+
+Polish
+
+    [ ] OG meta tags per page (title, description, image)
+    [ ] Loading skeletons consistent across all pages
+    [ ] Error boundary component
+    [ ] Toast notifications for all actions
+    [ ] Confirm dialogs before delete (currently using window.confirm)
+
+    

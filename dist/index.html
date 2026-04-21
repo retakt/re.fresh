@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" suppressHydrationWarning>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>re.Takt</title>
+    <meta name="description" content="My stash and evrything! Launching soon..." />
+    <meta name="author" content="Takt Akira" />
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+      
+    <!-- Apple / iOS -->
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+      
+    <!-- Android / Chrome -->
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+    <!-- Theme flash prevention - must run before render -->
+    <script>
+      (function () {
+        try {
+          // next-themes stores under 'theme' key by default
+          var stored = localStorage.getItem("theme");
+          var isDark =
+            stored === "dark" ||
+            (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches) ||
+            (stored === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+          // Apply immediately before paint
+          document.documentElement.classList.add(isDark ? "dark" : "light");
+          // Set color-scheme so browser native UI matches
+          document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+        } catch (e) {}
+      })();
+    </script>
+
+    <script type="module" crossorigin src="/assets/index-BNqMkAKz.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/router-NNeDLfbp.js">
+    <link rel="modulepreload" crossorigin href="/assets/editor-CLbSwgzr.js">
+    <link rel="modulepreload" crossorigin href="/assets/supabase-Bj90UvkW.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-oC2ziCBg.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
