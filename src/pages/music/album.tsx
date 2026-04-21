@@ -3,11 +3,12 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import {
   ArrowLeft,
-  Disc3, Play, Pause
+  Disc3, Play, Pause, PenLine
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import { usePlayer, type PlayerTrack } from "@/lib/player";
+import { useAuth } from "@/hooks/useAuth";
 import { getCardPalette } from "@/lib/cardColors";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 
@@ -18,6 +19,7 @@ export default function AlbumPage() {
   const [tracks, setTracks] = useState<Music[]>([]);
   const [loading, setLoading] = useState(true);
   const { play, pause, isTrackPlaying, playing, currentTrack } = usePlayer();
+  const { isAdmin } = useAuth();
 
   const decodedAlbum = decodeURIComponent(albumName || "");
   const albumInfo = tracks[0];
@@ -79,12 +81,24 @@ export default function AlbumPage() {
 
   return (
     <div className="w-full max-w-3xl space-y-8">
-      <Link
-        to="/music"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft size={14} /> Music
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          to="/music"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={14} /> Music
+        </Link>
+        
+        {/* Admin edit button for first track (represents album) */}
+        {isAdmin && tracks.length > 0 && (
+          <Link
+            to={`/admin/music?edit=${tracks[0].id}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded-lg transition-colors"
+          >
+            <PenLine size={12} /> Edit Album
+          </Link>
+        )}
+      </div>
 
       {loading ? (
         <div className="space-y-4">

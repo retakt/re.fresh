@@ -15,8 +15,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
@@ -55,9 +53,15 @@ export default function UserMenu() {
           aria-label="Open account menu"
         >
           <Avatar className="size-7 border border-border/70">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+            {isAuthenticated && avatarUrl && (
+              <AvatarImage 
+                src={avatarUrl} 
+                alt={displayName}
+                loading="lazy"
+              />
+            )}
             <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
-              {isAuthenticated ? initials : <UserCircle2 className="size-4" />}
+              {isAuthenticated ? initials : <UserCircle2 size={16} strokeWidth={2} />}
             </AvatarFallback>
           </Avatar>
         </button>
@@ -65,88 +69,85 @@ export default function UserMenu() {
 
       <DropdownMenuContent
         align="end"
-        sideOffset={10}
-        className="w-[19rem] rounded-lg border-border/70 bg-card/96 p-0 shadow-xl"
+        sideOffset={8}
+        className="w-40 rounded-xl border-border/70 bg-card p-0 shadow-lg overflow-hidden"
       >
-        <DropdownMenuLabel className="px-4 py-3">
-          <div className="space-y-1">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {isAuthenticated ? displayName : "Member access"}
-            </p>
-            <p className="truncate text-xs font-normal text-muted-foreground">
-              {email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-
-        <DropdownMenuSeparator className="mx-0 my-0" />
+        {/* Header */}
+        <div className="px-2.5 py-2 border-b border-border/50 min-w-0">
+          <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+            {isAuthenticated ? displayName : "Member access"}
+          </p>
+          <p
+            className="text-muted-foreground mt-0.5 truncate"
+            style={{ fontSize: "clamp(9px, 2.2vw, 11px)" }}
+          >
+            {isAuthenticated ? email : "Not signed in"}
+          </p>
+        </div>
 
         {isAuthenticated ? (
           <>
-            <DropdownMenuGroup className="p-1.5">
-              <DropdownMenuItem asChild className="rounded-md px-3 py-2">
+            {/* Nav items */}
+            <DropdownMenuGroup className="p-1">
+              <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-[11px] gap-2 cursor-pointer">
                 <Link to="/account">
-                  <Settings className="size-4" />
-                  Account preferences
+                  <Settings size={12} className="text-muted-foreground shrink-0" />
+                  <span className="truncate">Account</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="rounded-md px-3 py-2">
-                <Sparkles className="size-4" />
-                Feature previews
+              <DropdownMenuItem disabled className="rounded-lg px-2 py-1.5 text-[11px] gap-2">
+                <Sparkles size={12} className="text-muted-foreground shrink-0" />
+                <span className="truncate">Feature previews</span>
               </DropdownMenuItem>
               {profile?.role === "admin" && (
-                <DropdownMenuItem asChild className="rounded-md px-3 py-2">
+                <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-[11px] gap-2 cursor-pointer">
                   <Link to="/admin">
-                    <Shield className="size-4" />
-                    Admin dashboard
+                    <Shield size={12} className="text-muted-foreground shrink-0" />
+                    <span className="truncate">Dashboard</span>
                   </Link>
                 </DropdownMenuItem>
               )}
             </DropdownMenuGroup>
 
-            <DropdownMenuSeparator className="mx-0 my-0" />
+            <div className="border-t border-border/50" />
 
-            <div className="px-4 py-3">
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {/* Notifications toggle */}
+            <div className="px-2.5 py-2">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">
                 Preferences
-              </div>
-              <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-background/40 px-3 py-2.5">
-                <div className="flex items-start gap-2.5">
-                  <Bell className="mt-0.5 size-4 text-muted-foreground" />
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium text-foreground">
-                      Notifications
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Placeholder toggle for future wiring
-                    </p>
-                  </div>
+              </p>
+              <div className="flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Bell size={11} className="text-muted-foreground shrink-0" />
+                  <span className="text-[11px] font-medium text-foreground truncate">Notifications</span>
                 </div>
                 <Switch
                   checked={notificationsEnabled}
                   onCheckedChange={setNotificationsEnabled}
+                  className="shrink-0 scale-75 origin-right"
                 />
               </div>
             </div>
 
-            <DropdownMenuSeparator className="mx-0 my-0" />
+            <div className="border-t border-border/50" />
 
-            <div className="p-1.5">
+            {/* Logout */}
+            <div className="p-1">
               <DropdownMenuItem
-                className="rounded-md px-3 py-2"
+                className="rounded-lg px-2 py-1.5 text-[11px] gap-2 text-destructive focus:text-destructive cursor-pointer"
                 onClick={handleLogout}
               >
-                <LogOut className="size-4" />
-                Log out
+                <LogOut size={12} className="shrink-0" />
+                <span className="truncate">Log out</span>
               </DropdownMenuItem>
             </div>
           </>
         ) : (
-          <div className="p-1.5">
-            <DropdownMenuItem asChild className="rounded-md px-3 py-2">
+          <div className="p-1">
+            <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-[11px] gap-2 cursor-pointer">
               <Link to="/login">
-                <LogIn className="size-4" />
-                Sign in
+                <LogIn size={12} className="text-muted-foreground shrink-0" />
+                <span className="truncate">Sign in</span>
               </Link>
             </DropdownMenuItem>
           </div>

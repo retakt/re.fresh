@@ -2,13 +2,16 @@ import { useRef, useState } from "react";
 import {
   Bell,
   Camera,
+  ChevronRight,
   Loader2,
+  LogOut,
   Mail,
   PencilLine,
   Shield,
   Trash2,
+  X,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
@@ -17,25 +20,62 @@ import { Input } from "@/components/ui/input.tsx";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
-const ROLE_STYLES = {
-  admin: {
-    text: "text-fuchsia-700 dark:text-fuchsia-300",
-    badge: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/35 dark:text-fuchsia-300",
-    panel: "border-fuchsia-200/70 dark:border-fuchsia-900/40",
-  },
-  editor: {
-    text: "text-amber-700 dark:text-amber-300",
-    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/35 dark:text-amber-300",
-    panel: "border-amber-200/70 dark:border-amber-900/40",
-  },
-  member: {
-    text: "text-sky-700 dark:text-sky-300",
-    badge: "bg-sky-100 text-sky-700 dark:bg-sky-900/35 dark:text-sky-300",
-    panel: "border-sky-200/70 dark:border-sky-900/40",
-  },
-} as const;
+const ROLE_BADGE: Record<string, string> = {
+  admin: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/35 dark:text-fuchsia-300",
+  editor: "bg-amber-100 text-amber-700 dark:bg-amber-900/35 dark:text-amber-300",
+  member: "bg-sky-100 text-sky-700 dark:bg-sky-900/35 dark:text-sky-300",
+};
+
+function SettingRow({
+  icon,
+  label,
+  sublabel,
+  right,
+  onClick,
+  destructive,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  right?: React.ReactNode;
+  onClick?: () => void;
+  destructive?: boolean;
+}) {
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 transition-colors
+        ${onClick ? "hover:bg-secondary/50 active:bg-secondary cursor-pointer" : ""}
+        ${destructive ? "text-destructive" : "text-foreground"}`}
+    >
+      <span className={`shrink-0 ${destructive ? "text-destructive" : "text-muted-foreground"}`}>
+        {icon}
+      </span>
+      <div className="flex-1 min-w-0 text-left">
+        <p className={`text-sm font-medium ${destructive ? "text-destructive" : ""}`}>{label}</p>
+        {sublabel && <p className="text-xs text-muted-foreground mt-0.5">{sublabel}</p>}
+      </div>
+      {right ?? (onClick && !destructive && <ChevronRight size={14} className="text-muted-foreground/50 shrink-0" />)}
+    </Tag>
+  );
+}
+
+function SettingSection({ title, children }: { title?: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card overflow-hidden shadow-sm">
+      {title && (
+        <div className="px-4 pt-3 pb-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{title}</p>
+        </div>
+      )}
+      <div className="divide-y divide-border/50">{children}</div>
+    </div>
+  );
+}
 
 export default function AccountPage() {
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [usernameSaving, setUsernameSaving] = useState(false);
@@ -49,56 +89,95 @@ export default function AccountPage() {
     notificationsEnabled,
     setNotificationsEnabled,
     refreshProfile,
+    signOut,
   } = useAuth();
   const [usernameDraft, setUsernameDraft] = useState(profile?.username ?? "");
 
-  const email = profile?.email ?? user?.email ?? "No email available";
+  const email = profile?.email ?? user?.email ?? "No email";
   const role = profile?.role ?? "member";
-  const roleStyle = ROLE_STYLES[role];
 
   const updateAvatarUrl = async (nextUrl: string | null) => {
     if (!user) return false;
-
     const { error } = await supabase
       .from("profiles")
       .update({ avatar_url: nextUrl })
       .eq("id", user.id);
-
-    if (error) {
-      toast.error("Failed to update profile picture");
-      return false;
-    }
-
+    if (error) { toast.error("Failed to update profile picture"); return false; }
     await refreshProfile();
     return true;
   };
 
   const handleAvatarUpload = async (file: File) => {
     if (!user) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file");
-      return;
-    }
-
+    if (!file.type.startsWith("image/")) { toast.error("Please choose an image file"); return; }
     setAvatarSaving(true);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `avatars/${user.id}-${Date.now()}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("uploads")
-      .upload(path, file, { cacheControl: "3600", upsert: false });
-
-    if (uploadError) {
+    try {
+      // Optimize avatar (200x200px, WebP format)
+      const optimizedFile = await optimizeAvatar(file);
+      
+      const ext = "webp"; // Always use WebP for avatars
+      const path = `avatars/${user.id}-${Date.now()}.${ext}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("uploads")
+        .upload(path, optimizedFile, { cacheControl: "3600", upsert: false });
+        
+      if (uploadError) { 
+        setAvatarSaving(false); 
+        toast.error("Upload failed"); 
+        return; 
+      }
+      
+      const { data } = supabase.storage.from("uploads").getPublicUrl(path);
+      const saved = await updateAvatarUrl(data.publicUrl);
+      if (saved) toast.success("Profile picture updated");
+    } catch (error) {
+      toast.error("Failed to process image");
+    } finally {
       setAvatarSaving(false);
-      toast.error("Upload failed");
-      return;
     }
+  };
 
-    const { data } = supabase.storage.from("uploads").getPublicUrl(path);
-    const saved = await updateAvatarUrl(data.publicUrl);
-    setAvatarSaving(false);
+  // Avatar-specific optimization (200x200px, WebP)
+  const optimizeAvatar = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
+      const img = new Image();
 
-    if (saved) toast.success("Profile picture updated");
+      img.onload = () => {
+        const size = 200; // Fixed 200x200px for avatars
+        canvas.width = size;
+        canvas.height = size;
+
+        // Draw image centered and cropped to square
+        const { width, height } = img;
+        const minDim = Math.min(width, height);
+        const sx = (width - minDim) / 2;
+        const sy = (height - minDim) / 2;
+
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const optimizedFile = new File([blob], `avatar.webp`, {
+                type: "image/webp",
+                lastModified: Date.now(),
+              });
+              resolve(optimizedFile);
+            } else {
+              resolve(file); // Fallback
+            }
+          },
+          "image/webp",
+          0.90 // 90% quality for avatars
+        );
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   const handleAvatarRemove = async () => {
@@ -110,15 +189,12 @@ export default function AccountPage() {
 
   const saveUsername = async () => {
     if (!user) return;
-
     setUsernameSaving(true);
     const nextUsername = usernameDraft.trim() || null;
-
     const { error } = await supabase
       .from("profiles")
       .update({ username: nextUsername })
       .eq("id", user.id);
-
     if (error) {
       toast.error("Failed to update username");
     } else {
@@ -129,64 +205,44 @@ export default function AccountPage() {
     setUsernameSaving(false);
   };
 
-  return (
-    <div className="w-full max-w-3xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Member profile and preferences
-          </p>
-        </div>
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (!error) navigate("/");
+  };
 
-        {role === "admin" && (
-          <Link to="/admin">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <Shield size={14} />
-              Admin
-            </Button>
-          </Link>
-        )}
+  return (
+    <div className="w-full max-w-lg space-y-5">
+
+      {/* ── Header ── */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Account</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground">
+          Profile and preferences
+        </p>
       </div>
 
-      <section className={`rounded-lg border bg-card/50 p-5 shadow-sm ${roleStyle.panel}`}>
-        <div className="mb-4 flex items-start gap-4">
-          <div className="space-y-3">
-            <Avatar className="size-16 border border-border/70 shadow-sm">
+      {/* ── Profile card ── */}
+      <div className="rounded-xl border border-border/70 bg-card shadow-sm overflow-hidden">
+        {/* Avatar + name row */}
+        <div className="flex items-center gap-4 px-4 py-4 border-b border-border/50">
+          <div className="relative shrink-0">
+            <Avatar className="size-14 border-2 border-border/70 shadow-sm">
               {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-              <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
+              <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
-                disabled={avatarSaving}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {avatarSaving ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
-                {avatarUrl ? "Change" : "Upload"}
-              </Button>
-
-              {avatarUrl && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 text-destructive hover:text-destructive"
-                  disabled={avatarSaving}
-                  onClick={handleAvatarRemove}
-                >
-                  <Trash2 size={13} />
-                  Remove
-                </Button>
-              )}
-            </div>
-
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarSaving}
+              className="absolute -bottom-1 -right-1 size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:opacity-90 transition-opacity"
+              aria-label="Change avatar"
+            >
+              {avatarSaving
+                ? <Loader2 size={11} className="animate-spin" />
+                : <Camera size={11} />
+              }
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -200,105 +256,115 @@ export default function AccountPage() {
             />
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className={`text-base font-semibold ${roleStyle.text}`}>{displayName}</h2>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setIsEditingUsername((value) => !value)}
-              >
-                <PencilLine size={13} />
-              </Button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-semibold text-sm truncate">{displayName}</p>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${ROLE_BADGE[role] ?? ROLE_BADGE.member}`}>
+                {role}
+              </span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Profile picture is available for every role and appears in the navbar menu.
-            </p>
-
-            {isEditingUsername && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Input
-                  value={usernameDraft}
-                  onChange={(e) => setUsernameDraft(e.target.value)}
-                  placeholder="username"
-                  className="h-8 max-w-[14rem]"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8"
-                  disabled={usernameSaving}
-                  onClick={saveUsername}
-                >
-                  {usernameSaving ? "Saving..." : "Save"}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-8"
-                  onClick={() => {
-                    setUsernameDraft(profile?.username ?? "");
-                    setIsEditingUsername(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{email}</p>
           </div>
+
+          {avatarUrl && (
+            <button
+              onClick={handleAvatarRemove}
+              disabled={avatarSaving}
+              className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              aria-label="Remove avatar"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className={`rounded-lg border bg-background/40 p-3 ${roleStyle.panel}`}>
-            <div className="mb-1 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              <Mail size={12} />
-              Email
+        {/* Username edit */}
+        <div className="px-4 py-3">
+          {!isEditingUsername ? (
+            <button
+              onClick={() => setIsEditingUsername(true)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <PencilLine size={13} />
+              <span>{profile?.username ? `@${profile.username}` : "Set a username"}</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Input
+                value={usernameDraft}
+                onChange={(e) => setUsernameDraft(e.target.value)}
+                placeholder="username"
+                className="h-8 text-sm flex-1"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") void saveUsername(); if (e.key === "Escape") setIsEditingUsername(false); }}
+              />
+              <Button size="sm" className="h-8 px-3" disabled={usernameSaving} onClick={saveUsername}>
+                {usernameSaving ? <Loader2 size={12} className="animate-spin" /> : "Save"}
+              </Button>
+              <button
+                onClick={() => { setUsernameDraft(profile?.username ?? ""); setIsEditingUsername(false); }}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <X size={14} />
+              </button>
             </div>
-            <p className={`truncate text-sm font-medium ${roleStyle.text}`}>{email}</p>
-          </div>
+          )}
+        </div>
+      </div>
 
-          <div className={`rounded-lg border bg-background/40 p-3 ${roleStyle.panel}`}>
-            <div className="mb-1 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              <Shield size={12} />
-              Role
-            </div>
-            <span className={`inline-flex rounded-full px-2.5 py-1 text-sm font-medium capitalize ${roleStyle.badge}`}>
+      {/* ── Info ── */}
+      <SettingSection title="Account info">
+        <SettingRow
+          icon={<Mail size={15} />}
+          label="Email"
+          sublabel={email}
+        />
+        <SettingRow
+          icon={<Shield size={15} />}
+          label="Role"
+          right={
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${ROLE_BADGE[role] ?? ROLE_BADGE.member}`}>
               {role}
             </span>
-          </div>
-        </div>
-      </section>
+          }
+        />
+        {role === "admin" && (
+          <Link to="/admin" className="block">
+            <SettingRow
+              icon={<Shield size={15} />}
+              label="Admin dashboard"
+              sublabel="Manage content and members"
+              onClick={undefined}
+            />
+          </Link>
+        )}
+      </SettingSection>
 
-      <section className="rounded-lg border border-border/70 bg-card/50 p-5 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-base font-semibold">Preferences</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            UI-ready settings we can wire to backend behavior next.
-          </p>
-        </div>
+      {/* ── Preferences ── */}
+      <SettingSection title="Preferences">
+        <SettingRow
+          icon={<Bell size={15} />}
+          label="Notifications"
+          sublabel="Push alerts for new content"
+          right={
+            <Switch
+              checked={notificationsEnabled}
+              onCheckedChange={setNotificationsEnabled}
+            />
+          }
+        />
+      </SettingSection>
 
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-background/40 p-4">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Bell size={16} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Notifications</p>
-              <p className="text-xs text-muted-foreground">
-                Toggle saved locally for now. Backend syncing can be added later.
-              </p>
-            </div>
-          </div>
+      {/* ── Danger ── */}
+      <SettingSection>
+        <SettingRow
+          icon={<LogOut size={15} />}
+          label="Log out"
+          onClick={handleLogout}
+          destructive
+        />
+      </SettingSection>
 
-          <Switch
-            checked={notificationsEnabled}
-            onCheckedChange={setNotificationsEnabled}
-          />
-        </div>
-      </section>
     </div>
   );
 }

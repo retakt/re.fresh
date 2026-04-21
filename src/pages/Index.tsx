@@ -2,75 +2,16 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen, Music2, GraduationCap,
-  ArrowRight, Scissors, Bot,
-  MessageSquare, Layers, Shuffle, Sparkles,
-  Quote, CalendarDays,
+  ArrowRight, Quote, CalendarDays,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { FaYoutube, FaInstagram } from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import { getCurrentQuote, getQuotePalette, DEFAULT_QUOTES } from "@/lib/quotes";
 import { getCardPalette } from "@/lib/cardColors";
 import { format } from "date-fns";
-
-const TOOLS = [
-  {
-    icon: Scissors, label: "BG Remover",
-    gradient: "from-rose-400/20 to-pink-400/10",
-    iconBg: "bg-rose-100/80 dark:bg-rose-900/20",
-    iconColor: "text-rose-400 dark:text-rose-300",
-    border: "border-rose-200/50 dark:border-rose-800/20",
-  },
-  {
-    icon: FaYoutube, label: "YT Download",
-    gradient: "from-red-400/20 to-red-300/10",
-    iconBg: "bg-red-100/80 dark:bg-red-900/20",
-    iconColor: "text-red-400 dark:text-red-300",
-    border: "border-red-200/50 dark:border-red-800/20",
-  },
-  {
-    icon: FaInstagram, label: "IG Saver",
-    gradient: "from-pink-400/20 to-purple-400/10",
-    iconBg: "bg-pink-100/80 dark:bg-pink-900/20",
-    iconColor: "text-pink-400 dark:text-pink-300",
-    border: "border-pink-200/50 dark:border-pink-800/20",
-  },
-  {
-    icon: Bot, label: "Hugging Face",
-    gradient: "from-yellow-400/20 to-amber-300/10",
-    iconBg: "bg-yellow-100/80 dark:bg-yellow-900/20",
-    iconColor: "text-yellow-500 dark:text-yellow-300",
-    border: "border-yellow-200/50 dark:border-yellow-800/20",
-  },
-  {
-    icon: MessageSquare, label: "Reddit",
-    gradient: "from-orange-400/20 to-amber-300/10",
-    iconBg: "bg-orange-100/80 dark:bg-orange-900/20",
-    iconColor: "text-orange-400 dark:text-orange-300",
-    border: "border-orange-200/50 dark:border-orange-800/20",
-  },
-  {
-    icon: Layers, label: "Sampletter",
-    gradient: "from-blue-400/20 to-indigo-300/10",
-    iconBg: "bg-blue-100/80 dark:bg-blue-900/20",
-    iconColor: "text-blue-400 dark:text-blue-300",
-    border: "border-blue-200/50 dark:border-blue-800/20",
-  },
-  {
-    icon: Shuffle, label: "Face Swap",
-    gradient: "from-purple-400/20 to-violet-300/10",
-    iconBg: "bg-purple-100/80 dark:bg-purple-900/20",
-    iconColor: "text-purple-400 dark:text-purple-300",
-    border: "border-purple-200/50 dark:border-purple-800/20",
-  },
-  {
-    icon: Sparkles, label: "AI Tools",
-    gradient: "from-teal-400/20 to-cyan-300/10",
-    iconBg: "bg-teal-100/80 dark:bg-teal-900/20",
-    iconColor: "text-teal-400 dark:text-teal-300",
-    border: "border-teal-200/50 dark:border-teal-800/20",
-  },
-];
+import { ContentCardSkeleton } from "@/components/ui/skeleton.tsx";
+import { PageHeader } from "@/components/layout/page-header.tsx";
+import { TOOLS } from "@/features/tools";
 
 type FilterType = "all" | "blog" | "tutorial" | "music";
 
@@ -186,59 +127,39 @@ export default function Index() {
       On small phones everything stacks and the page scrolls naturally.
       On desktop the two-column layout sits side by side.
     */
-    <div className="w-full max-w-2xl space-y-5 pb-6">
+    <div className="w-full max-w-2xl space-y-4 pb-4">
 
       {/* ── HERO ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className="pt-5 space-y-1"
-      >
-        <h1 className="text-4xl font-extrabold tracking-[-0.04em] leading-none sm:text-5xl">
-          <span className="dark:hidden text-slate-900">re</span>
-          <span className="hidden dark:inline text-cyan-200 drop-shadow-[0_0_8px_rgba(97,228,206,0.45)]">
-            re
-          </span>
-        </h1>
-        <p className="text-sm font-medium text-muted-foreground">
-          My stash and everything! Launching soon...
-        </p>
-      </motion.div>
+      <PageHeader
+        title="Home"
+        subtitle="My stash and everything! Launching soon..."
+      />
 
       {/* ── QUOTE ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.08 }}
-        className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br
-          ${quotePalette.bg} ${quotePalette.border} px-4 py-3.5`}
+      <div
+        className={`relative overflow-hidden rounded-xl border bg-gradient-to-br
+          ${quotePalette.bg} ${quotePalette.border} px-3.5 py-3`}
       >
         <Quote
-          size={28}
+          size={24}
           className={`absolute top-2 right-3 opacity-[0.07] ${quotePalette.accent}`}
         />
-        <p className="text-sm font-medium leading-relaxed text-foreground/90 pr-8">
+        <p className="text-xs sm:text-sm font-medium leading-relaxed text-foreground/90 pr-8">
           "{quote.text}"
         </p>
-        <p className={`mt-1.5 text-xs font-semibold ${quotePalette.accent}`}>
+        <p className={`mt-1 text-[11px] sm:text-xs font-semibold ${quotePalette.accent}`}>
           — {quote.author}
         </p>
-      </motion.div>
+      </div>
 
       {/* ── MAIN CONTENT AREA: Latest + Tools ── */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_13rem] gap-5 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_13rem] gap-4 items-start">
 
         {/* ── LEFT: Latest ── */}
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.13 }}
-          className="space-y-2"
-        >
+        <section className="space-y-2">
           {/* Header + filters */}
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
               {FILTER_LABELS[activeFilter]}
             </h2>
             <div className="flex items-center gap-0.5 bg-secondary/60 rounded-lg p-0.5">
@@ -246,7 +167,7 @@ export default function Index() {
                 <button
                   key={f.value}
                   onClick={() => setActiveFilter(f.value)}
-                  className={`relative px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors
+                  className={`relative px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors
                     ${activeFilter === f.value
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -265,48 +186,38 @@ export default function Index() {
             </div>
           </div>
 
-          {/* 
-            Content list:
-            - Always renders 5 slots (real + empty placeholders)
-            - No scroll — items just stack naturally in page flow
-            - On very small phones this just means 5 cards visible,
-              user scrolls the whole page to see them all
-          */}
           <div className="flex flex-col gap-1.5">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-[58px] rounded-xl border bg-card animate-pulse"
-                />
+                <ContentCardSkeleton key={i} />
               ))
             ) : (
               <>
                 <AnimatePresence mode="popLayout">
-                  {filtered.map((item, i) => {
+                  {filtered.map((item) => {
                     const palette = getCardPalette(item.id);
                     const Icon = typeIcon(item.type);
                     return (
                       <motion.div
                         key={`${activeFilter}-${item.id}`}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.97 }}
-                        transition={{ duration: 0.16, delay: i * 0.025 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.12 }}
                       >
                         <Link
                           to={item.href}
-                          className={`group flex items-center gap-3 rounded-xl border
+                          className={`group flex items-center gap-3.5 rounded-xl border
                             bg-gradient-to-r ${palette.gradient} ${palette.border}
-                            px-3.5 py-3 transition-all
-                            hover:shadow-sm hover:-translate-y-px active:scale-[0.99]`}
+                            px-3.5 py-3 sm:px-4 sm:py-3.5 transition-all
+                            hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]`}
                         >
-                          <div className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
+                          <div className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
                             <Icon size={13} className={palette.iconColor} strokeWidth={2} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-semibold text-xs text-foreground group-hover:text-primary transition-colors truncate">
+                              <span className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">
                                 {item.title}
                               </span>
                               <ArrowRight
@@ -316,12 +227,12 @@ export default function Index() {
                             </div>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               {item.meta && (
-                                <span className={`text-[9px] font-semibold px-1.5 py-px rounded-full ${palette.badge}`}>
+                                <span className={`text-[10px] font-semibold px-1.5 py-px rounded-full ${palette.badge}`}>
                                   {item.meta}
                                 </span>
                               )}
-                              <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground/50">
-                                <CalendarDays size={8} />
+                              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/50">
+                                <CalendarDays size={9} />
                                 {format(new Date(item.date), "MMM d, yyyy")}
                               </span>
                             </div>
@@ -331,29 +242,15 @@ export default function Index() {
                     );
                   })}
                 </AnimatePresence>
-
-                {/* Empty placeholder slots — keep visual consistency */}
-                {filtered.length < 5 &&
-                  Array.from({ length: 5 - filtered.length }).map((_, i) => (
-                    <div
-                      key={`empty-${i}`}
-                      className="h-[58px] rounded-xl border border-dashed border-border/25"
-                    />
-                  ))}
               </>
             )}
           </div>
-        </motion.section>
+        </section>
 
         {/* ── RIGHT: Tools ── */}
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className="space-y-2"
-        >
+        <section className="space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
               Tools
             </h2>
             <span className="text-[10px] text-muted-foreground/60 font-medium">
@@ -361,37 +258,29 @@ export default function Index() {
             </span>
           </div>
 
-          {/*
-            Mobile: 4 columns (small tiles, fits in one row of 2 pairs)
-            Desktop: 2 columns (sidebar width)
-          */}
           <div className="grid grid-cols-4 md:grid-cols-2 gap-1.5">
-            {TOOLS.map((tool, i) => {
+            {TOOLS.map((tool) => {
               const Icon = tool.icon;
               return (
-                <motion.div
+                <div
                   key={tool.label}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.18, delay: 0.22 + i * 0.025 }}
                   title={tool.label}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border
+                  className={`flex flex-col items-center justify-center gap-1 rounded-xl border
                     ${tool.border} bg-gradient-to-br ${tool.gradient}
-                    p-2.5 text-center cursor-not-allowed
-                    transition-all hover:scale-[1.05] hover:shadow-sm active:scale-[0.97]`}
+                    p-2 text-center cursor-not-allowed
+                    transition-all hover:scale-[1.04] hover:shadow-md active:scale-[0.97]`}
                 >
-                  <div className={`w-7 h-7 rounded-lg ${tool.iconBg} flex items-center justify-center`}>
-                    <Icon size={13} className={tool.iconColor} />
+                  <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${tool.iconBg} flex items-center justify-center`}>
+                    <Icon size={12} className={tool.iconColor} />
                   </div>
-                  {/* Label hidden on very small screens, shown as tooltip via title */}
                   <span className="hidden xs:block text-[9px] font-semibold text-foreground/70 leading-tight">
                     {tool.label}
                   </span>
-                </motion.div>
+                </div>
               );
             })}
           </div>
-        </motion.section>
+        </section>
       </div>
     </div>
   );

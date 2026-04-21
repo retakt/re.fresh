@@ -4,9 +4,11 @@ import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import {
   FolderOpen, Download, Plus,
-  FileText, FileImage, FileAudio, FileVideo, File
+  FileText, FileImage, FileAudio, FileVideo, File, RefreshCw
 } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty.tsx";
+import { FileCardSkeleton } from "@/components/ui/skeleton.tsx";
+import { PageHeader } from "@/components/layout/page-header.tsx";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,44 +66,50 @@ function FileCard({ file }: { file: FileItem }) {
 export default function FilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { isAdmin } = useAuth();
 
-  useEffect(() => {
-    const fetchFiles = async () => {
-      const { data, error } = await supabase
-        .from("files")
-        .select("*")
-        .eq("published", true)
-        .order("created_at", { ascending: false });
+  const fetchFiles = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from("files")
+      .select("*")
+      .eq("published", true)
+      .order("created_at", { ascending: false });
+    if (error) setError("Failed to load files. Please try again.");
+    else if (data) setFiles(data);
+    setLoading(false);
+  };
 
-      if (!error && data) setFiles(data);
-      setLoading(false);
-    };
-
-    fetchFiles();
-  }, []);
+  useEffect(() => { fetchFiles(); }, []);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Files</h1>
-          <p className="text-sm text-muted-foreground mt-1">Downloads & resources</p>
-        </div>
-        {isAdmin && (
+      <PageHeader
+        title="Files"
+        subtitle="Downloads & resources"
+        action={isAdmin ? (
           <Link to="/admin/files">
             <Button size="sm" className="gap-1.5">
               <Plus size={14} /> Add file
             </Button>
           </Link>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl border bg-card animate-pulse" />
+            <FileCardSkeleton key={i} />
           ))}
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center gap-3 py-12 text-center">
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button size="sm" variant="outline" onClick={fetchFiles} className="gap-1.5">
+            <RefreshCw size={13} /> Retry
+          </Button>
         </div>
       ) : files.length === 0 ? (
         <Empty>

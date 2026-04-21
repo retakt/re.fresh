@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ProtectedRoute({
   children,
@@ -13,8 +14,14 @@ export default function ProtectedRoute({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground text-sm">Loading...</div>
+      <div className="space-y-3 pt-2">
+        <Skeleton className="h-8 w-48 rounded-lg" />
+        <Skeleton className="h-4 w-64 rounded" />
+        <div className="space-y-2 pt-2">
+          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
+        </div>
       </div>
     )
   }

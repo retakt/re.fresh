@@ -7,24 +7,46 @@ import {
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import type { PanInfo } from "motion/react";
 import { Link } from "react-router-dom";
 
 export default function FloatingPlayer() {
   const {
     currentTrack, playing, progress, duration,
     volume, loading, queue, currentIndex,
-    togglePlay, next, prev, seek, setVolume,
+    togglePlay, next, prev, seek, setVolume, stop,
   } = usePlayer();
 
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const prevVol = useRef(volume);
+  const prevTrackId = useRef<string | null>(null);
 
-  // Auto-restore when new track plays
+  // When a new track starts (including after stop+replay), restore the player
   useEffect(() => {
-    if (currentTrack) setCollapsed(false);
+    if (!currentTrack) {
+      // Track stopped — reset local UI state for next time
+      prevTrackId.current = null;
+      return;
+    }
+    if (currentTrack.id !== prevTrackId.current) {
+      // New track started — always show full player
+      setCollapsed(false);
+      setExpanded(false);
+      prevTrackId.current = currentTrack.id;
+    }
   }, [currentTrack?.id]);
+
+  // Handle drag to dismiss
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    setIsDragging(false);
+    // If dragged down more than 100px, dismiss the player
+    if (info.offset.y > 100) {
+      stop?.(); // Stop playback and hide player
+    }
+  };
 
   // MediaSession API
   useEffect(() => {
@@ -75,13 +97,23 @@ export default function FloatingPlayer() {
   // ── COLLAPSED PILL ──
   if (collapsed) {
     return (
-      <motion.button
+      <motion.div
+        drag="y"
+        dragConstraints={{ top: -200, bottom: 200 }}
+        dragElastic={0.15}
+        onDragEnd={(_e, info: PanInfo) => {
+          if (info.offset.y > 80) {
+            stop?.();
+          } else if (info.offset.y < -60) {
+            setCollapsed(false);
+          }
+        }}
         initial={{ x: 80, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 80, opacity: 0 }}
         transition={{ type: "spring", bounce: 0.25, duration: 0.4 }}
         onClick={() => setCollapsed(false)}
-        className="fixed z-50 right-0 bottom-24 md:bottom-16 group flex items-stretch"
+        className="fixed z-50 right-0 bottom-24 md:bottom-16 group flex items-stretch cursor-grab active:cursor-grabbing"
         aria-label="Expand player"
       >
         {/* Arrow tab */}
@@ -117,19 +149,33 @@ export default function FloatingPlayer() {
             <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary shadow-sm animate-pulse" />
           )}
         </div>
-      </motion.button>
+      </motion.div>
     );
   }
 
   // ── FULL PLAYER ──
   return (
     <motion.div
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 200 }}
+      dragElastic={0.2}
+      onDragStart={() => setIsDragging(true)}
+      onDragEnd={handleDragEnd}
+      whileDrag={{ scale: 0.95 }}
       initial={{ y: 80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
+      animate={{ 
+        y: 0, 
+        opacity: 1,
+        scale: isDragging ? 0.95 : 1
+      }}
       exit={{ y: 80, opacity: 0 }}
       transition={{ type: "spring", bounce: 0.2, duration: 0.45 }}
-      className="fixed z-50 bottom-[4.5rem] left-2 right-2 md:bottom-6 md:left-auto md:right-6 md:w-[20.5rem] rounded-2xl border border-white/10 bg-card/60 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden supports-[backdrop-filter]:bg-card/45"
+      className="fixed z-50 bottom-[4.5rem] left-2 right-2 md:bottom-6 md:left-auto md:right-6 md:w-[20.5rem] rounded-2xl border border-white/10 bg-card/60 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden supports-[backdrop-filter]:bg-card/45 cursor-grab active:cursor-grabbing"
     >
+      {/* Drag indicator */}
+      <div className="flex justify-center pt-2 pb-1">
+        <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
+      </div>
       {/* ══ EXPANDED PANEL — sits above main row ══ */}
       <AnimatePresence>
         {expanded && (
@@ -234,31 +280,31 @@ export default function FloatingPlayer() {
               )}
 
               {/* Platform links */}
-              {((currentTrack as any).spotify_url ||
-                (currentTrack as any).soundcloud_url ||
-                (currentTrack as any).youtube_url) && (
+              {(currentTrack.spotify_url ||
+                currentTrack.soundcloud_url ||
+                currentTrack.youtube_url) && (
                 <div className="flex items-center gap-1 justify-center">
-                  {(currentTrack as any).spotify_url && (
+                  {currentTrack.spotify_url && (
                     <a
-                      href={(currentTrack as any).spotify_url}
+                      href={currentTrack.spotify_url}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-green-500 transition-colors px-2 py-1 rounded-lg hover:bg-secondary/70"
                     >
                       <FaSpotify size={12} className="text-green-500" /> Spotify
                     </a>
                   )}
-                  {(currentTrack as any).soundcloud_url && (
+                  {currentTrack.soundcloud_url && (
                     <a
-                      href={(currentTrack as any).soundcloud_url}
+                      href={currentTrack.soundcloud_url}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-orange-500 transition-colors px-2 py-1 rounded-lg hover:bg-secondary/70"
                     >
                       <FaSoundcloud size={12} className="text-orange-500" /> SoundCloud
                     </a>
                   )}
-                  {(currentTrack as any).youtube_url && (
+                  {currentTrack.youtube_url && (
                     <a
-                      href={(currentTrack as any).youtube_url}
+                      href={currentTrack.youtube_url}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-secondary/70"
                     >
@@ -315,10 +361,10 @@ export default function FloatingPlayer() {
           <button
             onClick={prev}
             disabled={!hasPrev}
-            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 border
               ${hasPrev
-                ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary"
-                : "bg-secondary/30 text-muted-foreground/30 cursor-not-allowed"
+                ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary border-primary/20 hover:border-primary/40"
+                : "bg-secondary/30 text-muted-foreground/30 cursor-not-allowed border-transparent"
               }`}
           >
             <SkipBack size={12} fill={hasPrev ? "currentColor" : "none"} />
@@ -326,24 +372,24 @@ export default function FloatingPlayer() {
 
           <button
             onClick={togglePlay}
-            className="w-8 h-8 rounded-full bg-primary/95 text-primary-foreground hover:bg-primary/90 active:scale-90 transition-all flex items-center justify-center shadow-md shadow-primary/20"
+            className="w-8 h-8 rounded-full bg-primary/95 text-primary-foreground hover:bg-primary/90 active:scale-90 transition-all flex items-center justify-center shadow-md shadow-primary/20 border border-primary/30"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : playing ? (
               <Pause size={13} fill="currentColor" />
             ) : (
-              <Play size={13} fill="currentColor" className="translate-x-px" />
+              <Play size={13} fill="currentColor" className="ml-0.5" />
             )}
           </button>
 
           <button
             onClick={next}
             disabled={!hasNext}
-            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 border
               ${hasNext
-                ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary"
-                : "bg-secondary/30 text-muted-foreground/30 cursor-not-allowed"
+                ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary border-primary/20 hover:border-primary/40"
+                : "bg-secondary/30 text-muted-foreground/30 cursor-not-allowed border-transparent"
               }`}
           >
             <SkipForward size={12} fill={hasNext ? "currentColor" : "none"} />

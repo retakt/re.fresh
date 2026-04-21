@@ -41,6 +41,7 @@ type PlayerContext = PlayerState & {
   prev: () => void;
   seek: (pct: number) => void;
   setVolume: (v: number) => void;
+  stop: () => void;
   currentTrack: PlayerTrack | null;
   isTrackPlaying: (id: string) => boolean;
 };
@@ -50,20 +51,27 @@ const PlayerCtx = createContext<PlayerContext | null>(null);
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const [state, setState] = useState<PlayerState>({
-    queue: [],
-    currentIndex: -1,
-    playing: false,
-    progress: 0,
-    duration: 0,
-    volume: 0.8,
-    loading: false,
+  const [state, setState] = useState<PlayerState>(() => {
+    // Restore persisted volume
+    const savedVol = typeof window !== "undefined"
+      ? parseFloat(localStorage.getItem("player_volume") ?? "0.8")
+      : 0.8;
+    return {
+      queue: [],
+      currentIndex: -1,
+      playing: false,
+      progress: 0,
+      duration: 0,
+      volume: isNaN(savedVol) ? 0.8 : Math.min(1, Math.max(0, savedVol)),
+      loading: false,
+    };
   });
 
   // Init audio element once
   useEffect(() => {
     const audio = new Audio();
-    audio.volume = 0.8;
+    const savedVol = parseFloat(localStorage.getItem("player_volume") ?? "0.8");
+    audio.volume = isNaN(savedVol) ? 0.8 : Math.min(1, Math.max(0, savedVol));
     audio.preload = "metadata";
     audioRef.current = audio;
 
@@ -87,17 +95,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
     const onCanPlay = () => setState((s) => ({ ...s, loading: false }));
     const onWaiting = () => setState((s) => ({ ...s, loading: true }));
+    const onError = () => setState((s) => ({ ...s, loading: false, playing: false }));
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("canplay", onCanPlay);
     audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("error", onError);
 
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("canplay", onCanPlay);
       audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("error", onError);
       audio.pause();
     };
   }, []);
@@ -180,9 +191,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setVolume = useCallback((v: number) => {
-    if (audioRef.current) audioRef.current.volume = v;
-    setState((s) => ({ ...s, volume: v }));
+    const clamped = Math.min(1, Math.max(0, v));
+    if (audioRef.current) audioRef.current.volume = clamped;
+    // Persist volume preference
+    try { localStorage.setItem("player_volume", String(clamped)); } catch {}
+    setState((s) => ({ ...s, volume: clamped }));
   }, []);
+
+  const stop = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = "";
+    setState({
+      queue: [],
+      currentIndex: -1,  // -1 so currentTrack resolves to null
+      playing: false,
+      progress: 0,
+      duration: 0,
+      volume: state.volume, // preserve volume, don't reset it
+      loading: false,
+    });
+  }, [state.volume]);
 
   const currentTrack =
     state.currentIndex >= 0 ? state.queue[state.currentIndex] ?? null : null;
@@ -204,6 +235,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         prev,
         seek,
         setVolume,
+        stop,
         currentTrack,
         isTrackPlaying,
       }}

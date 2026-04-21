@@ -69,12 +69,12 @@ export default function AdminPage() {
           </p>
         </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
         {tiles.map(({ href, icon: Icon, label, desc, iconColor, bg }) => (
           <Link
             key={href}
             to={href}
-            className="flex flex-col gap-3 rounded-xl border bg-card p-5 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer"
+            className="flex flex-col gap-3 rounded-xl border bg-card p-4 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer active:scale-[0.98]"
           >
             <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center`}>
               <Icon size={18} className={iconColor} strokeWidth={1.8} />

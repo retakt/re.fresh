@@ -16,8 +16,11 @@ export default function BottomNav() {
   const location = useLocation();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md">
-      <div className="flex items-stretch h-16">
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background/97 backdrop-blur-lg shadow-[0_-1px_12px_rgba(0,0,0,0.08)]"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
+      <div className="flex items-stretch h-[56px]">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active =
@@ -29,15 +32,16 @@ export default function BottomNav() {
             <Link
               key={tab.href}
               to={tab.href}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-colors",
+                "flex-1 flex flex-col items-center justify-center gap-[3px] text-[9px] font-semibold transition-colors",
                 active
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Icon
-                size={18}
+                size={17}
                 strokeWidth={active ? 2.4 : 1.8}
                 className="transition-all"
               />
@@ -46,9 +50,6 @@ export default function BottomNav() {
           );
         })}
       </div>
-
-      {/* Safe area for iOS */}
-      <div className="h-safe-area-inset-bottom bg-background/95" />
     </nav>
   );
 }

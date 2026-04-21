@@ -23,23 +23,80 @@ export default function ImageUpload({ value, onChange, label = "Cover image" }: 
       return;
     }
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `images/${Date.now()}.${ext}`;
 
-    const { error } = await supabase.storage
-      .from("uploads")
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+    try {
+      // Optimize image before upload
+      const optimizedFile = await optimizeImage(file);
+      
+      const ext = optimizedFile.name.split(".").pop();
+      const path = `images/${Date.now()}.${ext}`;
 
-    if (error) {
-      toast.error("Upload failed");
+      const { error } = await supabase.storage
+        .from("uploads")
+        .upload(path, optimizedFile, { cacheControl: "3600", upsert: false });
+
+      if (error) {
+        toast.error("Upload failed");
+        setUploading(false);
+        return;
+      }
+
+      const { data } = supabase.storage.from("uploads").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast.success("Image uploaded!");
+    } catch (error) {
+      toast.error("Failed to process image");
+    } finally {
       setUploading(false);
-      return;
     }
+  };
 
-    const { data } = supabase.storage.from("uploads").getPublicUrl(path);
-    onChange(data.publicUrl);
-    toast.success("Image uploaded!");
-    setUploading(false);
+  // Image optimization function
+  const optimizeImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate dimensions (max 1200px width, maintain aspect ratio)
+        const maxWidth = 1200;
+        const maxHeight = 800;
+        let { width, height } = img;
+
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const optimizedFile = new File([blob], file.name, {
+                type: "image/webp",
+                lastModified: Date.now(),
+              });
+              resolve(optimizedFile);
+            } else {
+              resolve(file); // Fallback to original
+            }
+          },
+          "image/webp",
+          0.85 // 85% quality
+        );
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   const handleDrop = (e: React.DragEvent) => {

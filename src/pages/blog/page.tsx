@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { CalendarDays, PenLine, BookOpen, ArrowRight } from "lucide-react";
+import { CalendarDays, PenLine, BookOpen, ArrowRight, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty.tsx";
+import { BlogCardSkeleton } from "@/components/ui/skeleton.tsx";
+import { PageHeader } from "@/components/layout/page-header.tsx";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,59 +15,64 @@ import { getCardPalette } from "@/lib/cardColors";
 export default function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const { canManageEditorial } = useAuth();
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      let query = supabase
-        .from("posts")
-        .select("*")
-        .order("created_at", { ascending: false });
+  const fetchPosts = async () => {
+    setLoading(true);
+    setError(null);
+    let query = supabase
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!canManageEditorial) query = query.eq("published", true);
+    const { data, error } = await query;
+    if (error) {
+      setError("Failed to load posts. Please try again.");
+    } else if (data) {
+      setPosts(data);
+    }
+    setLoading(false);
+  };
 
-      if (!canManageEditorial) {
-        query = query.eq("published", true);
-      }
+  useEffect(() => { fetchPosts(); }, [canManageEditorial]);
 
-      const { data, error } = await query;
-      if (!error && data) setPosts(data);
-      setLoading(false);
-    };
-
-    fetchPosts();
-  }, [canManageEditorial]);
-
-  const allTags = Array.from(
-    new Set(posts.flatMap((p) => (p as any).tags || []))
+  // Memoize tags to avoid recomputing on every render
+  const allTags = useMemo(
+    () => Array.from(new Set(posts.flatMap((p) => (p as any).tags || []))),
+    [posts]
   );
 
-  const filtered = tagFilter
-    ? posts.filter((p) => ((p as any).tags || []).includes(tagFilter))
-    : posts;
+  const filtered = useMemo(
+    () => tagFilter
+      ? posts.filter((p) => ((p as any).tags || []).includes(tagFilter))
+      : posts,
+    [posts, tagFilter]
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Blog</h1>
-          <p className="text-sm text-muted-foreground mt-1">Articles & thoughts...</p>
-        </div>
-        {canManageEditorial && (
+    <div className="space-y-4">
+      <PageHeader
+        title="Blog"
+        subtitle="Articles & thoughts..."
+        action={canManageEditorial ? (
           <Link to="/admin/posts/new">
             <Button size="sm" className="gap-1.5">
               <PenLine size={14} /> New post
             </Button>
           </Link>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by tag">
           {allTags.map((tag) => (
             <button
               key={tag}
               onClick={() => setTagFilter((prev) => (prev === tag ? null : tag))}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              aria-pressed={tagFilter === tag}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
                 tagFilter === tag
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -77,7 +84,8 @@ export default function BlogPage() {
           {tagFilter && (
             <button
               onClick={() => setTagFilter(null)}
-              className="px-3 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+              aria-label="Clear tag filter"
+              className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
             >
               Clear ✕
             </button>
@@ -86,10 +94,15 @@ export default function BlogPage() {
       )}
 
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 rounded-xl border bg-card animate-pulse" />
-          ))}
+        <div className="space-y-1.5">
+          {[1, 2, 3].map((i) => <BlogCardSkeleton key={i} />)}
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center gap-3 py-12 text-center">
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button size="sm" variant="outline" onClick={fetchPosts} className="gap-1.5">
+            <RefreshCw size={13} /> Retry
+          </Button>
         </div>
       ) : filtered.length === 0 ? (
         <Empty>
@@ -97,75 +110,67 @@ export default function BlogPage() {
             <EmptyMedia variant="icon"><BookOpen /></EmptyMedia>
             <EmptyTitle>No posts yet</EmptyTitle>
             <EmptyDescription>
-              {tagFilter
-                ? `No posts tagged "${tagFilter}"`
-                : "Check back soon for articles and thoughts."}
+              {tagFilter ? `No posts tagged "${tagFilter}"` : "Check back soon for articles and thoughts."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-1.5">
           {filtered.map((post) => {
             const palette = getCardPalette(post.id);
+            const tags: string[] = (post as any).tags || [];
+            const dateStr = (() => {
+              try { return format(new Date(post.created_at), "MMM d, yyyy"); }
+              catch { return ""; }
+            })();
             return (
-                <Link
-                  key={post.id}
-                  to={`/blog/${post.slug}`}
-                  className="group relative block overflow-hidden rounded-lg border border-sky-100/80 bg-gradient-to-br from-sky-50/70 via-background to-background p-5 transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-sky-900/30 dark:from-sky-950/20 dark:via-background dark:to-background"
-                >
-                  {/* Subtle left accent bar */}
-                  <div className={`absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b ${palette.gradient}`} />
+              <Link
+                key={post.id}
+                to={`/blog/${post.slug}`}
+                className={`group relative flex items-center gap-3.5 rounded-xl border bg-gradient-to-r ${palette.gradient} ${palette.border} px-3.5 py-3 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]`}
+              >
+                {/* Icon */}
+                <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
+                  <BookOpen size={14} className={palette.iconColor} strokeWidth={2} />
+                </div>
 
-                <div className="pl-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                      {post.title}
-                    </h2>
-                    <ArrowRight
-                      size={14}
-                      className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5"
-                    />
-                  </div>
-                  {post.excerpt && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                      {post.excerpt}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      {!post.published && (
-                        <Badge variant="secondary" className="text-xs py-0 px-1.5">
-                          Draft
-                        </Badge>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <CalendarDays size={11} />
-                        {format(new Date(post.created_at), "MMM d, yyyy")}
-                      </span>
-                    </div>
-                    {(post as any).tags && (post as any).tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {((post as any).tags as string[]).slice(0, 3).map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setTagFilter((prev) => (prev === tag ? null : tag));
-                            }}
-                            className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
-                              tagFilter === tag
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-secondary text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            #{tag}
-                          </button>
-                        ))}
-                      </div>
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {!post.published && (
+                      <Badge variant="secondary" className="text-[10px] py-0 px-1.5 shrink-0">Draft</Badge>
                     )}
+                    <span className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                      {post.title}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    {dateStr && (
+                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+                        <CalendarDays size={9} />{dateStr}
+                      </span>
+                    )}
+                    {tags.slice(0, 2).map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        aria-label={`Filter by tag ${tag}`}
+                        aria-pressed={tagFilter === tag}
+                        onClick={(e) => { e.preventDefault(); setTagFilter((prev) => (prev === tag ? null : tag)); }}
+                        className={`text-[10px] px-1.5 py-px rounded-full transition-colors ${
+                          tagFilter === tag ? "bg-primary text-primary-foreground" : `${palette.badge} hover:opacity-80`
+                        }`}
+                      >
+                        #{tag}
+                      </button>
+                    ))}
                   </div>
                 </div>
+
+                <ArrowRight
+                  size={11}
+                  className="shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground transition-all group-hover:translate-x-0.5"
+                />
               </Link>
             );
           })}

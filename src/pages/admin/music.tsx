@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge.tsx";
 import { Trash2, Plus, X, Check, ArrowLeft, PenLine, Music2 } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 
@@ -43,8 +43,34 @@ export default function AdminMusicPage() {
   const [form, setForm] = useState<FormData | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [searchParams] = useSearchParams();
 
-  useEffect(() => { fetchTracks(); }, []);
+  useEffect(() => { 
+    fetchTracks();
+    
+    // Check if we should auto-edit a track from URL params
+    const editId = searchParams.get('edit');
+    if (editId) {
+      // Wait for tracks to load, then open edit
+      setTimeout(() => {
+        const track = tracks.find(t => t.id === editId);
+        if (track) {
+          openEdit(track);
+        }
+      }, 100);
+    }
+  }, [searchParams]);
+
+  // Also handle when tracks are loaded
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && tracks.length > 0 && !form) {
+      const track = tracks.find(t => t.id === editId);
+      if (track) {
+        openEdit(track);
+      }
+    }
+  }, [tracks, searchParams, form]);
 
   const fetchTracks = async () => {
     setLoading(true);

@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import {
   Music2, Plus, Disc3, ListMusic,
-  MicVocal, Play, Pause, ExternalLink,
+  MicVocal, Play, Pause, ExternalLink, PenLine, RefreshCw,
 } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 import {
   Empty, EmptyHeader, EmptyMedia,
   EmptyTitle, EmptyDescription,
 } from "@/components/ui/empty.tsx";
+import { TrackCardSkeleton } from "@/components/ui/skeleton.tsx";
+import { PageHeader } from "@/components/layout/page-header.tsx";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,11 +45,13 @@ function TrackRow({
   index,
   allTracks,
   onTagClick,
+  isAdmin,
 }: {
   track: Music;
   index: number;
   allTracks: Music[];
   onTagClick: (tag: string) => void;
+  isAdmin: boolean;
 }) {
   const navigate = useNavigate();
   const { play, pause, isTrackPlaying, currentTrack } = usePlayer();
@@ -57,11 +61,21 @@ function TrackRow({
   const isPlaying = isTrackPlaying(track.id);
   const hasAudio = !!track.audio_url;
 
-  // Smart routing: single → song page, has album → album page
+  // Smart routing based on release type
   const handleNavigate = useCallback(() => {
-    if (track.album) {
-      navigate(`/music/album/${encodeURIComponent(track.album)}`);
+    if (track.release_type === "single") {
+      // Singles always go to individual song page
+      navigate(`/music/song/${track.id}`);
+    } else if (track.release_type === "album" || track.release_type === "ep") {
+      // Albums and EPs go to album page (grouped view)
+      if (track.album) {
+        navigate(`/music/album/${encodeURIComponent(track.album)}`);
+      } else {
+        // Fallback: if no album name, go to song page
+        navigate(`/music/song/${track.id}`);
+      }
     } else {
+      // Default: go to song page
       navigate(`/music/song/${track.id}`);
     }
   }, [track, navigate]);
@@ -93,45 +107,34 @@ function TrackRow({
 
   return (
     <div
-      className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer select-none
+      className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all cursor-pointer select-none
+        bg-gradient-to-r ${palette.gradient} ${palette.border}
         ${isLoaded
-          ? "bg-primary/8 dark:bg-primary/10"
-          : "hover:bg-secondary/60"
+          ? "shadow-md -translate-y-0.5"
+          : "hover:shadow-md hover:-translate-y-0.5"
         }
       `}
       onClick={handleNavigate}
     >
-      {/* Play button / track number - Spotify style */}
+      {/* Play button - Always visible for mobile */}
       <div className="shrink-0 w-8 flex items-center justify-center">
         {hasAudio ? (
-          <>
-            {/* Number shown by default, hidden on hover/active */}
-            <span
-              className={`text-sm text-muted-foreground tabular-nums transition-all
-                ${isLoaded ? "hidden" : "group-hover:hidden"}
-              `}
-            >
-              {index + 1}
-            </span>
-            {/* Play/pause button shown on hover/active */}
-            <button
-              onClick={handlePlayPause}
-              className={`items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 active:scale-95
-                ${isLoaded ? "flex" : "hidden group-hover:flex"}
-                ${isPlaying ? "text-primary" : "text-foreground"}
-              `}
-            >
-              {isPlaying ? (
-                <Pause size={14} fill="currentColor" />
-              ) : (
-                <Play size={14} fill="currentColor" className="translate-x-px" />
-              )}
-            </button>
-          </>
+          <button
+            onClick={handlePlayPause}
+            className={`flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 active:scale-95
+              ${isPlaying ? "text-primary" : "text-foreground hover:text-primary"}
+            `}
+          >
+            {isPlaying ? (
+              <Pause size={14} fill="currentColor" />
+            ) : (
+              <Play size={14} fill="currentColor" className="translate-x-px" />
+            )}
+          </button>
         ) : (
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {index + 1}
-          </span>
+          <div className="w-7 h-7 rounded-full bg-muted/50 flex items-center justify-center">
+            <Music2 size={12} className="text-muted-foreground/50" />
+          </div>
         )}
       </div>
 
@@ -149,79 +152,113 @@ function TrackRow({
         )}
       </div>
 
-      {/* Title + artist */}
+      {/* Title + artist + tags */}
       <div className="flex-1 min-w-0">
-        <p className={`font-semibold text-sm truncate transition-colors
-          ${isLoaded ? "text-primary" : "text-foreground group-hover:text-primary"}
-        `}>
-          {track.title}
-        </p>
-        {track.artist && (
-          <p className="text-xs text-muted-foreground truncate mt-0.5">
-            {track.artist}
-          </p>
-        )}
-      </div>
-
-      {/* Tags / meta - NOW visible on mobile too */}
-      <div
-        className="flex flex-wrap items-center gap-1.5 shrink-0 max-w-[120px]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {track.genre && (
-          <button
-            onClick={() => onTagClick(track.genre!)}
-            className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${palette.badge} hover:opacity-80 transition-opacity`}
-          >
-            {track.genre}
-          </button>
-        )}
-        {track.year && (
-          <span className="text-[10px] text-muted-foreground font-medium">
-            {track.year}
-          </span>
-        )}
-        {track.album && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/music/album/${encodeURIComponent(track.album!)}`);
-            }}
-            className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium truncate max-w-[100px]"
-          >
-            {track.album}
-          </button>
-        )}
-        {track.tags?.slice(0, 2).map((tag) => (
-          <button
-            key={tag}
-            onClick={() => onTagClick(tag)}
-            className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          >
-            #{tag}
-          </button>
-        ))}
-      </div>
-      {/* Platform icons + external links */}
-      <div
-        className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {extLinks.map((link) => {
-          const Icon = link.icon;
-          return (
-            <a
-              key={link.label}
-              href={link.url!}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={link.label}
-              className={`p-1.5 rounded-md hover:bg-secondary/80 transition-colors ${link.color}`}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p 
+              className={`font-semibold truncate transition-colors leading-tight
+                ${isLoaded ? "text-primary" : "text-foreground group-hover:text-primary"}
+              `}
+              style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
             >
-              <Icon size={13} />
-            </a>
-          );
-        })}
+              {track.title}
+            </p>
+            {track.artist && (
+              <p 
+                className="text-muted-foreground truncate mt-0.5 leading-tight"
+                style={{ fontSize: "clamp(10px, 2.5vw, 12px)" }}
+              >
+                {track.artist}
+              </p>
+            )}
+          </div>
+          
+          {/* Platform icons - Always visible, more prominent */}
+          {extLinks.length > 0 && (
+            <div
+              className="flex items-center gap-1 shrink-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {extLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <a
+                    key={link.label}
+                    href={link.url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={link.label}
+                    className={`p-1.5 rounded-md hover:bg-secondary/80 transition-all hover:scale-110 ${link.color}`}
+                  >
+                    <Icon size={14} />
+                  </a>
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Admin edit button */}
+          {isAdmin && (
+            <Link
+              to={`/admin/music?edit=${track.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all hover:scale-110"
+              title="Edit track"
+            >
+              <PenLine size={12} />
+            </Link>
+          )}
+        </div>
+        
+        {/* Tags below song info */}
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {track.genre && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTagClick(track.genre!);
+              }}
+              className={`px-2 py-0.5 rounded-full font-medium ${palette.badge} hover:opacity-80 transition-opacity`}
+              style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+            >
+              {track.genre}
+            </button>
+          )}
+          {track.year && (
+            <span 
+              className="px-2 py-0.5 rounded-full bg-secondary/60 text-muted-foreground font-medium"
+              style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+            >
+              {track.year}
+            </span>
+          )}
+          {track.album && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/music/album/${encodeURIComponent(track.album!)}`);
+              }}
+              className="px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
+              style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+            >
+              {track.album}
+            </button>
+          )}
+          {track.tags?.slice(0, 2).map((tag) => (
+            <button
+              key={tag}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTagClick(tag);
+              }}
+              className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -230,23 +267,25 @@ function TrackRow({
 export default function MusicPage() {
   const [tracks, setTracks] = useState<Music[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const { isAdmin } = useAuth();
 
-  useEffect(() => {
-    const fetchTracks = async () => {
-      const { data, error } = await supabase
-        .from("music")
-        .select("*")
-        .eq("published", true)
-        .order("created_at", { ascending: false });
+  const fetchTracks = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from("music")
+      .select("*")
+      .eq("published", true)
+      .order("created_at", { ascending: false });
+    if (error) setError("Failed to load tracks. Please try again.");
+    else if (data) setTracks(data);
+    setLoading(false);
+  };
 
-      if (!error && data) setTracks(data);
-      setLoading(false);
-    };
-    fetchTracks();
-  }, []);
+  useEffect(() => { fetchTracks(); }, []);
 
   const handleTagClick = (tag: string) => {
     setTagFilter((prev) => (prev === tag ? null : tag));
@@ -271,20 +310,18 @@ export default function MusicPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Music</h1>
-          <p className="text-sm text-muted-foreground mt-1">List of my musical works...</p>
-          <p className="text-sm text-muted-foreground mt-1">Music for life. ~ hmph!</p>
-        </div>
-        {isAdmin && (
+      <PageHeader
+        title="Music"
+        subtitle="List of my musical works..."
+        subtitle2="Music for life. ~ hmph!"
+        action={isAdmin ? (
           <Link to="/admin/music">
             <Button size="sm" className="gap-1.5">
               <Plus size={14} /> Add track
             </Button>
           </Link>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Filter tabs */}
       <div className="flex gap-1.5 flex-wrap">
@@ -319,8 +356,15 @@ export default function MusicPage() {
       {loading ? (
         <div className="space-y-1">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-14 rounded-xl bg-card animate-pulse" />
+            <TrackCardSkeleton key={i} />
           ))}
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center gap-3 py-12 text-center">
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button size="sm" variant="outline" onClick={fetchTracks} className="gap-1.5">
+            <RefreshCw size={13} /> Retry
+          </Button>
         </div>
       ) : filtered.length === 0 ? (
         <Empty>
@@ -337,12 +381,10 @@ export default function MusicPage() {
       ) : (
         <div className="space-y-0.5">
           {/* Column headers - desktop only */}
-          <div className="hidden sm:grid grid-cols-[2rem_2.5rem_1fr_auto_auto] gap-3 px-3 pb-2 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider border-b mb-1">
-            <span className="text-center">#</span>
+          <div className="hidden sm:grid grid-cols-[2rem_2.5rem_1fr] gap-3 px-3 pb-2 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider border-b mb-1">
+            <span className="text-center">▶</span>
             <span />
             <span>Title</span>
-            <span>Info</span>
-            <span>Links</span>
           </div>
 
           {filtered.map((track, i) => (
@@ -352,6 +394,7 @@ export default function MusicPage() {
               index={i}
               allTracks={tracks}
               onTagClick={handleTagClick}
+              isAdmin={isAdmin}
             />
           ))}
         </div>

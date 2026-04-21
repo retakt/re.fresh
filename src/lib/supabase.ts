@@ -16,6 +16,7 @@ export type Post = {
   content: string | null
   excerpt: string | null
   cover_image: string | null
+  tags: string[]
   published: boolean
   created_at: string
   updated_at: string
