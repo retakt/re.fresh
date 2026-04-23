@@ -17,9 +17,9 @@ export type PlayerTrack = Pick<
   | "cover_image"
   | "audio_url"
   | "album"
-  | "spotify_url"      // ← add
-  | "soundcloud_url"   // ← add
-  | "youtube_url"      // ← add
+  | "spotify_url"
+  | "soundcloud_url"
+  | "youtube_url"
 >;
 
 type PlayerState = {
@@ -52,7 +52,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [state, setState] = useState<PlayerState>(() => {
-    // Restore persisted volume
     const savedVol = typeof window !== "undefined"
       ? parseFloat(localStorage.getItem("player_volume") ?? "0.8")
       : 0.8;
@@ -66,6 +65,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       loading: false,
     };
   });
+
+  // Keep a ref to current state so callbacks don't go stale
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   // Init audio element once
   useEffect(() => {
@@ -115,20 +118,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const play = useCallback((track: PlayerTrack, queue?: PlayerTrack[]) => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !track.audio_url) return;
 
     const newQueue = queue ?? [track];
     const idx = newQueue.findIndex((t) => t.id === track.id);
+    const resolvedIdx = idx >= 0 ? idx : 0;
 
-    if (!track.audio_url) return;
+    const current = stateRef.current;
+    const isSameTrack = current.queue[current.currentIndex]?.id === track.id;
 
+    if (isSameTrack) {
+      // Same track — just resume from where it was, don't restart
+      audio.play().catch(() => {});
+      setState((s) => ({ ...s, playing: true }));
+      return;
+    }
+
+    // Different track — load and play from start
     audio.src = track.audio_url;
     audio.play().catch(() => {});
 
     setState((s) => ({
       ...s,
       queue: newQueue,
-      currentIndex: idx >= 0 ? idx : 0,
+      currentIndex: resolvedIdx,
       playing: true,
       loading: true,
       progress: 0,
@@ -146,9 +159,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const togglePlay = useCallback(() => {
-    if (state.playing) pause();
+    if (stateRef.current.playing) pause();
     else resume();
-  }, [state.playing, pause, resume]);
+  }, [pause, resume]);
 
   const next = useCallback(() => {
     const audio = audioRef.current;
@@ -193,7 +206,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const setVolume = useCallback((v: number) => {
     const clamped = Math.min(1, Math.max(0, v));
     if (audioRef.current) audioRef.current.volume = clamped;
-    // Persist volume preference
     try { localStorage.setItem("player_volume", String(clamped)); } catch {}
     setState((s) => ({ ...s, volume: clamped }));
   }, []);
@@ -204,16 +216,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.pause();
     audio.currentTime = 0;
     audio.src = "";
-    setState({
+    setState((s) => ({
       queue: [],
-      currentIndex: -1,  // -1 so currentTrack resolves to null
+      currentIndex: -1,
       playing: false,
       progress: 0,
       duration: 0,
-      volume: state.volume, // preserve volume, don't reset it
+      volume: s.volume,
       loading: false,
-    });
-  }, [state.volume]);
+    }));
+  }, []);
 
   const currentTrack =
     state.currentIndex >= 0 ? state.queue[state.currentIndex] ?? null : null;
