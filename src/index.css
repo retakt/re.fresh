@@ -318,8 +318,14 @@ input[type="range"]::-moz-range-thumb {
   to   { transform: scaleY(1); }
 }
 
-/* ── Marquee scroll animation ── */
-@keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+/* ── Marquee scroll animation — two-copy seamless loop ── */
+/* Copy A: 0% → -100% (scrolls out to the left) */
+@keyframes marquee-a {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
+}
+/* Copy B: starts 100% to the right, arrives at 0 exactly as A exits */
+@keyframes marquee-b {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(0%); }
 }
