@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import ImageUpload from "@/components/ImageUpload.tsx";
 import { useBackNav } from "@/hooks/use-back-nav";
+import { FloatingSave } from "@/components/ui/floating-save";
 
 type FormData = {
   title: string;
@@ -152,9 +153,12 @@ export default function MusicEditorPage() {
         <ArrowLeft size={14} /> Back
       </button>
 
-      <h1 className="text-2xl font-bold tracking-tight">
-        {isEditing ? "Edit Track" : "New Track"}
-      </h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">
+          {isEditing ? "Edit Track" : "New Track"}
+        </h1>
+        <FloatingSave onClick={handleSave} saving={saving} label={isEditing ? "Save" : "Add"} />
+      </div>
 
       <div className="space-y-4">
         {/* Basic info */}

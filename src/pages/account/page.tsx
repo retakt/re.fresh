@@ -117,13 +117,15 @@ export default function AccountPage() {
     void fetchAvatarHistory();
   }, [user?.id]);
 
-  const avatarPressHandlers = useLongPress({
+  // Camera icon: tap = change photo, long press = open history panel
+  const cameraLongPress = useLongPress({
     onLongPress: () => {
       if (avatarUrl || avatarHistory.length > 0) {
         setAvatarPreviewOpen(true);
       }
     },
     onClick: () => fileInputRef.current?.click(),
+    delay: 500,
   });
 
   const fetchAvatarHistory = async () => {
@@ -405,31 +407,26 @@ export default function AccountPage() {
       <div className="rounded-xl border border-border/70 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center gap-4 px-4 py-4 border-b border-border/50">
           <div className="relative shrink-0">
-            <button
-              type="button"
-              disabled={avatarSaving}
-              className="group relative rounded-full outline-none"
-              aria-label="Change or preview avatar"
-              {...avatarPressHandlers}
-            >
-              <Avatar className="size-14 border-2 border-border/70 shadow-sm transition-transform group-hover:scale-[1.02]">
-                {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} className="object-cover" />}
-                <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </button>
+            {/* Avatar — just displays, no press handler */}
+            <Avatar className="size-14 border-2 border-border/70 shadow-sm">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} className="object-cover" />}
+              <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
 
+            {/* Camera icon — tap to change, long press to open history */}
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
               disabled={avatarSaving}
-              className="absolute -bottom-1 -right-1 size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:opacity-90 transition-opacity"
-              aria-label="Change avatar"
+              aria-label="Change avatar (hold for history)"
+              className="absolute -bottom-1.5 -right-1.5 size-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:opacity-90 active:scale-90 transition-all touch-manipulation select-none"
+              style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+              {...cameraLongPress}
             >
               {avatarSaving
-                ? <Loader2 size={11} className="animate-spin" />
-                : <Camera size={11} />
+                ? <Loader2 size={13} className="animate-spin" />
+                : <Camera size={13} />
               }
             </button>
 
@@ -454,9 +451,6 @@ export default function AccountPage() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground truncate mt-0.5">{email}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Tap to change. Press and hold to preview photo history.
-            </p>
           </div>
 
           {avatarUrl && (

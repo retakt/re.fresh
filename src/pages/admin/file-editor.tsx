@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
 import FileUpload from "@/components/FileUpload";
 import { useBackNav } from "@/hooks/use-back-nav";
+import { FloatingSave } from "@/components/ui/floating-save";
 
 type FormData = {
   name: string;
@@ -111,9 +112,12 @@ export default function FileEditorPage() {
         <ArrowLeft size={14} /> Back
       </button>
 
-      <h1 className="text-2xl font-bold tracking-tight">
-        {isEditing ? "Edit File" : "Add File"}
-      </h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">
+          {isEditing ? "Edit File" : "Add File"}
+        </h1>
+        <FloatingSave onClick={handleSave} saving={saving} label={isEditing ? "Save" : "Add"} />
+      </div>
 
       <div className="space-y-4">
         {/* File upload — only on create */}

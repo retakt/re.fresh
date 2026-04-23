@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import { useBackNav } from "@/hooks/use-back-nav";
 import { PublishToggle } from "@/components/ui/publish-toggle";
+import { MarqueeText } from "@/components/ui/marquee-text";
 
 export default function AdminMusicPage() {
   const navigate = useNavigate();
@@ -75,9 +76,9 @@ export default function AdminMusicPage() {
           {tracks.map((track) => (
             <div key={track.id} className="flex items-start gap-3 rounded-xl border bg-card px-4 py-3 min-h-[4.5rem]">
               <div className="flex-1 min-w-0 space-y-0.5">
-                {/* Line 1: Title + Live/Draft + AUDIO */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="font-semibold text-sm truncate max-w-[160px]">{track.title}</p>
+                {/* Line 1: Title + Live/Draft + AUDIO — title scrolls if too long */}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MarqueeText text={track.title} className="font-semibold text-sm max-w-[140px] shrink-0 flex-1 min-w-0" />
                   <Badge variant={track.published ? "default" : "secondary"} className="text-[10px] py-0 px-1.5 shrink-0">
                     {track.published ? "Live" : "Draft"}
                   </Badge>
@@ -85,12 +86,16 @@ export default function AdminMusicPage() {
                     <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">AUDIO</span>
                   )}
                 </div>
-                {/* Line 2: Artist | Release type | Year */}
-                <div className="flex items-center gap-1 text-[11px] text-muted-foreground flex-wrap">
-                  {track.artist && <span className="truncate max-w-[100px]">{track.artist}</span>}
-                  {track.artist && <span className="text-muted-foreground/40">·</span>}
-                  <span className="capitalize">{track.release_type}</span>
-                  {track.year && <><span className="text-muted-foreground/40">·</span><span>{track.year}</span></>}
+                {/* Line 2: Artist · Release type · Year — all on one line, no wrap */}
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground overflow-hidden">
+                  {track.artist && (
+                    <span className="truncate max-w-[90px] shrink-0">{track.artist}</span>
+                  )}
+                  {track.artist && <span className="text-muted-foreground/40 shrink-0">·</span>}
+                  <span className="capitalize shrink-0">{track.release_type}</span>
+                  {track.year && (
+                    <><span className="text-muted-foreground/40 shrink-0">·</span><span className="shrink-0">{track.year}</span></>
+                  )}
                 </div>
                 {/* Line 3: Tags */}
                 {(track.tags ?? []).length > 0 && (

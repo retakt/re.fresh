@@ -317,3 +317,9 @@ input[type="range"]::-moz-range-thumb {
   from { transform: scaleY(0.3); }
   to   { transform: scaleY(1); }
 }
+
+/* ── Marquee scroll animation ── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/lib/supabase";
 import { useBackNav } from "@/hooks/use-back-nav";
+import { FloatingSave } from "@/components/ui/floating-save";
 
 function slugify(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -165,10 +166,12 @@ export default function PostEditorPage() {
         <ArrowLeft size={14} /> Back
       </button>
 
-      <h1 className="text-2xl font-bold tracking-tight">
-        {isEditing ? "Edit Post" : "New Post"}
-      </h1>
-
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">
+          {isEditing ? "Edit Post" : "New Post"}
+        </h1>
+        <FloatingSave onClick={handleSave} saving={saving} label={isEditing ? "Save" : "Create"} />
+      </div>
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
