@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Sentry } from "@/lib/monitoring.ts";
 
 interface Props {
   children: ReactNode;
@@ -19,7 +20,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Log to console in dev; swap for Sentry in production
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: info.componentStack,
+      },
+    });
+
     console.error("[ErrorBoundary]", error, info.componentStack);
   }
 

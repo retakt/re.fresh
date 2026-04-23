@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { BackButton } from '@/components/layout/back-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,8 +13,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/'
+  const [searchParams] = useSearchParams()
+  // ?from= lets us redirect back to the page the user came from
+  const from = searchParams.get('from') ?? '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,19 +25,26 @@ export default function LoginPage() {
     const { error } = await signIn(email, password)
 
     if (error) {
-      setError('Invalid email or password')
+      setError('Invalid email/username or password')
       setLoading(false)
       return
     }
 
-    navigate(redirectTo, { replace: true })
+    // Go back to where they came from
+    navigate(from, { replace: true })
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-6">
+      <div className="absolute left-3 top-4 sm:left-5 sm:top-5">
+        <BackButton fallbackTo={from === '/' ? '/' : from} showLabel={false} className="px-2" />
+      </div>
+
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">re.Takt</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            <span className="text-sky-400 dark:text-sky-300">re</span><span className="text-primary">.</span><span className="text-foreground">Takt</span>
+          </h1>
           <p className="text-sm text-muted-foreground">an Isolated Space for you.</p>
         </div>
 
@@ -45,7 +54,7 @@ export default function LoginPage() {
             <Input
               id="email"
               type="text"
-              placeholder="you@example.com or username"
+              placeholder=""
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -58,7 +67,7 @@ export default function LoginPage() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder=""
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

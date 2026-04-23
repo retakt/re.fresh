@@ -45,7 +45,7 @@ export async function requireAdmin(req: Request) {
   const {
     data: { user },
     error: userError,
-  } = await userClient.auth.getUser(token);
+  } = await adminClient.auth.getUser(token);
 
   if (userError || !user) {
     return { errorResponse: jsonError("Not authorized", 401) };

@@ -7,15 +7,17 @@ import FloatingPlayer from "@/components/player/FloatingPlayer.tsx";
 
 export default function AppLayout() {
   return (
-    <div className="flex flex-col min-h-dvh bg-background text-foreground">
+    <div className="flex min-h-[var(--app-height)] flex-col bg-background text-foreground">
       <Navbar />
 
-      <div className="flex-1 mx-auto flex w-full max-w-6xl gap-6 px-3 sm:px-4 lg:px-6">
-        <Sidebar />
+      <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6">
+        <div className="hidden md:block w-44 shrink-0 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)]">
+          <Sidebar />
+        </div>
 
         <main
           id="main-content"
-          className="flex-1 min-w-0 overflow-x-hidden py-5 sm:py-8 pb-[76px] md:border-l md:border-border/60 md:pb-14 md:pl-5 lg:pl-6"
+          className="flex-1 min-w-0 overflow-x-hidden py-5 sm:py-8 pb-[76px] md:pb-14 md:pl-6 lg:pl-8"
         >
           <Outlet />
         </main>

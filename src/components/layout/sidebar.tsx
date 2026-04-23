@@ -4,6 +4,7 @@ import {
   User, FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { prefetchRoute } from "@/lib/prefetch";
 
 const NAV_LINKS = [
   { href: "/", icon: Home, label: "Home" },
@@ -18,7 +19,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="hidden md:flex flex-col w-44 shrink-0 py-8 sticky top-13 h-[calc(100vh-3.25rem)] overflow-y-auto scrollbar-none">
+    <aside className="hidden md:flex flex-col w-44 shrink-0 py-8 sticky top-13 h-[calc(100vh-3.25rem)] overflow-y-auto scrollbar-none pr-2">
       <nav className="flex flex-col gap-0.5">
         {NAV_LINKS.map((link) => {
           const Icon = link.icon;
@@ -32,15 +33,17 @@ export default function Sidebar() {
               key={link.href}
               to={link.href}
               aria-current={active ? "page" : undefined}
+              onMouseEnter={() => prefetchRoute(link.href)}
+              onFocus={() => prefetchRoute(link.href)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all",
                 active
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               )}
             >
               <Icon
-                size={16}
+                size={18}
                 strokeWidth={active ? 2.2 : 1.8}
                 className="shrink-0"
               />
@@ -50,11 +53,11 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Divider + version */}
-      <div className="mt-auto pt-6">
-        <p className="text-xs px-3 flex flex-col">
-          <span className="text-muted-foreground">made by</span>
-          <span className="font-bold">Takt Akira</span>
+      {/* Bottom — made by, pushed to bottom, indented to align with nav labels */}
+      <div className="mt-auto pt-6 text-center ">
+        <p className="text-xs flex flex-col gap-0.5">
+          <span className="text-muted-foreground/50">made by</span>
+          <span className="font-semibold text-muted-foreground/80">Takt Akira</span>
         </p>
       </div>
     </aside>

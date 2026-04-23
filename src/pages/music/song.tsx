@@ -14,6 +14,7 @@ import { usePlayer } from "@/lib/player";
 import { useAuth } from "@/hooks/useAuth";
 import { getCardPalette } from "@/lib/cardColors";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
+import { SongDetailSkeleton } from "@/components/ui/skeleton";
 
 export default function SongPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,16 +43,9 @@ export default function SongPage() {
   }, [id]);
 
   if (loading) {
-      return (
-      <div className="max-w-2xl space-y-4">
-        <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-        <div className="flex gap-6">
-          <div className="w-40 h-40 rounded-2xl bg-muted animate-pulse shrink-0" />
-          <div className="flex-1 space-y-3">
-            <div className="h-6 w-3/4 rounded bg-muted animate-pulse" />
-            <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
-          </div>
-        </div>
+    return (
+      <div className="w-full max-w-3xl">
+        <SongDetailSkeleton />
       </div>
     );
   }
@@ -108,10 +102,11 @@ export default function SongPage() {
       <div className={`relative mb-8 overflow-hidden rounded-lg border border-border/60 px-5 py-7 shadow-sm sm:px-7 sm:py-8 bg-gradient-to-b ${palette.headerGradient}`}>
         <div className="flex items-center justify-between mb-6">
           <Link
-            to="/music"
+            to={track.album ? `/music/album/${encodeURIComponent(track.album)}` : "/music"}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft size={14} /> Music
+            <ArrowLeft size={14} />
+            {track.album ? track.album : "Music"}
           </Link>
           
           {/* Admin edit button */}
@@ -126,9 +121,9 @@ export default function SongPage() {
         </div>
 
         {/* Song header */}
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-          {/* Cover */}
-          <div className={`shrink-0 w-32 h-32 sm:w-40 sm:h-40 rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          {/* Cover — smaller on mobile */}
+          <div className={`shrink-0 w-24 h-24 sm:w-36 sm:h-36 rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}>
             {track.cover_image ? (
               <img
                 src={track.cover_image}
@@ -136,22 +131,22 @@ export default function SongPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Music2 size={40} className={palette.iconColor} strokeWidth={1.2} />
+              <Music2 size={32} className={palette.iconColor} strokeWidth={1.2} />
             )}
           </div>
 
           {/* Info */}
-          <div className="space-y-2 min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
+          <div className="space-y-1.5 min-w-0 flex-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
               {track.release_type}
             </p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
               {track.title}
             </h1>
             {track.artist && (
-              <p className="text-sm text-slate-600 dark:text-slate-300">{track.artist}</p>
+              <p className="text-sm text-muted-foreground">{track.artist}</p>
             )}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               {track.year && <span>{track.year}</span>}
               {track.genre && (
                 <>
@@ -174,22 +169,22 @@ export default function SongPage() {
           </div>
         </div>
 
-        {/* Play button + external links */}
-        <div className="flex flex-wrap items-center gap-3 mt-6">
+        {/* Play + social links — all same height, wrap on small screens */}
+        <div className="flex flex-wrap items-center gap-2 mt-5">
           {track.audio_url ? (
             <button
               onClick={handlePlayPause}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:scale-105 active:scale-95 ${palette.iconBg} ${palette.iconColor} border ${palette.border}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 active:scale-95 border ${palette.iconBg} ${palette.iconColor} ${palette.border}`}
             >
               {isPlaying ? (
-                <><Pause size={15} /> Pause</>
+                <><Pause size={13} fill="currentColor" /> Pause</>
               ) : (
-                <><Play size={15} className="translate-x-px" /> {isLoaded ? "Resume" : "Play"}</>
+                <><Play size={13} fill="currentColor" className="translate-x-px" /> {isLoaded ? "Resume" : "Play"}</>
               )}
             </button>
           ) : (
-            <span className="text-xs text-muted-foreground px-3 py-2 rounded-xl border border-dashed">
-              No audio available
+            <span className="text-xs text-muted-foreground px-3 py-1.5 rounded-full border border-dashed">
+              No audio
             </span>
           )}
 
@@ -201,7 +196,7 @@ export default function SongPage() {
                 href={link.url!}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-border transition-colors ${link.color} hover:border-transparent`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-border/60 transition-colors ${link.color} hover:border-transparent`}
               >
                 <Icon size={13} />
                 {link.label}

@@ -49,8 +49,9 @@ export type Tutorial = {
   content: string | null
   excerpt: string | null
   category: string | null
-  difficulty: 'beginner' | 'intermediate' | 'advanced' | null
+  difficulty: string | null
   cover_image: string | null
+  tags: string[]
   published: boolean
   created_at: string
   updated_at: string
@@ -75,4 +76,41 @@ export type Profile = {
   avatar_url?: string | null
   role: 'admin' | 'editor' | 'member'
   created_at: string
+}
+
+export type ProfileAvatarHistory = {
+  id: string
+  user_id: string
+  avatar_url: string
+  storage_path: string
+  is_active: boolean
+  created_at: string
+}
+
+export type CommentAttachment = {
+  name: string
+  url: string
+  mimeType: string
+  size: number
+}
+
+export type CommentVote = {
+  id: string
+  comment_id: string
+  user_id: string
+  vote: 1 | -1
+  created_at: string
+}
+
+export type PostComment = {
+  id: string
+  post_id: string
+  user_id: string
+  parent_id: string | null
+  anchor_id: string | null
+  anchor_label: string | null
+  body: string
+  attachments: CommentAttachment[]
+  created_at: string
+  updated_at: string
 }

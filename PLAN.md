@@ -267,3 +267,41 @@ src/features/tools/
 **Last Updated:** 2026-04-22
 **Status:** Optimization Phase Complete - Ready for Production
 **Version:** 0.1.0 (Post-optimization)
+
+---
+
+## 🆕 Version 0.1.1 (Planned)
+
+### Targeted UX / Account Upgrades
+- **Dark mode text rebalance** - Shift global dark-mode body text to a softer silver tone while keeping heading and subheading contrast intact
+- **Avatar history** - Add Telegram-style press-and-hold avatar preview with selectable photo history (keep last 5)
+- **Username login resolver** - Support reliable username sign-in through a public edge function instead of client-side profile lookups
+
+### Implementation Notes
+- Add `profile_avatar_history` with per-user RLS, active-avatar tracking, and pruning support
+- Keep avatar uploads in the existing `uploads` bucket
+- Add normalized username uniqueness guardrails with a partial unique index on `lower(username)`
+- Preserve existing roadmap items below without removing any current optimization work
+
+### Next After v0.1.1
+- Resume the current high-priority roadmap in order:
+  1. Performance Monitoring
+  2. Bundle Analysis
+  3. Mobile Gestures
+  4. Virtual Scrolling
+
+---
+
+## 🆕 Version 0.1.2 (In Progress)
+
+### Performance Monitoring
+- **Status:** IMPLEMENTED
+- Added Sentry client initialization behind env-based configuration
+- Hooked the global React error boundary into Sentry exception capture
+- Kept monitoring dormant unless `VITE_SENTRY_DSN` is provided
+
+### Next After v0.1.2
+- Continue with the existing high-priority roadmap:
+  1. Bundle Analysis
+  2. Mobile Gestures
+  3. Virtual Scrolling

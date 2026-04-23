@@ -41,7 +41,7 @@ export default function UserMenu() {
     const { error } = await signOut();
     if (!error) {
       setOpen(false);
-      navigate("/");
+      // Stay on current page — don't navigate away
     }
   };
 
@@ -49,7 +49,7 @@ export default function UserMenu() {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild className="outline-none">
         <button
-          className="rounded-full border border-border/70 bg-card/70 p-1 text-foreground transition-colors hover:bg-secondary/70"
+          className="rounded-full border border-border/70 bg-card/70 p-1 text-foreground outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label="Open account menu"
         >
           <Avatar className="size-7 border border-border/70">
@@ -103,7 +103,15 @@ export default function UserMenu() {
                 <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-[11px] gap-2 cursor-pointer">
                   <Link to="/admin">
                     <Shield size={12} className="text-muted-foreground shrink-0" />
-                    <span className="truncate">Dashboard</span>
+                    <span className="truncate">Admin panel</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {profile?.role === "editor" && (
+                <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-[11px] gap-2 cursor-pointer">
+                  <Link to="/editor">
+                    <Shield size={12} className="text-muted-foreground shrink-0" />
+                    <span className="truncate">Editor panel</span>
                   </Link>
                 </DropdownMenuItem>
               )}

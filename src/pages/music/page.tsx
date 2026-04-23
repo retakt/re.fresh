@@ -13,11 +13,13 @@ import {
 } from "@/components/ui/empty.tsx";
 import { TrackCardSkeleton } from "@/components/ui/skeleton.tsx";
 import { PageHeader } from "@/components/layout/page-header.tsx";
+import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh.tsx";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlayer, type PlayerTrack } from "@/lib/player";
 import { getCardPalette } from "@/lib/cardColors";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 type FilterType = "all" | "album" | "single" | "ep";
 
@@ -64,10 +66,10 @@ function TrackRow({
   // Smart routing based on release type
   const handleNavigate = useCallback(() => {
     if (track.release_type === "single") {
-      // Singles always go to individual song page
+      // Singles go directly to individual song page
       navigate(`/music/song/${track.id}`);
     } else if (track.release_type === "album" || track.release_type === "ep") {
-      // Albums and EPs go to album page (grouped view)
+      // Albums and EPs go to album/EP page (grouped view)
       if (track.album) {
         navigate(`/music/album/${encodeURIComponent(track.album)}`);
       } else {
@@ -75,7 +77,6 @@ function TrackRow({
         navigate(`/music/song/${track.id}`);
       }
     } else {
-      // Default: go to song page
       navigate(`/music/song/${track.id}`);
     }
   }, [track, navigate]);
@@ -110,8 +111,8 @@ function TrackRow({
       className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all cursor-pointer select-none
         bg-gradient-to-r ${palette.gradient} ${palette.border}
         ${isLoaded
-          ? "shadow-md -translate-y-0.5"
-          : "hover:shadow-md hover:-translate-y-0.5"
+          ? `shadow-lg ${palette.hoverShadow} -translate-y-0.5`
+          : `hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5`
         }
       `}
       onClick={handleNavigate}
@@ -219,7 +220,7 @@ function TrackRow({
                 e.stopPropagation();
                 onTagClick(track.genre!);
               }}
-              className={`px-2 py-0.5 rounded-full font-medium ${palette.badge} hover:opacity-80 transition-opacity`}
+              className={`px-2 py-0.5 rounded-full font-medium transition-all hover:opacity-80 ${palette.badge}`}
               style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
             >
               {track.genre}
@@ -227,7 +228,7 @@ function TrackRow({
           )}
           {track.year && (
             <span 
-              className="px-2 py-0.5 rounded-full bg-secondary/60 text-muted-foreground font-medium"
+              className="px-2 py-0.5 rounded-full bg-secondary/60 text-muted-foreground font-medium pointer-events-none"
               style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
             >
               {track.year}
@@ -269,10 +270,10 @@ export default function MusicPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
   const { isAdmin } = useAuth();
 
-  const fetchTracks = async () => {
+  const fetchTracks = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
@@ -283,12 +284,19 @@ export default function MusicPage() {
     if (error) setError("Failed to load tracks. Please try again.");
     else if (data) setTracks(data);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchTracks(); }, []);
+  useEffect(() => { fetchTracks(); }, [fetchTracks]);
+
+  const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
+    onRefresh: fetchTracks,
+    disabled: loading,
+  });
 
   const handleTagClick = (tag: string) => {
-    setTagFilter((prev) => (prev === tag ? null : tag));
+    setTagFilters((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
     setFilter("all");
   };
 
@@ -300,15 +308,17 @@ export default function MusicPage() {
       (filter === "ep" && t.release_type === "ep");
 
     const matchesTag =
-      !tagFilter ||
-      t.genre === tagFilter ||
-      (t.tags && t.tags.includes(tagFilter));
+      tagFilters.length === 0 ||
+      tagFilters.some((f) =>
+        t.genre === f || (t.tags && t.tags.includes(f))
+      );
 
     return matchesType && matchesTag;
   });
 
   return (
     <div className="space-y-6">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} isTriggered={isTriggered} />
       {/* Header */}
       <PageHeader
         title="Music"
@@ -342,14 +352,15 @@ export default function MusicPage() {
             </button>
           );
         })}
-        {tagFilter && (
+        {tagFilters.length > 0 && tagFilters.map((f) => (
           <button
-            onClick={() => setTagFilter(null)}
+            key={f}
+            onClick={() => handleTagClick(f)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
           >
-            #{tagFilter} ✕
+            #{f} ✕
           </button>
-        )}
+        ))}
       </div>
 
       {/* Track list */}
@@ -372,8 +383,8 @@ export default function MusicPage() {
             <EmptyMedia variant="icon"><Music2 /></EmptyMedia>
             <EmptyTitle>No tracks found</EmptyTitle>
             <EmptyDescription>
-              {tagFilter
-                ? `No tracks tagged "${tagFilter}"`
+              {tagFilters.length > 0
+                ? `No tracks matching "${tagFilters.join('" or "')}"`
                 : "Tracks and productions will appear here."}
             </EmptyDescription>
           </EmptyHeader>

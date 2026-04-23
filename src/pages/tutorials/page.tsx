@@ -1,14 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { GraduationCap, Plus, BookMarked, ArrowRight, RefreshCw } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty.tsx";
 import { TutorialCardSkeleton } from "@/components/ui/skeleton.tsx";
 import { PageHeader } from "@/components/layout/page-header.tsx";
+import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh.tsx";
 import { supabase } from "@/lib/supabase";
 import type { Tutorial } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { getCardPalette } from "@/lib/cardColors";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
+import { prefetchPostData } from "@/lib/prefetch";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
@@ -20,10 +24,10 @@ export default function TutorialsPage() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = usePersistedState<string[]>("tutorials-tag-filter", []);
   const { canManageEditorial } = useAuth();
 
-  const fetchTutorials = async () => {
+  const fetchTutorials = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
@@ -37,27 +41,40 @@ export default function TutorialsPage() {
       setTutorials(data);
     }
     setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchTutorials(); }, [fetchTutorials]);
+
+  const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
+    onRefresh: fetchTutorials,
+    disabled: loading,
+  });
+
+  // Toggle a tag in/out of the active filter set
+  const handleTagClick = (tag: string) => {
+    setTagFilter((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
   };
 
-  useEffect(() => { fetchTutorials(); }, []);
-
-  const handleTagClick = (tag: string) => setTagFilter((prev) => (prev === tag ? null : tag));
-
   const filtered = useMemo(
-    () => tagFilter
-      ? tutorials.filter((t) => t.difficulty === tagFilter || t.category === tagFilter)
-      : tutorials,
+    () => tagFilter.length === 0
+      ? tutorials
+      : tutorials.filter((t) =>
+          tagFilter.some((f) => t.difficulty === f || t.category === f)
+        ),
     [tutorials, tagFilter]
   );
 
   return (
     <div className="space-y-4">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} isTriggered={isTriggered} />
       <PageHeader
         title="Tutorials"
         subtitle="My learning resources..."
         subtitle2="Guides, Tricks and some Lessons everyone should know!"
         action={canManageEditorial ? (
-          <Link to="/admin/tutorials">
+          <Link to="/admin/tutorials/new">
             <Button size="sm" className="gap-1.5">
               <Plus size={14} /> Add tutorial
             </Button>
@@ -65,14 +82,26 @@ export default function TutorialsPage() {
         ) : undefined}
       />
 
-      {tagFilter && (
-        <button
-          onClick={() => setTagFilter(null)}
-          aria-label="Clear filter"
-          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-        >
-          {tagFilter} ✕
-        </button>
+      {tagFilter.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tagFilter.map((f) => (
+            <button
+              key={f}
+              onClick={() => handleTagClick(f)}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+            >
+              {f} ✕
+            </button>
+          ))}
+          {tagFilter.length > 1 && (
+            <button
+              onClick={() => setTagFilter([])}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
       )}
 
       {loading ? (
@@ -92,7 +121,7 @@ export default function TutorialsPage() {
             <EmptyMedia variant="icon"><GraduationCap /></EmptyMedia>
             <EmptyTitle>No tutorials yet</EmptyTitle>
             <EmptyDescription>
-              {tagFilter ? `No tutorials tagged "${tagFilter}"` : "Learning resources will appear here."}
+              {tagFilter.length > 0 ? `No tutorials matching "${tagFilter.join('" or "')}"` : "Learning resources will appear here."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -104,7 +133,9 @@ export default function TutorialsPage() {
               <Link
                 key={item.id}
                 to={`/tutorials/${item.slug}`}
-                className={`group relative flex items-center gap-3.5 rounded-xl border bg-gradient-to-r ${palette.gradient} ${palette.border} px-3.5 py-3 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]`}
+                onMouseEnter={() => prefetchPostData('tutorials', item.slug)}
+                onFocus={() => prefetchPostData('tutorials', item.slug)}
+                className={`group relative flex items-center gap-3.5 rounded-xl border bg-gradient-to-r ${palette.gradient} ${palette.border} px-3.5 py-3 transition-all hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5 active:scale-[0.99]`}
               >
                 {/* Icon */}
                 <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
@@ -121,9 +152,13 @@ export default function TutorialsPage() {
                       <button
                         type="button"
                         aria-label={`Filter by difficulty: ${item.difficulty}`}
-                        aria-pressed={tagFilter === item.difficulty}
+                        aria-pressed={tagFilter.includes(item.difficulty)}
                         onClick={(e) => { e.preventDefault(); handleTagClick(item.difficulty!); }}
-                        className={`text-[10px] px-1.5 py-px rounded-full font-semibold transition-opacity hover:opacity-70 ${DIFFICULTY_COLORS[item.difficulty] ?? ""}`}
+                        className={`text-[10px] px-1.5 py-px rounded-full font-semibold transition-all hover:opacity-70 ${
+                          tagFilter.includes(item.difficulty)
+                            ? "ring-2 ring-primary/50 " + (DIFFICULTY_COLORS[item.difficulty.toLowerCase()] ?? palette.badge)
+                            : DIFFICULTY_COLORS[item.difficulty.toLowerCase()] ?? palette.badge
+                        }`}
                       >
                         {item.difficulty}
                       </button>
@@ -132,9 +167,13 @@ export default function TutorialsPage() {
                       <button
                         type="button"
                         aria-label={`Filter by category: ${item.category}`}
-                        aria-pressed={tagFilter === item.category}
+                        aria-pressed={tagFilter.includes(item.category)}
                         onClick={(e) => { e.preventDefault(); handleTagClick(item.category!); }}
-                        className={`text-[10px] px-1.5 py-px rounded-full font-medium ${palette.badge} hover:opacity-80 transition-opacity`}
+                        className={`text-[10px] px-1.5 py-px rounded-full font-medium transition-all hover:opacity-80 ${
+                          tagFilter.includes(item.category)
+                            ? "ring-2 ring-primary/50 " + palette.badge
+                            : palette.badge
+                        }`}
                       >
                         {item.category}
                       </button>

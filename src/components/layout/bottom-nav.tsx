@@ -3,6 +3,7 @@ import {
   Home, BookOpen, Music2, GraduationCap, FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { prefetchRoute } from "@/lib/prefetch";
 
 const TABS = [
   { href: "/", icon: Home, label: "Home" },
@@ -33,8 +34,10 @@ export default function BottomNav() {
               key={tab.href}
               to={tab.href}
               aria-current={active ? "page" : undefined}
+              onTouchStart={() => prefetchRoute(tab.href)}
+              onMouseEnter={() => prefetchRoute(tab.href)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-[3px] text-[9px] font-semibold transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-[3px] text-[9px] font-semibold outline-none transition-colors",
                 active
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"

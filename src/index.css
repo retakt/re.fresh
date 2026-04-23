@@ -55,6 +55,7 @@
 
 :root {
   --radius: 0.75rem;
+  --app-height: 100dvh;
   --background: oklch(0.985 0.005 80);
   --foreground: oklch(0.14 0.012 260);
   --card: oklch(1 0 0);
@@ -90,17 +91,17 @@
 
 .dark {
   --background: oklch(0.12 0.008 260);
-  --foreground: oklch(0.94 0.005 80);
+  --foreground: oklch(0.82 0.006 90);
   --card: oklch(0.17 0.01 260);
-  --card-foreground: oklch(0.94 0.005 80);
+  --card-foreground: oklch(0.82 0.006 90);
   --popover: oklch(0.17 0.01 260);
-  --popover-foreground: oklch(0.94 0.005 80);
+  --popover-foreground: oklch(0.82 0.006 90);
   --primary: oklch(0.74 0.16 340);
   --primary-foreground: oklch(0.12 0.008 260);
   --secondary: oklch(0.21 0.012 260);
-  --secondary-foreground: oklch(0.87 0.005 80);
+  --secondary-foreground: oklch(0.82 0.007 92);
   --muted: oklch(0.21 0.012 260);
-  --muted-foreground: oklch(0.60 0.012 260);
+  --muted-foreground: oklch(0.67 0.01 240);
   --accent: oklch(0.3 0.06 190);
   --accent-foreground: oklch(0.88 0.04 180);
   --destructive: oklch(0.704 0.191 22.216);
@@ -113,18 +114,18 @@
   --chart-4: oklch(0.62 0.16 300);
   --chart-5: oklch(0.68 0.15 220);
   --sidebar: oklch(0.15 0.009 260);
-  --sidebar-foreground: oklch(0.94 0.005 80);
+  --sidebar-foreground: oklch(0.82 0.006 90);
   --sidebar-primary: oklch(0.74 0.16 340);
   --sidebar-primary-foreground: oklch(0.12 0.008 260);
   --sidebar-accent: oklch(0.21 0.012 260);
-  --sidebar-accent-foreground: oklch(0.87 0.005 80);
+  --sidebar-accent-foreground: oklch(0.82 0.007 92);
   --sidebar-border: oklch(1 0 0 / 9%);
   --sidebar-ring: oklch(0.74 0.16 340);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
@@ -139,6 +140,21 @@
   p {
     font-weight: 450;
   }
+
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+  }
 }
 
 /* ── Prevent overscroll bounce / white gap on iOS ── */
@@ -150,12 +166,21 @@ html {
 
 body {
   overscroll-behavior-y: none;
-  min-height: 100dvh;
+  min-height: var(--app-height);
+}
+
+body,
+#root {
+  min-height: var(--app-height);
 }
 
 /* Smooth theme transitions AFTER initial load only */
 html.theme-loaded * {
   transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+html.resume-paint-fix body {
+  transform: translateZ(0);
 }
 
 /* Critical - prevent white flash on dark mode */
@@ -202,6 +227,12 @@ html.light {
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Pull-to-refresh spin animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ── Range inputs — complete reset ── */
@@ -279,4 +310,10 @@ input[type="range"]::-moz-range-thumb {
   border: 2px solid color-mix(in oklch, var(--background) 82%, transparent);
   box-shadow: 0 1px 4px rgba(0,0,0,0.35);
   cursor: pointer;
+}
+
+/* ── Music playing bars animation ── */
+@keyframes musicbar {
+  from { transform: scaleY(0.3); }
+  to   { transform: scaleY(1); }
 }

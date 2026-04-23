@@ -6,6 +6,7 @@ export const CARD_PALETTES = [
     badge: "bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400",
     border: "border-pink-100/60 dark:border-pink-900/20",
     headerGradient: "from-pink-500/20 via-pink-500/5 to-transparent",
+    hoverShadow: "hover:shadow-pink-500/10 dark:hover:shadow-pink-500/15",
   },
   {
     gradient: "from-cyan-500/15 via-cyan-500/5 to-transparent",
@@ -14,6 +15,7 @@ export const CARD_PALETTES = [
     badge: "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400",
     border: "border-cyan-100/60 dark:border-cyan-900/20",
     headerGradient: "from-cyan-500/20 via-cyan-500/5 to-transparent",
+    hoverShadow: "hover:shadow-cyan-500/10 dark:hover:shadow-cyan-500/15",
   },
   {
     gradient: "from-violet-500/15 via-violet-500/5 to-transparent",
@@ -22,6 +24,7 @@ export const CARD_PALETTES = [
     badge: "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400",
     border: "border-violet-100/60 dark:border-violet-900/20",
     headerGradient: "from-violet-500/20 via-violet-500/5 to-transparent",
+    hoverShadow: "hover:shadow-violet-500/10 dark:hover:shadow-violet-500/15",
   },
   {
     gradient: "from-amber-500/15 via-amber-500/5 to-transparent",
@@ -30,6 +33,7 @@ export const CARD_PALETTES = [
     badge: "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
     border: "border-amber-100/60 dark:border-amber-900/20",
     headerGradient: "from-amber-500/20 via-amber-500/5 to-transparent",
+    hoverShadow: "hover:shadow-amber-500/10 dark:hover:shadow-amber-500/15",
   },
   {
     gradient: "from-emerald-500/15 via-emerald-500/5 to-transparent",
@@ -38,6 +42,7 @@ export const CARD_PALETTES = [
     badge: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
     border: "border-emerald-100/60 dark:border-emerald-900/20",
     headerGradient: "from-emerald-500/20 via-emerald-500/5 to-transparent",
+    hoverShadow: "hover:shadow-emerald-500/10 dark:hover:shadow-emerald-500/15",
   },
   {
     gradient: "from-rose-500/15 via-rose-500/5 to-transparent",
@@ -46,6 +51,7 @@ export const CARD_PALETTES = [
     badge: "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400",
     border: "border-rose-100/60 dark:border-rose-900/20",
     headerGradient: "from-rose-500/20 via-rose-500/5 to-transparent",
+    hoverShadow: "hover:shadow-rose-500/10 dark:hover:shadow-rose-500/15",
   },
   {
     gradient: "from-indigo-500/15 via-indigo-500/5 to-transparent",
@@ -54,6 +60,7 @@ export const CARD_PALETTES = [
     badge: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400",
     border: "border-indigo-100/60 dark:border-indigo-900/20",
     headerGradient: "from-indigo-500/20 via-indigo-500/5 to-transparent",
+    hoverShadow: "hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/15",
   },
   {
     gradient: "from-teal-500/15 via-teal-500/5 to-transparent",
@@ -62,6 +69,7 @@ export const CARD_PALETTES = [
     badge: "bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400",
     border: "border-teal-100/60 dark:border-teal-900/20",
     headerGradient: "from-teal-500/20 via-teal-500/5 to-transparent",
+    hoverShadow: "hover:shadow-teal-500/10 dark:hover:shadow-teal-500/15",
   },
 ] as const;
 

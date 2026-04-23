@@ -1,17 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen, Music2, GraduationCap,
-  ArrowRight, Quote, CalendarDays,
+  ArrowRight, Quote, CalendarDays, RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "@/lib/supabase";
-import { getCurrentQuote, getQuotePalette, DEFAULT_QUOTES } from "@/lib/quotes";
+import { getQuotePalette, DEFAULT_QUOTES, QUOTE_CARD_PALETTES } from "@/lib/quotes";
 import { getCardPalette } from "@/lib/cardColors";
 import { format } from "date-fns";
 import { ContentCardSkeleton } from "@/components/ui/skeleton.tsx";
 import { PageHeader } from "@/components/layout/page-header.tsx";
 import { TOOLS } from "@/features/tools";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 type FilterType = "all" | "blog" | "tutorial" | "music";
 
@@ -41,10 +42,55 @@ type ContentItem = {
 export default function Index() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  // Persisted filter — survives refresh
+  const [activeFilter, setActiveFilter] = usePersistedState<FilterType>("home-filter", "all");
 
-  const quote = useMemo(() => getCurrentQuote(DEFAULT_QUOTES), []);
-  const quotePalette = useMemo(() => getQuotePalette(quote.id), [quote.id]);
+  // Quotes — persistent rotation using sessionStorage
+  // Index persists across refreshes. On first visit, starts at a random position.
+  // Only the ↻ button advances it manually.
+  const [quotes, setQuotes] = useState<typeof DEFAULT_QUOTES | null>(null);
+  const [quoteIndex, setQuoteIndex] = usePersistedState<number>("quote-index", -1);
+  const [quoteLoadedAt, setQuoteLoadedAt] = usePersistedState<number>("quote-loaded-at", 0);
+
+  useEffect(() => {
+    void supabase.from("quotes").select("id, text, author").order("created_at", { ascending: false })
+      .then(({ data }) => {
+        const dbQuotes = (data && data.length > 0) ? (data as typeof DEFAULT_QUOTES) : [];
+
+        // Respect hidden defaults from admin panel
+        let hiddenIds: Set<string> = new Set();
+        try { hiddenIds = new Set(JSON.parse(localStorage.getItem("hidden-default-quotes") ?? "[]")); } catch {}
+        const visibleDefaults = DEFAULT_QUOTES.filter((q) => !hiddenIds.has(q.id));
+
+        // Merge and shuffle — truly random, no ordering by source
+        const merged = [...dbQuotes, ...visibleDefaults];
+        const pool = merged.sort(() => Math.random() - 0.5);
+        setQuotes(pool);
+
+        const now = Date.now();
+        const twentyMin = 20 * 60 * 1000;
+
+        if (quoteIndex === -1 || quoteIndex >= pool.length) {
+          setQuoteIndex(Math.floor(Math.random() * pool.length));
+          setQuoteLoadedAt(now);
+        } else if (now - quoteLoadedAt > twentyMin) {
+          setQuoteIndex((prev) => (prev + 1) % pool.length);
+          setQuoteLoadedAt(now);
+        }
+      });
+  }, []);
+
+  const quote = quotes ? quotes[Math.abs(quoteIndex) % quotes.length] : null;
+  const quotePalette = QUOTE_CARD_PALETTES[Math.abs(quoteIndex) % QUOTE_CARD_PALETTES.length];
+
+  const cycleQuote = useCallback(() => {
+    if (!quotes) return;
+    setQuoteIndex((i) => (i + 1) % quotes.length);
+    setQuoteLoadedAt(Date.now()); // reset the 20-min timer on manual cycle
+  }, [quotes?.length]);
+
+  // Remove keyboard bindings — only the ↻ button cycles quotes
+  // (keyboard shortcuts removed per user request)
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -63,7 +109,7 @@ export default function Index() {
           .limit(10),
         supabase
           .from("music")
-          .select("id, title, created_at, genre, release_type")
+          .select("id, title, created_at, genre, release_type, album")
           .eq("published", true)
           .order("created_at", { ascending: false })
           .limit(10),
@@ -90,7 +136,9 @@ export default function Index() {
           id: m.id,
           title: m.title,
           type: "music" as const,
-          href: `/music/song/${m.id}`,
+          href: (m.release_type === "album" || m.release_type === "ep") && m.album
+            ? `/music/album/${encodeURIComponent(m.album)}`
+            : `/music/song/${m.id}`,
           date: m.created_at,
           meta: m.genre ?? m.release_type ?? "Music",
         })),
@@ -136,21 +184,42 @@ export default function Index() {
       />
 
       {/* ── QUOTE ── */}
-      <div
-        className={`relative overflow-hidden rounded-xl border bg-gradient-to-br
-          ${quotePalette.bg} ${quotePalette.border} px-3.5 py-3`}
-      >
-        <Quote
-          size={24}
-          className={`absolute top-2 right-3 opacity-[0.07] ${quotePalette.accent}`}
-        />
-        <p className="text-xs sm:text-sm font-medium leading-relaxed text-foreground/90 pr-8">
-          "{quote.text}"
-        </p>
-        <p className={`mt-1 text-[11px] sm:text-xs font-semibold ${quotePalette.accent}`}>
-          — {quote.author}
-        </p>
-      </div>
+      <AnimatePresence mode="wait">
+        {!quote ? (
+          <div className="h-16 rounded-xl border bg-muted/30 animate-pulse" />
+        ) : (
+        <motion.div
+          key={quoteIndex}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+          className={`relative overflow-hidden rounded-xl border bg-gradient-to-br
+            ${quotePalette.bg} ${quotePalette.border} px-3.5 py-3 select-none`}
+        >
+          {/* Decorative quote mark — top right watermark */}
+          <Quote
+            size={32}
+            className={`absolute top-2 right-3 opacity-[0.08] ${quotePalette.accent}`}
+          />
+          <p className="text-xs sm:text-sm font-medium leading-relaxed text-foreground/90 pr-8 pb-5">
+            "{quote.text}"
+          </p>
+          <p className={`mt-1 text-[11px] sm:text-xs font-semibold ${quotePalette.accent}`}>
+            — {quote.author}
+          </p>
+          {/* Cycle button */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); cycleQuote(); }}
+            className={`absolute bottom-2.5 right-2.5 rounded-full p-1.5 border border-current/20 shadow-sm transition-all hover:scale-110 opacity-50 hover:opacity-90 ${quotePalette.accent}`}
+            aria-label="Next quote"
+          >
+            <RefreshCw size={12} />
+          </button>
+        </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── MAIN CONTENT AREA: Latest + Tools ── */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_13rem] gap-4 items-start">
@@ -162,12 +231,13 @@ export default function Index() {
             <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
               {FILTER_LABELS[activeFilter]}
             </h2>
-            <div className="flex items-center gap-0.5 bg-secondary/60 rounded-lg p-0.5">
+            <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: "linear-gradient(135deg, rgba(17,216,194,0.10) 0%, rgba(17,216,194,0.05) 100%)", border: "1px solid rgba(17,216,194,0.18)" }}>
               {FILTERS.map((f) => (
                 <button
                   key={f.value}
                   onClick={() => setActiveFilter(f.value)}
                   className={`relative px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors
+                    outline-none
                     ${activeFilter === f.value
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -210,7 +280,7 @@ export default function Index() {
                           className={`group flex items-center gap-3.5 rounded-xl border
                             bg-gradient-to-r ${palette.gradient} ${palette.border}
                             px-3.5 py-3 sm:px-4 sm:py-3.5 transition-all
-                            hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]`}
+                            outline-none hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5 active:scale-[0.99]`}
                         >
                           <div className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
                             <Icon size={13} className={palette.iconColor} strokeWidth={2} />

@@ -90,7 +90,9 @@ export default function AdminMembersPage() {
       const result = await response.json();
 
       if (!response.ok || result.error) {
-        toast.error(result.error || "Failed to send invite");
+        const msg = result.error || "Failed to send invite";
+        console.error("Invite error:", response.status, result);
+        toast.error(msg);
       } else {
         toast.success(`Invite sent to ${email} ✓`);
         setEmail("");
@@ -231,13 +233,14 @@ export default function AdminMembersPage() {
             you can promote them to editor or admin from the list below.
           </p>
           <div className="space-y-1.5">
-            <Label>Email address</Label>
+            <Label className="text-xs">Email address</Label>
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-              placeholder="member@example.com"
+              placeholder=""
+              className="text-sm"
             />
           </div>
           <div className="flex gap-2">
@@ -247,13 +250,12 @@ export default function AdminMembersPage() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => {
-                setShowInvite(false);
-                setEmail("");
-              }}
+              onClick={() => { setShowInvite(false); setEmail(""); }}
               className="gap-1.5"
+              aria-label="Close"
+              title="Close"
             >
-              <X size={13} /> Cancel
+              <X size={13} />
             </Button>
           </div>
         </div>
@@ -274,22 +276,22 @@ export default function AdminMembersPage() {
               <div className="flex items-start gap-4">
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-semibold">
+                    <p className="truncate text-xs font-semibold">
                       {member.username || member.email || "Unnamed member"}
                     </p>
-                    <Badge className={`border-0 text-xs py-0 px-1.5 ${ROLE_STYLES[member.role]}`}>
+                    <Badge className={`border-0 text-[10px] py-0 px-1.5 ${ROLE_STYLES[member.role]}`}>
                       {member.role}
                     </Badge>
                     {member.id === user?.id && (
-                      <Badge variant="outline" className="text-xs py-0 px-1.5">
+                      <Badge variant="outline" className="text-[10px] py-0 px-1.5">
                         You
                       </Badge>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>{member.email ?? "No profile email yet"}</span>
-                    <span>•</span>
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span className="truncate max-w-[160px]">{member.email ?? "No email"}</span>
+                    <span>·</span>
                     <span>{new Date(member.created_at).toLocaleDateString()}</span>
                   </div>
 
@@ -319,35 +321,38 @@ export default function AdminMembersPage() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2 pt-1">
+                    <div className="flex flex-wrap gap-1.5 pt-1">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="h-8 gap-1.5"
+                        className="h-9 gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground active:bg-secondary touch-manipulation"
                         onClick={() => openEdit(member)}
+                        title="Edit username"
                       >
                         <PencilLine size={13} />
                         Username
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="h-8 gap-1.5"
+                        className="h-9 gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground active:bg-secondary touch-manipulation"
                         disabled={savingMemberId === member.id}
                         onClick={() => handleResetPassword(member)}
+                        title="Reset password"
                       >
                         <KeyRound size={13} />
-                        Reset password
+                        Reset pw
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="h-8 gap-1.5"
+                        className="h-9 gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground active:bg-secondary touch-manipulation"
                         disabled={savingMemberId === member.id}
                         onClick={() => handleChangeEmail(member)}
+                        title="Change email"
                       >
                         <Mail size={13} />
-                        Change email
+                        Email
                       </Button>
                     </div>
                   )}
@@ -374,10 +379,10 @@ export default function AdminMembersPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      className="h-9 w-9 text-destructive hover:text-destructive touch-manipulation"
                       onClick={() => handleRemove(member.id, member.email ?? "this member")}
                     >
-                      <Trash2 size={13} />
+                      <Trash2 size={14} />
                     </Button>
                   )}
                 </div>

@@ -149,19 +149,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       avatarUrl: profile?.avatar_url ?? null,
       notificationsEnabled,
       setNotificationsEnabled,
-      signIn: async (email: string, password: string) => {
-        let emailOrUsername = email.trim();
+      signIn: async (identifier: string, password: string) => {
+        const emailOrUsername = identifier.trim();
         let resolvedEmail = emailOrUsername;
 
-        if (!emailOrUsername.includes("@")) {
-          const { data: profileMatch } = await supabase
-            .from("profiles")
-            .select("email")
-            .eq("username", emailOrUsername)
-            .maybeSingle();
+        if (emailOrUsername && !emailOrUsername.includes("@")) {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resolve-login-identifier`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({ identifier: emailOrUsername }),
+            },
+          );
 
-          if (profileMatch?.email) {
-            resolvedEmail = profileMatch.email;
+          if (response.ok) {
+            const result = await response.json().catch(() => null);
+            if (result?.resolvedEmail) {
+              resolvedEmail = result.resolvedEmail;
+            }
           }
         }
 

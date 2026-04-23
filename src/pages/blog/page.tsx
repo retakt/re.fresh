@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
@@ -7,19 +7,23 @@ import { format } from "date-fns";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty.tsx";
 import { BlogCardSkeleton } from "@/components/ui/skeleton.tsx";
 import { PageHeader } from "@/components/layout/page-header.tsx";
+import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh.tsx";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { getCardPalette } from "@/lib/cardColors";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
+import { prefetchPostData } from "@/lib/prefetch";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = usePersistedState<string[]>("blog-tag-filter", []);
   const { canManageEditorial } = useAuth();
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     setError(null);
     let query = supabase
@@ -34,9 +38,15 @@ export default function BlogPage() {
       setPosts(data);
     }
     setLoading(false);
-  };
+  }, [canManageEditorial]);
 
-  useEffect(() => { fetchPosts(); }, [canManageEditorial]);
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  // Pull-to-refresh on mobile
+  const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
+    onRefresh: fetchPosts,
+    disabled: loading,
+  });
 
   // Memoize tags to avoid recomputing on every render
   const allTags = useMemo(
@@ -45,14 +55,17 @@ export default function BlogPage() {
   );
 
   const filtered = useMemo(
-    () => tagFilter
-      ? posts.filter((p) => ((p as any).tags || []).includes(tagFilter))
-      : posts,
+    () => tagFilter.length === 0
+      ? posts
+      : posts.filter((p) =>
+          tagFilter.some((f) => ((p as any).tags || []).includes(f))
+        ),
     [posts, tagFilter]
   );
 
   return (
     <div className="space-y-4">
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} isTriggered={isTriggered} />
       <PageHeader
         title="Blog"
         subtitle="Articles & thoughts..."
@@ -70,10 +83,12 @@ export default function BlogPage() {
           {allTags.map((tag) => (
             <button
               key={tag}
-              onClick={() => setTagFilter((prev) => (prev === tag ? null : tag))}
-              aria-pressed={tagFilter === tag}
+              onClick={() => setTagFilter((prev) =>
+                prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+              )}
+              aria-pressed={tagFilter.includes(tag)}
               className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                tagFilter === tag
+                tagFilter.includes(tag)
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
@@ -81,9 +96,9 @@ export default function BlogPage() {
               #{tag}
             </button>
           ))}
-          {tagFilter && (
+          {tagFilter.length > 0 && (
             <button
-              onClick={() => setTagFilter(null)}
+              onClick={() => setTagFilter([])}
               aria-label="Clear tag filter"
               className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
             >
@@ -110,7 +125,7 @@ export default function BlogPage() {
             <EmptyMedia variant="icon"><BookOpen /></EmptyMedia>
             <EmptyTitle>No posts yet</EmptyTitle>
             <EmptyDescription>
-              {tagFilter ? `No posts tagged "${tagFilter}"` : "Check back soon for articles and thoughts."}
+              {tagFilter.length > 0 ? `No posts tagged "${tagFilter.join('" or "')}"` : "Check back soon for articles and thoughts."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -127,7 +142,9 @@ export default function BlogPage() {
               <Link
                 key={post.id}
                 to={`/blog/${post.slug}`}
-                className={`group relative flex items-center gap-3.5 rounded-xl border bg-gradient-to-r ${palette.gradient} ${palette.border} px-3.5 py-3 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]`}
+                onMouseEnter={() => prefetchPostData('posts', post.slug)}
+                onFocus={() => prefetchPostData('posts', post.slug)}
+                className={`group relative flex items-center gap-3.5 rounded-xl border bg-gradient-to-r ${palette.gradient} ${palette.border} px-3.5 py-3 transition-all hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5 active:scale-[0.99]`}
               >
                 {/* Icon */}
                 <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
@@ -155,10 +172,10 @@ export default function BlogPage() {
                         key={tag}
                         type="button"
                         aria-label={`Filter by tag ${tag}`}
-                        aria-pressed={tagFilter === tag}
-                        onClick={(e) => { e.preventDefault(); setTagFilter((prev) => (prev === tag ? null : tag)); }}
+                        aria-pressed={tagFilter.includes(tag)}
+                        onClick={(e) => { e.preventDefault(); setTagFilter((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]); }}
                         className={`text-[10px] px-1.5 py-px rounded-full transition-colors ${
-                          tagFilter === tag ? "bg-primary text-primary-foreground" : `${palette.badge} hover:opacity-80`
+                          tagFilter.includes(tag) ? "bg-primary text-primary-foreground" : `${palette.badge} hover:opacity-80`
                         }`}
                       >
                         #{tag}

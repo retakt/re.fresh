@@ -7,27 +7,30 @@
     <!-- Performance optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <!-- Supabase — shaves 100-300ms off first query on mobile -->
+    <link rel="preconnect" href="https://yroedxnorqfndcajlmpu.supabase.co" />
+    <link rel="dns-prefetch" href="https://yroedxnorqfndcajlmpu.supabase.co" />
     
     <!-- Preload critical fonts to prevent FOUT -->
     <link rel="preload" href="/assets/plus-jakarta-sans-latin-400-normal-Dhut76fR.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/assets/plus-jakarta-sans-latin-600-normal-DLTa1BUW.woff2" as="font" type="font/woff2" crossorigin />
 
     <!-- SEO Meta Tags -->
-    <title>re.Takt - My stash and everything!</title>
-    <meta name="description" content="Personal blog, music, tutorials, and tools by Takt Akira. Launching soon with curated content and creative resources." />
+    <title>re.Takt</title>
+    <meta name="description" content="Launching soon with curated content and creative resources." />
     <meta name="author" content="Takt Akira" />
     <meta name="keywords" content="blog, music, tutorials, tools, creative, personal website" />
     
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="re.Takt - My stash and everything!" />
-    <meta property="og:description" content="Personal blog, music, tutorials, and tools by Takt Akira. Launching soon with curated content and creative resources." />
+    <meta property="og:title" content="re.Takt" />
+    <meta property="og:description" content="Launching soon with curated content and creative resources." />
     <meta property="og:site_name" content="re.Takt" />
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="re.Takt - My stash and everything!" />
-    <meta name="twitter:description" content="Personal blog, music, tutorials, and tools by Takt Akira. Launching soon with curated content and creative resources." />
+    <meta name="twitter:title" content="re.Takt" />
+    <meta name="twitter:description" content="Launching soon with curated content and creative resources." />
     
     <!-- Favicon -->
     <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
@@ -36,11 +39,16 @@
       
     <!-- Apple / iOS -->
     <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="re.Takt" />
       
     <!-- Android / Chrome -->
     <link rel="manifest" href="/favicon/site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+    <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8f7f4" media="(prefers-color-scheme: light)" />
     
     <!-- Theme flash prevention - must run before render -->
     <script>
@@ -60,14 +68,73 @@
         } catch (e) {}
       })();
     </script>
-
-    <script type="module" crossorigin src="/assets/index-DdAAjLQD.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/router-D0OAuHEL.js">
-    <link rel="modulepreload" crossorigin href="/assets/editor-qDxGGLcm.js">
+
+    <script type="module" crossorigin src="/assets/index-DCFAEm8W.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-yks2RO0Y.js">
     <link rel="modulepreload" crossorigin href="/assets/supabase-Bj90UvkW.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-Dsy1aHws.css">
-  </head>
+    <link rel="modulepreload" crossorigin href="/assets/radix-DpTpA1Sj.js">
+    <link rel="modulepreload" crossorigin href="/assets/sentry-DoubSJEL.js">
+    <link rel="modulepreload" crossorigin href="/assets/router-D1UHwoBh.js">
+    <link rel="modulepreload" crossorigin href="/assets/motion-CTHdN7bs.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-D9bqOWFV.css">
+  <link rel="manifest" href="/manifest.webmanifest"></head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Inline loading shell — visible before JS parses, prevents black screen -->
+      <div id="app-shell" style="
+        min-height: 100dvh;
+        background: var(--shell-bg, #f9f8f5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+        ">
+          <div style="
+            width: 28px;
+            height: 28px;
+            border: 2px solid rgba(0,0,0,0.08);
+            border-top-color: rgba(0,0,0,0.4);
+            border-radius: 50%;
+            animation: shell-spin 0.7s linear infinite;
+          "></div>
+          <span style="
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            font-size: 13px;
+            letter-spacing: -0.02em;
+            font-weight: 700;
+          "><span style="color: #38bdf8;">re</span><span style="color: rgba(0,0,0,0.25);">.</span></span>
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes shell-spin { to { transform: rotate(360deg); } }
+      /* Dark mode shell */
+      html.dark #app-shell { background: #1a1a2e !important; }
+      html.dark #app-shell div div { border-color: rgba(255,255,255,0.08) !important; border-top-color: rgba(255,255,255,0.4) !important; }
+      html.dark #app-shell span span:last-child { color: rgba(255,255,255,0.2) !important; }
+    </style>
+    <script>
+      // Remove shell once React mounts its first real child
+      (function() {
+        var shell = document.getElementById('app-shell');
+        if (!shell) return;
+        var root = document.getElementById('root');
+        var observer = new MutationObserver(function() {
+          // React replaces the shell div with its own tree
+          if (root.children.length > 1 || (root.firstElementChild && root.firstElementChild.id !== 'app-shell')) {
+            shell.remove();
+            observer.disconnect();
+          }
+        });
+        observer.observe(root, { childList: true, subtree: false });
+        // Fallback: remove after 8s no matter what
+        setTimeout(function() { shell.remove(); observer.disconnect(); }, 8000);
+      })();
+    </script>
   </body>
 </html>

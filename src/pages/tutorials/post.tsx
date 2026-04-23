@@ -8,6 +8,10 @@ import { supabase } from "@/lib/supabase";
 import type { Tutorial } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { getCardPalette } from "@/lib/cardColors";
+import { getPrefetchedData } from "@/lib/prefetch";
+import { useSwipeBack } from "@/hooks/use-swipe-back";
+import { getTagColor } from "@/lib/tagColors";
+import { PostDetailSkeleton } from "@/components/ui/skeleton";
 
 const DIFFICULTY_COLORS = {
   beginner: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400",
@@ -17,10 +21,13 @@ const DIFFICULTY_COLORS = {
 
 export default function TutorialPostPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [tutorial, setTutorial] = useState<Tutorial | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [tutorial, setTutorial] = useState<Tutorial | null>(() => getPrefetchedData<Tutorial>('tutorials', slug ?? ''));
+  const [loading, setLoading] = useState(!getPrefetchedData<Tutorial>('tutorials', slug ?? ''));
   const [notFound, setNotFound] = useState(false);
   const { canManageEditorial } = useAuth();
+
+  // Swipe right from left edge to go back on mobile
+  useSwipeBack();
 
   useEffect(() => {
     const fetchTutorial = async () => {
@@ -40,14 +47,9 @@ export default function TutorialPostPage() {
   }, [slug]);
 
   if (loading) {
-      return (
-      <div className="max-w-2xl space-y-4">
-        <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-        <div className="h-48 rounded-2xl bg-muted animate-pulse" />
-        <div className="h-8 w-3/4 rounded bg-muted animate-pulse" />
-        <div className="space-y-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-4 rounded bg-muted animate-pulse" />)}
-        </div>
+    return (
+      <div className="w-full max-w-3xl">
+        <PostDetailSkeleton />
       </div>
     );
   }
@@ -80,7 +82,7 @@ export default function TutorialPostPage() {
             <ArrowLeft size={14} /> Tutorials
           </Link>
           {canManageEditorial && (
-            <Link to="/admin/tutorials">
+            <Link to={`/admin/tutorials/edit/${tutorial.id}`}>
               <Button variant="ghost" size="sm" className="gap-1.5">
                 <PenLine size={13} /> Edit
               </Button>
@@ -91,18 +93,24 @@ export default function TutorialPostPage() {
         {/* Badges */}
         <div className="flex flex-wrap gap-2 items-center mb-3">
           {tutorial.difficulty && (
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${DIFFICULTY_COLORS[tutorial.difficulty]}`}>
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+              DIFFICULTY_COLORS[tutorial.difficulty.toLowerCase() as keyof typeof DIFFICULTY_COLORS] ??
+              "bg-secondary text-secondary-foreground"
+            }`}>
               {tutorial.difficulty}
             </span>
           )}
-          {tutorial.category && (
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${palette.badge}`}>
-              {tutorial.category}
+          {tutorial.category && tutorial.category.split(", ").map((cat) => (
+            <span key={cat} className={`text-xs px-2.5 py-1 rounded-full font-medium ${getTagColor(cat)}`}>
+              {cat}
             </span>
-          )}
-          {!tutorial.published && (
-            <Badge variant="secondary">Draft</Badge>
-          )}
+          ))}
+          {(tutorial.tags ?? []).map((tag) => (
+            <span key={tag} className={`text-xs px-2.5 py-1 rounded-full font-semibold ${getTagColor(tag)}`}>
+              #{tag}
+            </span>
+          ))}
+          {!tutorial.published && <Badge variant="secondary">Draft</Badge>}
         </div>
 
         <h1 className="text-3xl font-bold tracking-tight text-balance mb-3">

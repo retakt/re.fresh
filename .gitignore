@@ -1,4 +1,28 @@
-.env.local
+# Dependencies
 node_modules
+
+# Environment variables — never commit secrets
 .env
+.env.local
+.env.*.local
+
+# Build output
 dist
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
+
+# Vite generated files
+vite.config.js
+vite.config.d.ts
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# Logs
+*.log
+npm-debug.log*

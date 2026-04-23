@@ -1,38 +1,19 @@
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
-import { Input } from "@/components/ui/input.tsx";
-import { Label } from "@/components/ui/label.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Trash2, Plus, X, Check, ArrowLeft, PenLine } from "lucide-react";
+import { Trash2, PenLine, Plus, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
-import FileUpload from "@/components/FileUpload";
-
-type FormData = {
-  name: string;
-  description: string;
-  file_url: string;
-  file_type: string;
-  file_size: string;
-  category: string;
-  published: boolean;
-};
-
-const emptyForm: FormData = {
-  name: "", description: "", file_url: "",
-  file_type: "", file_size: "", category: "", published: false,
-};
+import { useBackNav } from "@/hooks/use-back-nav";
+import { PublishToggle } from "@/components/ui/publish-toggle";
 
 export default function AdminFilesPage() {
+  const navigate = useNavigate();
+  const goBack = useBackNav('/admin');
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState<FormData | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => { fetchFiles(); }, []);
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -44,179 +25,87 @@ export default function AdminFilesPage() {
     setLoading(false);
   };
 
-  const openEdit = (f: FileItem) => {
-    setEditingId(f.id);
-    setForm({
-      name: f.name, description: f.description || "",
-      file_url: f.file_url || "", file_type: f.file_type || "",
-      file_size: f.file_size || "", category: f.category || "",
-      published: f.published,
-    });
-  };
-
-  const handleSave = async () => {
-    if (!form || !form.name.trim() || !form.file_url.trim()) {
-      toast.error("Name and file are required."); return;
-    }
-    setSaving(true);
-
-    const payload = {
-      name: form.name,
-      description: form.description || null,
-      file_url: form.file_url,
-      file_type: form.file_type || null,
-      file_size: form.file_size || null,
-      category: form.category || null,
-      published: form.published,
-    };
-
-    if (editingId) {
-      const { error } = await supabase.from("files").update(payload).eq("id", editingId);
-      if (error) toast.error("Failed to save");
-      else { toast.success("File updated."); setForm(null); setEditingId(null); fetchFiles(); }
-    } else {
-      const { error } = await supabase.from("files").insert([payload]);
-      if (error) toast.error("Failed to add file");
-      else { toast.success("File added."); setForm(null); fetchFiles(); }
-    }
-    setSaving(false);
-  };
+  useEffect(() => { void fetchFiles(); }, []);
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
     const { error } = await supabase.from("files").delete().eq("id", id);
     if (error) toast.error("Failed to delete");
-    else { toast.success("Deleted."); fetchFiles(); }
+    else { toast.success("Deleted."); void fetchFiles(); }
   };
 
   const togglePublish = async (f: FileItem) => {
     await supabase.from("files").update({ published: !f.published }).eq("id", f.id);
-    fetchFiles();
+    void fetchFiles();
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2">
-            <ArrowLeft size={13} /> Admin
-          </Link>
+          <button
+            onClick={goBack}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors"
+          >
+            <ArrowLeft size={13} /> Back
+          </button>
           <h1 className="text-2xl font-bold tracking-tight">Files</h1>
         </div>
-        {!form && (
-          <Button size="sm" className="gap-1.5"
-            onClick={() => { setEditingId(null); setForm({ ...emptyForm }); }}>
+        <Link to="/admin/files/new">
+          <Button size="sm" className="gap-1.5">
             <Plus size={14} /> Add file
           </Button>
-        )}
+        </Link>
       </div>
-
-      {form && (
-        <div className="rounded-xl border bg-card p-5 space-y-4">
-          <h2 className="font-semibold text-sm">{editingId ? "Edit file" : "Add file"}</h2>
-
-          {/* File upload - only show on create */}
-          {!editingId && (
-            <div className="space-y-1.5">
-              <Label>File</Label>
-              <FileUpload
-                onUpload={(url, fileName, fileType, fileSize) => {
-                  setForm((f) => f ? {
-                    ...f,
-                    file_url: url,
-                    name: f.name || fileName,
-                    file_type: fileType,
-                    file_size: fileSize,
-                  } : f);
-                }}
-              />
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Name *</Label>
-              <Input value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Filename or display name" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Category</Label>
-              <Input value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="e.g. Samples, Presets" />
-            </div>
-            {editingId && (
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>File URL</Label>
-                <Input value={form.file_url}
-                  onChange={(e) => setForm({ ...form, file_url: e.target.value })}
-                  placeholder="https://..." />
-              </div>
-            )}
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Description</Label>
-              <Input value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="What is this file?" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input id="pub" type="checkbox" checked={form.published}
-              onChange={(e) => setForm({ ...form, published: e.target.checked })}
-              className="h-4 w-4" />
-            <Label htmlFor="pub" className="cursor-pointer">Published</Label>
-          </div>
-
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
-              <Check size={13} /> {saving ? "Saving..." : "Save"}
-            </Button>
-            <Button size="sm" variant="ghost"
-              onClick={() => { setForm(null); setEditingId(null); }}
-              className="gap-1.5">
-              <X size={13} /> Cancel
-            </Button>
-          </div>
-        </div>
-      )}
 
       {loading ? (
         <div className="space-y-2">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-16 rounded-xl border bg-card animate-pulse" />
-          ))}
+          {[1, 2].map((i) => <div key={i} className="h-16 rounded-xl border bg-card animate-pulse" />)}
         </div>
       ) : files.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No files yet.</p>
+        <div className="text-center py-16">
+          <p className="text-sm text-muted-foreground">No files yet.</p>
+          <Link to="/admin/files/new">
+            <Button size="sm" className="mt-4">Add your first file</Button>
+          </Link>
+        </div>
       ) : (
         <div className="space-y-2">
           {files.map((f) => (
-            <div key={f.id} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{f.name}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <Badge variant={f.published ? "default" : "secondary"} className="text-xs py-0 px-1.5">
+            <div key={f.id} className="flex items-start gap-3 rounded-xl border bg-card px-4 py-3 min-h-[4.5rem]">
+              <div className="flex-1 min-w-0 space-y-0.5">
+                {/* Line 1: Name + Live/Draft */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-semibold text-sm truncate max-w-[180px]">{f.name}</p>
+                  <Badge variant={f.published ? "default" : "secondary"} className="text-[10px] py-0 px-1.5 shrink-0">
                     {f.published ? "Live" : "Draft"}
                   </Badge>
-                  {f.category && <span className="text-xs text-muted-foreground">{f.category}</span>}
-                  {f.file_size && <span className="text-xs text-muted-foreground">{f.file_size}</span>}
                 </div>
+                {/* Line 2: Category · Size */}
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground flex-wrap">
+                  {f.category && <span className="truncate max-w-[100px]">{f.category}</span>}
+                  {f.category && f.file_size && <span className="text-muted-foreground/40">·</span>}
+                  {f.file_size && <span>{f.file_size}</span>}
+                </div>
+                {/* Line 3: File type */}
+                {f.file_type && (
+                  <div className="pt-0.5">
+                    <span className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground uppercase">
+                      {f.file_type}
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="sm" className="text-xs h-8 px-2"
-                  onClick={() => togglePublish(f)}>
-                  {f.published ? "Unpublish" : "Publish"}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8"
-                  onClick={() => openEdit(f)}>
-                  <PenLine size={13} />
-                </Button>
-                <Button variant="ghost" size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
+              <div className="flex gap-1 items-center shrink-0 pt-0.5">
+                <PublishToggle published={f.published} onChange={() => togglePublish(f)} />
+                <Link to={`/admin/files/edit/${f.id}`}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 touch-manipulation">
+                    <PenLine size={14} />
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive touch-manipulation"
                   onClick={() => handleDelete(f.id, f.name)}>
-                  <Trash2 size={13} />
+                  <Trash2 size={14} />
                 </Button>
               </div>
             </div>

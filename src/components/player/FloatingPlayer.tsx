@@ -27,7 +27,9 @@ export default function FloatingPlayer() {
   // When a new track starts (including after stop+replay), restore the player
   useEffect(() => {
     if (!currentTrack) {
-      // Track stopped — reset local UI state for next time
+      // Reset UI state when player stops so next play starts fresh
+      setCollapsed(false);
+      setExpanded(false);
       prevTrackId.current = null;
       return;
     }
@@ -170,12 +172,21 @@ export default function FloatingPlayer() {
       }}
       exit={{ y: 80, opacity: 0 }}
       transition={{ type: "spring", bounce: 0.2, duration: 0.45 }}
-      className="fixed z-50 bottom-[4.5rem] left-2 right-2 md:bottom-6 md:left-auto md:right-6 md:w-[20.5rem] rounded-2xl border border-white/10 bg-card/60 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden supports-[backdrop-filter]:bg-card/45 cursor-grab active:cursor-grabbing"
+      // Only the drag handle (top strip) initiates drag — not the whole player
+      dragListener={false}
+      className="fixed z-50 bottom-[4.5rem] left-2 right-2 md:bottom-6 md:left-auto md:right-6 md:w-[20.5rem] rounded-2xl border border-white/10 bg-card/60 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden supports-[backdrop-filter]:bg-card/45"
     >
-      {/* Drag indicator */}
-      <div className="flex justify-center pt-2 pb-1">
-        <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
-      </div>
+      {/* Drag handle — ONLY this area initiates drag */}
+      <motion.div
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 200 }}
+        dragElastic={0.2}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={handleDragEnd}
+        className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none"
+      >
+        <div className="w-8 h-1 bg-muted-foreground/30 rounded-full pointer-events-none" />
+      </motion.div>
       {/* ══ EXPANDED PANEL — sits above main row ══ */}
       <AnimatePresence>
         {expanded && (
@@ -208,6 +219,7 @@ export default function FloatingPlayer() {
                     min={0} max={1} step={0.001}
                     value={progress}
                     onChange={(e) => seek(parseFloat(e.target.value))}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="seek-slider absolute inset-x-0 w-full opacity-100"
                     style={{ background: "transparent" }}
                   />
@@ -249,6 +261,7 @@ export default function FloatingPlayer() {
                       setVolume(v);
                       if (v > 0) setMuted(false);
                     }}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="seek-slider absolute inset-x-0 w-full"
                     style={{ background: "transparent" }}
                   />
@@ -361,38 +374,38 @@ export default function FloatingPlayer() {
           <button
             onClick={prev}
             disabled={!hasPrev}
-            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 border
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 border touch-manipulation
               ${hasPrev
                 ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary border-primary/20 hover:border-primary/40"
                 : "bg-secondary/30 text-muted-foreground/30 cursor-not-allowed border-transparent"
               }`}
           >
-            <SkipBack size={12} fill={hasPrev ? "currentColor" : "none"} />
+            <SkipBack size={13} fill={hasPrev ? "currentColor" : "none"} />
           </button>
 
           <button
             onClick={togglePlay}
-            className="w-8 h-8 rounded-full bg-primary/95 text-primary-foreground hover:bg-primary/90 active:scale-90 transition-all flex items-center justify-center shadow-md shadow-primary/20 border border-primary/30"
+            className="w-10 h-10 rounded-full bg-primary/95 text-primary-foreground hover:bg-primary/90 active:scale-90 transition-all flex items-center justify-center shadow-md shadow-primary/20 border border-primary/30 touch-manipulation"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : playing ? (
-              <Pause size={13} fill="currentColor" />
+              <Pause size={14} fill="currentColor" />
             ) : (
-              <Play size={13} fill="currentColor" className="ml-0.5" />
+              <Play size={14} fill="currentColor" className="ml-0.5" />
             )}
           </button>
 
           <button
             onClick={next}
             disabled={!hasNext}
-            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 border
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 border touch-manipulation
               ${hasNext
                 ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary border-primary/20 hover:border-primary/40"
                 : "bg-secondary/30 text-muted-foreground/30 cursor-not-allowed border-transparent"
               }`}
           >
-            <SkipForward size={12} fill={hasNext ? "currentColor" : "none"} />
+            <SkipForward size={13} fill={hasNext ? "currentColor" : "none"} />
           </button>
         </div>
 
@@ -414,6 +427,7 @@ export default function FloatingPlayer() {
       {!expanded && (
         <div
           className="relative h-3 w-full cursor-pointer"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             seek(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
@@ -69,7 +69,7 @@ export default function FilesPage() {
   const [error, setError] = useState<string | null>(null);
   const { isAdmin } = useAuth();
 
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
@@ -80,9 +80,9 @@ export default function FilesPage() {
     if (error) setError("Failed to load files. Please try again.");
     else if (data) setFiles(data);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchFiles(); }, []);
+  useEffect(() => { fetchFiles(); }, [fetchFiles]);
 
   return (
     <div className="space-y-6">
