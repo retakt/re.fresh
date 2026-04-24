@@ -41,7 +41,7 @@ export default function BlogPage() {
     setLoading(false);
   }, [canManageEditorial]);
 
-  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+  useEffect(() => { void fetchPosts(); }, [fetchPosts]);
 
   // Pull-to-refresh on mobile
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({

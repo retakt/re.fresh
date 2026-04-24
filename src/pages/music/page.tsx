@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import {
   Music2, Plus, Disc3, ListMusic,
-  MicVocal, Play, Pause, ExternalLink, PenLine, RefreshCw,
+  MicVocal, Play, Pause, PenLine, RefreshCw,
 } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 import {

@@ -138,7 +138,7 @@ export default function AdminMusicPage() {
 
               {/* ── LINE 3: Tags (left) · Edit + Delete (right, bottom) ── */}
               <div className="flex items-center gap-1 min-w-0">
-                {/* Tags */}
+                {/* Tags — only rendered if they exist */}
                 <div className="flex flex-wrap gap-1 flex-1 min-w-0">
                   {(track.tags ?? []).slice(0, 4).map((tag) => (
                     <span key={tag} className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground">
@@ -148,7 +148,7 @@ export default function AdminMusicPage() {
                 </div>
 
                 {/* Edit + Delete — small, muted, right edge */}
-                <div className="flex items-center gap-0 shrink-0 ml-auto">
+                <div className="flex items-center shrink-0 ml-auto">
                   <Link to={`/admin/music/edit/${track.id}`}>
                     <Button
                       variant="ghost"

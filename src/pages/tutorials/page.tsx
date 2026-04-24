@@ -44,7 +44,7 @@ export default function TutorialsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchTutorials(); }, [fetchTutorials]);
+  useEffect(() => { void fetchTutorials(); }, [fetchTutorials]);
 
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
     onRefresh: fetchTutorials,
