@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/layout/page-header.tsx";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { MarqueeText } from "@/components/ui/marquee-text";
 
 function fileIcon(type?: string | null) {
   if (!type) return File;
@@ -31,7 +32,7 @@ function FileCard({ file }: { file: FileItem }) {
       </div>
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-semibold text-sm truncate">{file.name}</span>
+          <MarqueeText text={file.name} className="font-semibold text-sm flex-1 min-w-0" />
           <div className="flex items-center gap-1 shrink-0">
             {file.file_size && (
               <span className="text-xs text-muted-foreground">{file.file_size}</span>

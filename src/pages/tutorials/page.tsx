@@ -13,6 +13,7 @@ import { getCardPalette } from "@/lib/cardColors";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { prefetchPostData } from "@/lib/prefetch";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { MarqueeText } from "@/components/ui/marquee-text";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
@@ -144,9 +145,10 @@ export default function TutorialsPage() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <span className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate block">
-                    {item.title}
-                  </span>
+                  <MarqueeText
+                    text={item.title}
+                    className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors"
+                  />
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {item.difficulty && (
                       <button

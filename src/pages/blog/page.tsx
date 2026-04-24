@@ -15,6 +15,7 @@ import { getCardPalette } from "@/lib/cardColors";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { prefetchPostData } from "@/lib/prefetch";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { MarqueeText } from "@/components/ui/marquee-text";
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -153,13 +154,14 @@ export default function BlogPage() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {!post.published && (
                       <Badge variant="secondary" className="text-[10px] py-0 px-1.5 shrink-0">Draft</Badge>
                     )}
-                    <span className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate">
-                      {post.title}
-                    </span>
+                    <MarqueeText
+                      text={post.title}
+                      className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors flex-1 min-w-0"
+                    />
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     {dateStr && (
