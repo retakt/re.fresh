@@ -329,3 +329,111 @@ input[type="range"]::-moz-range-thumb {
   0%   { transform: translateX(100%); }
   100% { transform: translateX(0%); }
 }
+
+/* ── Glass Toast ─────────────────────────────────────────────────────────── */
+/*
+ * Sonner renders toasts as [data-sonner-toast] elements inside a
+ * [data-sonner-toaster] container. We target the class names we pass
+ * via toastOptions.classNames in sonner.tsx.
+ *
+ * The glass effect uses backdrop-filter + semi-transparent background.
+ * CSS variables set in sonner.tsx control the per-type tint colors.
+ * Safari requires -webkit-backdrop-filter as well.
+ */
+
+[data-sonner-toaster] {
+  /* Ensure the toaster sits above the floating player (z-50) and modals */
+  z-index: 9999 !important;
+}
+
+.glass-toast {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 500 !important;
+  border-radius: 14px !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+
+  /* Glass blur */
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+
+  /* Depth shadow */
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+
+  /* Comfortable padding */
+  padding: 12px 16px !important;
+
+  /* Responsive width — snug on phones, wider on desktop */
+  min-width: 260px !important;
+  max-width: min(360px, calc(100vw - 32px)) !important;
+}
+
+/* Title text */
+.glass-toast-title {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Description text (used in toast.info with description: "...") */
+.glass-toast-description {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 450 !important;
+  font-size: 11.5px !important;
+  line-height: 1.5 !important;
+  opacity: 0.8 !important;
+  margin-top: 2px !important;
+}
+
+/* Close button */
+.glass-toast-close {
+  border-radius: 8px !important;
+  opacity: 0.5 !important;
+  transition: opacity 0.15s ease !important;
+}
+.glass-toast-close:hover {
+  opacity: 1 !important;
+}
+
+/* Action button */
+.glass-toast-action {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+
+/* ── Smaller phones (< 375px) — tighter sizing ── */
+@media (max-width: 374px) {
+  .glass-toast {
+    padding: 10px 13px !important;
+    border-radius: 12px !important;
+    min-width: 220px !important;
+  }
+  .glass-toast-title {
+    font-size: 12px !important;
+  }
+  .glass-toast-description {
+    font-size: 11px !important;
+  }
+}
+
+/* ── Desktop (≥ 640px) — slightly larger ── */
+@media (min-width: 640px) {
+  .glass-toast {
+    min-width: 300px !important;
+    max-width: 400px !important;
+    padding: 13px 18px !important;
+  }
+  .glass-toast-title {
+    font-size: 13.5px !important;
+  }
+  .glass-toast-description {
+    font-size: 12px !important;
+  }
+}
