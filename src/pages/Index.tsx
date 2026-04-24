@@ -325,21 +325,43 @@ export default function Index() {
           <div className="grid grid-cols-4 md:grid-cols-2 gap-1.5">
             {TOOLS.map((tool) => {
               const Icon = tool.icon;
-              return (
-                <div
-                  key={tool.label}
-                  title={tool.label}
-                  className={`flex flex-col items-center justify-center gap-1 rounded-xl border
-                    ${tool.border} bg-gradient-to-br ${tool.gradient}
-                    p-2 text-center cursor-not-allowed
-                    transition-all hover:scale-[1.04] hover:shadow-md active:scale-[0.97]`}
-                >
+              const inner = (
+                <>
                   <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${tool.iconBg} flex items-center justify-center`}>
                     <Icon size={12} className={tool.iconColor} />
                   </div>
                   <span className="hidden xs:block text-[9px] font-semibold text-foreground/70 leading-tight">
                     {tool.label}
                   </span>
+                </>
+              );
+
+              const baseClass = `flex flex-col items-center justify-center gap-1 rounded-xl border
+                ${tool.border} bg-gradient-to-br ${tool.gradient}
+                p-2 text-center transition-all hover:scale-[1.04] hover:shadow-md active:scale-[0.97]`;
+
+              if (tool.enabled && tool.href) {
+                return (
+                  <a
+                    key={tool.label}
+                    href={tool.href}
+                    title={tool.label}
+                    target={tool.href.startsWith("http") ? "_blank" : undefined}
+                    rel={tool.href.startsWith("http") ? "noreferrer" : undefined}
+                    className={baseClass}
+                  >
+                    {inner}
+                  </a>
+                );
+              }
+
+              return (
+                <div
+                  key={tool.label}
+                  title={tool.label}
+                  className={`${baseClass} cursor-not-allowed opacity-60`}
+                >
+                  {inner}
                 </div>
               );
             })}

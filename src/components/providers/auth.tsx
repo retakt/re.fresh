@@ -164,15 +164,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(nextSession);
         setUser(nextUser);
 
-        if (PROFILE_FETCH_EVENTS.has(event)) {
-          // SIGNED_OUT — clear profile immediately without a network call
-          if (!nextUser) {
-            setProfile(null);
-            lastFetchedUserIdRef.current = null;
-            setLoading(false);
-            return;
-          }
+        // SIGNED_OUT — clear profile immediately, no network call needed
+        if (event === "SIGNED_OUT" || !nextUser) {
+          setProfile(null);
+          lastFetchedUserIdRef.current = null;
+          if (mounted) setLoading(false);
+          return;
+        }
 
+        if (PROFILE_FETCH_EVENTS.has(event)) {
           await fetchProfile(nextUser);
         }
 

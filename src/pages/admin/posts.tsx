@@ -1,52 +1,46 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { Trash2, PenLine, Plus, ArrowLeft } from "lucide-react";
+import { Trash2, PenLine, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/lib/supabase";
-import { useBackNav } from "@/hooks/use-back-nav";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 
 export default function AdminPostsPage() {
-  const navigate = useNavigate();
-  const goBack = useBackNav('/admin');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchPosts(); }, []);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("posts").select("*").order("created_at", { ascending: false });
     if (error) toast.error("Failed to load posts");
     else setPosts(data || []);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => { void fetchPosts(); }, [fetchPosts]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
     const { error } = await supabase.from("posts").delete().eq("id", id);
     if (error) toast.error("Failed to delete post");
-    else { toast.success("Post deleted."); fetchPosts(); }
+    else { toast.success("Post deleted."); void fetchPosts(); }
   };
 
   const togglePublish = async (post: Post) => {
     const { error } = await supabase.from("posts").update({ published: !post.published }).eq("id", post.id);
     if (error) toast.error("Failed to update post");
-    else { toast.success(post.published ? "Post unpublished" : "Post published"); fetchPosts(); }
+    else { toast.success(post.published ? "Post unpublished" : "Post published"); void fetchPosts(); }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={goBack} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors">
-            <ArrowLeft size={13} /> Back
-          </button>
           <h1 className="text-2xl font-bold tracking-tight">Posts</h1>
         </div>
         <Link to="/admin/posts/new">

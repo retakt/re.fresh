@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { ArrowLeft, PenLine, BookMarked, CalendarDays } from "lucide-react";
+import { ArrowLeft, PenLine, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import type { Tutorial } from "@/lib/supabase";

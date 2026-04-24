@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
@@ -27,7 +27,6 @@ const emptyForm: FormData = {
 };
 
 export default function FileEditorPage() {
-  const navigate = useNavigate();
   const goBack = useBackNav('/admin/files');
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
@@ -64,7 +63,7 @@ export default function FileEditorPage() {
       setLoading(false);
     };
     fetchFile();
-  }, [id, isEditing, navigate]);
+  }, [id, isEditing, goBack]);
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.file_url.trim()) {
@@ -105,13 +104,6 @@ export default function FileEditorPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <button
-        onClick={() => goBack()}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-      >
-        <ArrowLeft size={14} /> Back
-      </button>
-
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight">
           {isEditing ? "Edit File" : "Add File"}

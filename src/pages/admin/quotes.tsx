@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { ArrowLeft, Plus, Trash2, Check, X, Quote, PenLine } from "lucide-react";
+import { Plus, Trash2, Check, X, Quote, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { DEFAULT_QUOTES } from "@/lib/quotes";
-import { useBackNav } from "@/hooks/use-back-nav";
 
 const HIDDEN_DEFAULTS_KEY = "hidden-default-quotes";
 
@@ -36,7 +35,6 @@ type QuoteRow = {
 };
 
 export default function AdminQuotesPage() {
-  const goBack = useBackNav('/admin');
   const [dbQuotes, setDbQuotes] = useState<QuoteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -47,9 +45,7 @@ export default function AdminQuotesPage() {
   const [tableExists, setTableExists] = useState(true);
   const [hiddenDefaults, setHiddenDefaults] = useState<Set<string>>(getHiddenDefaults);
 
-  useEffect(() => { fetchDbQuotes(); }, []);
-
-  const fetchDbQuotes = async () => {
+  const fetchDbQuotes = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("quotes")
@@ -63,7 +59,9 @@ export default function AdminQuotesPage() {
       setTableExists(true);
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => { void fetchDbQuotes(); }, [fetchDbQuotes]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -100,13 +98,13 @@ export default function AdminQuotesPage() {
         .update({ text: text.trim(), author: author.trim() })
         .eq("id", editingId);
       if (error) toast.error("Failed to update.");
-      else { toast.success("Updated."); closeForm(); fetchDbQuotes(); }
+      else { toast.success("Updated."); closeForm(); void fetchDbQuotes(); }
     } else {
       const { error } = await supabase
         .from("quotes")
         .insert([{ text: text.trim(), author: author.trim() }]);
       if (error) toast.error("Failed to add.");
-      else { toast.success("Quote added."); closeForm(); fetchDbQuotes(); }
+      else { toast.success("Quote added."); closeForm(); void fetchDbQuotes(); }
     }
     setSaving(false);
   };
@@ -115,7 +113,7 @@ export default function AdminQuotesPage() {
     if (!confirm("Delete this quote?")) return;
     const { error } = await supabase.from("quotes").delete().eq("id", id);
     if (error) toast.error("Failed to delete");
-    else { toast.success("Deleted."); fetchDbQuotes(); }
+    else { toast.success("Deleted."); void fetchDbQuotes(); }
   };
 
   const handleHideDefault = (id: string) => {
@@ -140,10 +138,6 @@ export default function AdminQuotesPage() {
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={goBack}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors">
-            <ArrowLeft size={13} /> Back
-          </button>
           <h1 className="text-2xl font-bold tracking-tight">Music Quotes</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {allQuotes.length} quotes · rotates every 20 min

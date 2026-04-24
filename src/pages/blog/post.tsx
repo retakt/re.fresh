@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { CalendarDays, ArrowLeft, PenLine } from "lucide-react";
@@ -21,11 +21,10 @@ export default function BlogPostPage() {
   const [notFound, setNotFound] = useState(false);
   const [activeAnchorId, setActiveAnchorId] = useState<string | null>(null);
   const { canManageEditorial, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const handleReplyRedirect = () => {
-    navigate(`/login?from=${encodeURIComponent(location.pathname)}`);
+    window.location.href = `/login?from=${encodeURIComponent(location.pathname)}`;
   };
 
   // Swipe right from left edge to go back on mobile

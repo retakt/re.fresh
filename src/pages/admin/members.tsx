@@ -4,11 +4,10 @@ import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import {
-  ArrowLeft, Plus, X, Mail, Trash2, KeyRound, PencilLine, Shield, Check,
-  AtSign, RotateCcw,
+  Plus, X, Mail, Trash2, KeyRound, PencilLine, Shield, Check,
+  AtSign,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import type { Profile } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -171,9 +170,6 @@ export default function AdminMembersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link to="/admin" className="mb-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft size={14} strokeWidth={2} /> Admin
-          </Link>
           <h1 className="text-2xl font-bold tracking-tight">Members</h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage roles, usernames, and account actions</p>
         </div>

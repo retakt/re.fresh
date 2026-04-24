@@ -1,23 +1,20 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Trash2, PenLine, Plus, ArrowLeft } from "lucide-react";
+import { Trash2, PenLine, Plus } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
-import { useBackNav } from "@/hooks/use-back-nav";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 
 export default function AdminMusicPage() {
-  const navigate = useNavigate();
-  const goBack = useBackNav('/admin');
   const [tracks, setTracks] = useState<Music[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTracks = async () => {
+  const fetchTracks = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("music")
@@ -25,9 +22,9 @@ export default function AdminMusicPage() {
       .order("created_at", { ascending: false });
     if (!error && data) setTracks(data);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { void fetchTracks(); }, []);
+  useEffect(() => { void fetchTracks(); }, [fetchTracks]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
@@ -37,17 +34,15 @@ export default function AdminMusicPage() {
   };
 
   const togglePublish = async (track: Music) => {
-    await supabase.from("music").update({ published: !track.published }).eq("id", track.id);
-    void fetchTracks();
+    const { error } = await supabase.from("music").update({ published: !track.published }).eq("id", track.id);
+    if (error) toast.error("Failed to update");
+    else void fetchTracks();
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={goBack} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors">
-            <ArrowLeft size={13} /> Back
-          </button>
           <h1 className="text-2xl font-bold tracking-tight">Music</h1>
         </div>
         <Link to="/admin/music/new">
@@ -83,27 +78,12 @@ export default function AdminMusicPage() {
                   )}
                 </div>
 
-                {/* Line 2: Artist · Release · Year
-                    Desktop: fixed-width columns for perfect vertical alignment
-                    Mobile: centered, proportional spacing */}
-                <div className="flex items-center text-[11px] text-muted-foreground">
-                  {/* Artist — fixed width on desktop, flex on mobile */}
-                  <div className="md:w-[7rem] min-w-0 flex-1 md:flex-none md:shrink-0">
-                    {track.artist
-                      ? <MarqueeText text={track.artist} className="text-[11px] text-muted-foreground" />
-                      : <span className="text-muted-foreground/30">—</span>
-                    }
-                  </div>
-                  {/* Separator — bolder, more visible */}
-                  <span className="text-foreground/50 font-bold shrink-0 mx-2">·</span>
-                  {/* Release type */}
-                  <span className="md:w-[3.5rem] md:shrink-0 capitalize">{track.release_type}</span>
-                  {track.year && (
-                    <>
-                      <span className="text-foreground/50 font-bold shrink-0 mx-2">·</span>
-                      <span className="shrink-0">{track.year}</span>
-                    </>
-                  )}
+                {/* Line 2: Artist only — year/type moved to right column */}
+                <div className="flex items-center text-[11px] text-muted-foreground min-w-0">
+                  {track.artist
+                    ? <MarqueeText text={track.artist} className="text-[11px] text-muted-foreground flex-1 min-w-0" />
+                    : <span className="text-muted-foreground/30">—</span>
+                  }
                 </div>
 
                 {/* Line 3: Tags */}
@@ -116,44 +96,54 @@ export default function AdminMusicPage() {
                 )}
               </div>
 
-              {/* ── RIGHT: 70% socials / 30% controls ──
-                  Social icons are bigger and take most of the space.
-                  Edit/delete are smaller, pushed to bottom-right. */}
-              <div className="flex flex-col justify-between shrink-0 items-end gap-1 min-w-[4.5rem]">
+              {/* ── RIGHT column ── */}
+              <div className="flex flex-col justify-between shrink-0 items-end gap-1 min-w-[3.5rem]">
 
-                {/* TOP: Platform icons — large, prominent */}
-                <div className="flex items-center gap-2.5 pt-0.5">
+                {/* TOP: Year · Type — fixed 4-char year, then release type */}
+                <div className="flex flex-col items-end gap-0.5 pt-0.5">
+                  {track.year && (
+                    <span className="text-[11px] font-semibold text-foreground/70 tabular-nums leading-none">
+                      {track.year}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-medium text-muted-foreground/70 capitalize leading-none">
+                    {track.release_type}
+                  </span>
+                </div>
+
+                {/* MIDDLE: Platform icons */}
+                <div className="flex items-center gap-2">
                   {track.soundcloud_url && (
                     <a href={track.soundcloud_url} target="_blank" rel="noreferrer" title="SoundCloud"
                       onClick={(e) => e.stopPropagation()}>
-                      <FaSoundcloud size={18} className="text-orange-500 hover:opacity-70 transition-opacity" />
+                      <FaSoundcloud size={15} className="text-orange-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                   {track.youtube_url && (
                     <a href={track.youtube_url} target="_blank" rel="noreferrer" title="YouTube"
                       onClick={(e) => e.stopPropagation()}>
-                      <FaYoutube size={18} className="text-red-500 hover:opacity-70 transition-opacity" />
+                      <FaYoutube size={15} className="text-red-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                   {track.spotify_url && (
                     <a href={track.spotify_url} target="_blank" rel="noreferrer" title="Spotify"
                       onClick={(e) => e.stopPropagation()}>
-                      <FaSpotify size={18} className="text-green-500 hover:opacity-70 transition-opacity" />
+                      <FaSpotify size={15} className="text-green-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                 </div>
 
-                {/* BOTTOM: Publish toggle + edit + delete — smaller, bottom-right */}
+                {/* BOTTOM: Toggle + edit + delete — small, muted */}
                 <div className="flex items-center gap-0">
                   <PublishToggle published={track.published} onChange={() => togglePublish(track)} />
                   <Link to={`/admin/music/edit/${track.id}`}>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 touch-manipulation">
-                      <PenLine size={12} />
+                    <Button variant="ghost" size="icon" className="h-6 w-6 touch-manipulation text-muted-foreground/60 hover:text-foreground">
+                      <PenLine size={11} />
                     </Button>
                   </Link>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive touch-manipulation"
+                  <Button variant="ghost" size="icon" className="h-6 w-6 touch-manipulation text-muted-foreground/40 hover:text-destructive"
                     onClick={() => handleDelete(track.id, track.title)}>
-                    <Trash2 size={12} />
+                    <Trash2 size={11} />
                   </Button>
                 </div>
               </div>

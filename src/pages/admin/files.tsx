@@ -1,18 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Trash2, PenLine, Plus, ArrowLeft } from "lucide-react";
+import { Trash2, PenLine, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
-import { useBackNav } from "@/hooks/use-back-nav";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 
 export default function AdminFilesPage() {
-  const navigate = useNavigate();
-  const goBack = useBackNav('/admin');
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,17 +31,15 @@ export default function AdminFilesPage() {
   };
 
   const togglePublish = async (f: FileItem) => {
-    await supabase.from("files").update({ published: !f.published }).eq("id", f.id);
-    void fetchFiles();
+    const { error } = await supabase.from("files").update({ published: !f.published }).eq("id", f.id);
+    if (error) toast.error("Failed to update");
+    else void fetchFiles();
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={goBack} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors">
-            <ArrowLeft size={13} /> Back
-          </button>
           <h1 className="text-2xl font-bold tracking-tight">Files</h1>
         </div>
         <Link to="/admin/files/new">

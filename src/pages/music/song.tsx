@@ -21,7 +21,7 @@ export default function SongPage() {
   const [track, setTrack] = useState<Music | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const { play, pause, isTrackPlaying, playing, currentTrack } = usePlayer();
+  const { play, pause, isTrackPlaying, currentTrack } = usePlayer();
   const { isAdmin } = useAuth();
 
   useEffect(() => {

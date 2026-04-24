@@ -1,30 +1,27 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, PenLine, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { PenLine, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { supabase } from "@/lib/supabase";
 import type { Tutorial } from "@/lib/supabase";
-import { useBackNav } from "@/hooks/use-back-nav";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 
 export default function AdminTutorialsPage() {
-  const navigate = useNavigate();
-  const goBack = useBackNav('/admin');
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTutorials = async () => {
+  const fetchTutorials = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("tutorials").select("*").order("created_at", { ascending: false });
     if (!error && data) setTutorials(data as Tutorial[]);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { void fetchTutorials(); }, []);
+  useEffect(() => { void fetchTutorials(); }, [fetchTutorials]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
@@ -34,17 +31,15 @@ export default function AdminTutorialsPage() {
   };
 
   const togglePublish = async (tutorial: Tutorial) => {
-    await supabase.from("tutorials").update({ published: !tutorial.published }).eq("id", tutorial.id);
-    void fetchTutorials();
+    const { error } = await supabase.from("tutorials").update({ published: !tutorial.published }).eq("id", tutorial.id);
+    if (error) toast.error("Failed to update");
+    else void fetchTutorials();
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={goBack} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors">
-            <ArrowLeft size={13} /> Back
-          </button>
           <h1 className="text-2xl font-bold tracking-tight">Tutorials</h1>
         </div>
         <Link to="/admin/tutorials/new">

@@ -38,10 +38,12 @@ export default function UserMenu() {
   const email = profile?.email ?? user?.email ?? "Not signed in";
 
   const handleLogout = async () => {
+    setOpen(false);
     const { error } = await signOut();
     if (!error) {
-      setOpen(false);
-      // Stay on current page — don't navigate away
+      // Hard navigate to root — clears any stale React state
+      // (important for browsers like Vivaldi with aggressive caching)
+      window.location.href = "/";
     }
   };
 

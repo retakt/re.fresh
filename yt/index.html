@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" suppressHydrationWarning>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>yt.retakt — YouTube Downloader</title>
+    <meta name="description" content="Download YouTube videos and audio — fast, clean, no ads." />
+    <meta name="author" content="Takt Akira" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="yt.retakt" />
+    <meta property="og:description" content="Download YouTube videos and audio — fast, clean, no ads." />
+
+    <!-- Favicon (shared with main site) -->
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+
+    <meta name="theme-color" content="#0f0f0f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+
+    <!-- Theme flash prevention -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("yt-theme");
+          var isDark =
+            stored === "dark" ||
+            (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.add(isDark ? "dark" : "light");
+          document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+        } catch (e) {}
+      })();
+    </script>
+
+    <link href="/src/index.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="yt-root"></div>
+    <script type="module" src="/yt/main.tsx"></script>
+  </body>
+</html>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import RichTextEditor from "@/components/rich-text-editor.tsx";
 import ImageUpload from "@/components/ImageUpload.tsx";
-import { ArrowLeft, Loader2, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/lib/supabase";
@@ -19,7 +19,6 @@ function slugify(title: string) {
 }
 
 export default function PostEditorPage() {
-  const navigate = useNavigate();
   const goBack = useBackNav('/admin/posts');
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
@@ -80,7 +79,7 @@ export default function PostEditorPage() {
     };
 
     fetchPost();
-  }, [id, isEditing, navigate]);
+  }, [id, isEditing, goBack]);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
@@ -159,13 +158,6 @@ export default function PostEditorPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <button
-        onClick={() => goBack()}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-      >
-        <ArrowLeft size={14} /> Back
-      </button>
-
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight">
           {isEditing ? "Edit Post" : "New Post"}

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { ArrowLeft, Check, Loader2, Music2, X } from "lucide-react";
+import { Check, Loader2, Music2, X } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -40,7 +40,6 @@ const emptyForm: FormData = {
 const CURRENT_YEAR = new Date().getFullYear();
 
 export default function MusicEditorPage() {
-  const navigate = useNavigate();
   const goBack = useBackNav('/admin/music');
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
@@ -84,7 +83,7 @@ export default function MusicEditorPage() {
       setLoading(false);
     };
     fetchTrack();
-  }, [id, isEditing, navigate]);
+  }, [id, isEditing, goBack]);
 
   const handleYearChange = (val: string) => {
     const cleaned = val.replace(/\D/g, "").slice(0, 4);
@@ -146,13 +145,6 @@ export default function MusicEditorPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <button
-        onClick={() => goBack()}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-      >
-        <ArrowLeft size={14} /> Back
-      </button>
-
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight">
           {isEditing ? "Edit Track" : "New Track"}
