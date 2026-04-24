@@ -300,7 +300,7 @@ function CommentCard({
         <div className="flex flex-wrap items-center gap-1.5 mb-1">
           <span className={cn("text-xs font-semibold", colorClass.split(" ")[0])}>{displayName}</span>
           {comment.userMeta && <RoleBadge role={comment.userMeta.role} />}
-          <span className="text-[10px] text-foreground/40 font-medium">
+          <span className="text-[10px] text-foreground/55 font-medium">
             {format(new Date(comment.created_at), "MMM d · h:mm a")}
           </span>
           {comment.anchor_id && !comment.parent_id && (
@@ -349,18 +349,18 @@ function CommentCard({
               <button
                 type="button"
                 onClick={() => isAuthenticated ? onReply(comment) : onLoginRedirect()}
-                className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold text-foreground/45 hover:text-foreground hover:bg-secondary/60 active:bg-secondary/60 transition-colors touch-manipulation"
+                className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold text-foreground/55 hover:text-foreground hover:bg-secondary/60 active:bg-secondary/60 transition-colors touch-manipulation"
               >
-                <Reply size={11} /> Reply
+                <Reply size={12} strokeWidth={2} /> Reply
               </button>
 
               <button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center justify-center w-7 h-7 rounded text-foreground/35 hover:text-foreground hover:bg-secondary/60 active:bg-secondary/60 transition-colors touch-manipulation"
+                className="flex items-center justify-center w-7 h-7 rounded text-foreground/50 hover:text-foreground hover:bg-secondary/60 active:bg-secondary/60 transition-colors touch-manipulation"
                 title="Copy"
               >
-                <Copy size={12} />
+                <Copy size={13} strokeWidth={2} />
               </button>
 
               {(isOwn || isAdmin) && (
@@ -368,10 +368,10 @@ function CommentCard({
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="flex items-center justify-center w-7 h-7 rounded text-foreground/25 hover:text-destructive hover:bg-destructive/10 active:text-destructive active:bg-destructive/10 transition-colors touch-manipulation"
+                  className="flex items-center justify-center w-7 h-7 rounded text-foreground/40 hover:text-destructive hover:bg-destructive/10 active:text-destructive active:bg-destructive/10 transition-colors touch-manipulation"
                   title="Delete"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={13} strokeWidth={2} />
                 </button>
               )}
             </div>

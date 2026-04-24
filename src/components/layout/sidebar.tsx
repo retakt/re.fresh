@@ -44,10 +44,10 @@ export default function Sidebar() {
             >
               <Icon
                 size={18}
-                strokeWidth={active ? 2.2 : 1.8}
+                strokeWidth={active ? 2.4 : 2}
                 className="shrink-0"
               />
-              {link.label}
+              <span className={cn("font-medium", active ? "font-semibold" : "")}>{link.label}</span>
             </Link>
           );
         })}

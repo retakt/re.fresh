@@ -44,8 +44,8 @@ export default function BottomNav() {
               )}
             >
               <Icon
-                size={17}
-                strokeWidth={active ? 2.4 : 1.8}
+                size={18}
+                strokeWidth={active ? 2.5 : 2}
                 className="transition-all"
               />
               {tab.label}
