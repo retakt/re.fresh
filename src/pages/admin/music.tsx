@@ -42,9 +42,7 @@ export default function AdminMusicPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Music</h1>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Music</h1>
         <Link to="/admin/music/new">
           <Button size="sm" className="gap-1.5"><Plus size={14} /> Add track</Button>
         </Link>
@@ -62,87 +60,110 @@ export default function AdminMusicPage() {
       ) : (
         <div className="space-y-2">
           {tracks.map((track) => (
-            <div key={track.id} className="flex items-stretch rounded-xl border bg-card px-3 py-3 min-h-[4.5rem] gap-2">
+            <div key={track.id} className="rounded-xl border bg-card px-3 py-2.5 min-h-[4.5rem] flex flex-col justify-between gap-1">
 
-              {/* ── LEFT: 3 lines ── */}
-              <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+              {/* ── LINE 1: Title (left) · Badges (center-left) · Socials (right) ── */}
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Title — takes all remaining space, marquees if long */}
+                <div className="flex-1 min-w-0">
+                  <MarqueeText text={track.title} className="font-semibold text-sm" />
+                </div>
 
-                {/* Line 1: Title + badges */}
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <MarqueeText text={track.title} className="font-semibold text-sm flex-1 min-w-0" />
-                  <Badge variant={track.published ? "default" : "secondary"} className="text-[10px] py-0 px-1.5 shrink-0">
+                {/* Badges — center, shrink-0 so they never wrap */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <Badge
+                    variant={track.published ? "default" : "secondary"}
+                    className="text-[10px] py-0 px-1.5"
+                  >
                     {track.published ? "Live" : "Draft"}
                   </Badge>
                   {track.audio_url && (
-                    <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">AUDIO</span>
-                  )}
-                </div>
-
-                {/* Line 2: Artist only — year/type moved to right column */}
-                <div className="flex items-center text-[11px] text-muted-foreground min-w-0">
-                  {track.artist
-                    ? <MarqueeText text={track.artist} className="text-[11px] text-muted-foreground flex-1 min-w-0" />
-                    : <span className="text-muted-foreground/30">—</span>
-                  }
-                </div>
-
-                {/* Line 3: Tags */}
-                {(track.tags ?? []).length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {(track.tags ?? []).slice(0, 4).map((tag) => (
-                      <span key={tag} className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground">#{tag}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* ── RIGHT column ── */}
-              <div className="flex flex-col justify-between shrink-0 items-end gap-1 min-w-[3.5rem]">
-
-                {/* TOP: Year · Type — fixed 4-char year, then release type */}
-                <div className="flex flex-col items-end gap-0.5 pt-0.5">
-                  {track.year && (
-                    <span className="text-[11px] font-semibold text-foreground/70 tabular-nums leading-none">
-                      {track.year}
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
+                      AUDIO
                     </span>
                   )}
-                  <span className="text-[10px] font-medium text-muted-foreground/70 capitalize leading-none">
-                    {track.release_type}
-                  </span>
                 </div>
 
-                {/* MIDDLE: Platform icons */}
-                <div className="flex items-center gap-2">
+                {/* Socials — right, bigger icons */}
+                <div className="flex items-center gap-2 shrink-0">
                   {track.soundcloud_url && (
                     <a href={track.soundcloud_url} target="_blank" rel="noreferrer" title="SoundCloud"
                       onClick={(e) => e.stopPropagation()}>
-                      <FaSoundcloud size={15} className="text-orange-500 hover:opacity-70 transition-opacity" />
+                      <FaSoundcloud size={17} className="text-orange-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                   {track.youtube_url && (
                     <a href={track.youtube_url} target="_blank" rel="noreferrer" title="YouTube"
                       onClick={(e) => e.stopPropagation()}>
-                      <FaYoutube size={15} className="text-red-500 hover:opacity-70 transition-opacity" />
+                      <FaYoutube size={17} className="text-red-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                   {track.spotify_url && (
                     <a href={track.spotify_url} target="_blank" rel="noreferrer" title="Spotify"
                       onClick={(e) => e.stopPropagation()}>
-                      <FaSpotify size={15} className="text-green-500 hover:opacity-70 transition-opacity" />
+                      <FaSpotify size={17} className="text-green-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                 </div>
+              </div>
 
-                {/* BOTTOM: Toggle + edit + delete — small, muted */}
-                <div className="flex items-center gap-0">
+              {/* ── LINE 2: Artist (left) · Year + Type (center) · Toggle (right) ── */}
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Artist — flex-1, marquees if long */}
+                <div className="flex-1 min-w-0">
+                  {track.artist
+                    ? <MarqueeText text={track.artist} className="text-[11px] text-muted-foreground" />
+                    : <span className="text-[11px] text-muted-foreground/30">—</span>
+                  }
+                </div>
+
+                {/* Year + Type — centered, fixed width so they align across cards */}
+                <div className="flex items-center gap-1.5 shrink-0 justify-center min-w-[5rem]">
+                  {track.year && (
+                    <span className="text-[11px] font-semibold text-foreground/70 tabular-nums">
+                      {track.year}
+                    </span>
+                  )}
+                  {track.year && <span className="text-muted-foreground/30 text-[10px]">·</span>}
+                  <span className="text-[11px] text-muted-foreground/70 capitalize">
+                    {track.release_type}
+                  </span>
+                </div>
+
+                {/* Publish toggle — right */}
+                <div className="shrink-0">
                   <PublishToggle published={track.published} onChange={() => togglePublish(track)} />
+                </div>
+              </div>
+
+              {/* ── LINE 3: Tags (left) · Edit + Delete (right, bottom) ── */}
+              <div className="flex items-center gap-1 min-w-0">
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+                  {(track.tags ?? []).slice(0, 4).map((tag) => (
+                    <span key={tag} className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Edit + Delete — small, muted, right edge */}
+                <div className="flex items-center gap-0 shrink-0 ml-auto">
                   <Link to={`/admin/music/edit/${track.id}`}>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 touch-manipulation text-muted-foreground/60 hover:text-foreground">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 touch-manipulation text-muted-foreground/50 hover:text-foreground"
+                    >
                       <PenLine size={11} />
                     </Button>
                   </Link>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 touch-manipulation text-muted-foreground/40 hover:text-destructive"
-                    onClick={() => handleDelete(track.id, track.title)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 touch-manipulation text-muted-foreground/30 hover:text-destructive"
+                    onClick={() => handleDelete(track.id, track.title)}
+                  >
                     <Trash2 size={11} />
                   </Button>
                 </div>

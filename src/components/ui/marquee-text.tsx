@@ -3,14 +3,12 @@ import { cn } from "@/lib/utils";
 
 /**
  * MarqueeText — scrolls right-to-left only when text overflows its container.
- * Uses two absolutely-positioned copies for a seamless, jitter-free loop.
- * Static (no animation) when text fits.
+ * Static when text fits. Two-copy seamless loop when overflowing.
  *
- * iOS Safari notes:
- * - Uses `animation` shorthand (not separate properties) for compat
- * - `will-change: transform` prevents layer promotion issues on iOS
- * - Gap between copies is handled via a spacer span, not paddingRight
- *   (paddingRight on absolutely-positioned elements is unreliable on WebKit)
+ * Key fix: the invisible spacer must have real height (not h-0) so the
+ * container has a measured height for the absolutely-positioned copies.
+ * We use `aria-hidden` + `select-none` + `pointer-events-none` to hide it
+ * from users while keeping it in layout flow.
  */
 export function MarqueeText({
   text,
@@ -23,8 +21,8 @@ export function MarqueeText({
   const measureRef = useRef<HTMLSpanElement>(null);
   const [overflows, setOverflows] = useState(false);
 
-  // Duration scales with text length so speed feels consistent
-  const duration = `${Math.max(5, text.length * 0.25)}s`;
+  // Duration scales with text length — longer text scrolls at same visual speed
+  const duration = `${Math.max(4, text.length * 0.22)}s`;
 
   useEffect(() => {
     const check = () => {
@@ -34,14 +32,13 @@ export function MarqueeText({
 
     check();
 
-    // ResizeObserver for container width changes
     const ro = new ResizeObserver(check);
     if (containerRef.current) ro.observe(containerRef.current);
-
     return () => ro.disconnect();
   }, [text]);
 
   if (!overflows) {
+    // Static — just render normally, no animation overhead
     return (
       <div ref={containerRef} className={cn("overflow-hidden", className)}>
         <span ref={measureRef} className="whitespace-nowrap font-[inherit] text-[inherit]">
@@ -51,63 +48,59 @@ export function MarqueeText({
     );
   }
 
-  // Overflowing — two copies scroll in tandem
-  // Copy A: translateX(0%) → translateX(-100%)  [scrolls out left]
-  // Copy B: translateX(100%) → translateX(0%)   [arrives from right]
-  // A gap spacer (3rem) is included inside each copy so the two copies
-  // don't visually merge when B arrives.
-  const copyStyle: React.CSSProperties = {
-    animation: `marquee-a ${duration} linear infinite`,
-    willChange: "transform",
-    WebkitBackfaceVisibility: "hidden",
-    backfaceVisibility: "hidden",
-  };
-
-  const copyBStyle: React.CSSProperties = {
-    animation: `marquee-b ${duration} linear infinite`,
-    willChange: "transform",
-    WebkitBackfaceVisibility: "hidden",
-    backfaceVisibility: "hidden",
-  };
-
   return (
     <div
       ref={containerRef}
       className={cn("overflow-hidden relative", className)}
       style={{
-        maskImage:
-          "linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%)",
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%)",
+        // Fade edges so the scroll looks clean
+        maskImage: "linear-gradient(to right, transparent 0%, black 5%, black 90%, transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 5%, black 90%, transparent 100%)",
       }}
     >
-      {/* Invisible spacer — keeps container height correct */}
+      {/*
+       * Invisible spacer — MUST stay in normal flow with real height.
+       * This is what gives the container its height so the absolute
+       * copies have something to anchor their inset-y-0 to.
+       * opacity-0 hides it visually while keeping layout dimensions.
+       */}
       <span
         ref={measureRef}
-        className="invisible whitespace-nowrap block h-0 overflow-hidden pointer-events-none"
+        className="whitespace-nowrap font-[inherit] text-[inherit] opacity-0 pointer-events-none select-none block"
         aria-hidden
       >
         {text}
       </span>
 
-      {/* Copy A */}
+      {/* Copy A: starts at 0, scrolls to -100% */}
       <span
         aria-hidden
-        className="absolute inset-y-0 flex items-center whitespace-nowrap"
-        style={copyStyle}
+        className="absolute inset-y-0 left-0 flex items-center whitespace-nowrap pointer-events-none select-none"
+        style={{
+          animation: `marquee-a ${duration} linear infinite`,
+          willChange: "transform",
+          WebkitBackfaceVisibility: "hidden",
+          backfaceVisibility: "hidden",
+        }}
       >
         {text}
-        {/* Gap spacer between end of A and start of B */}
-        <span className="inline-block w-12" aria-hidden />
+        {/* Gap so copies don't visually merge */}
+        <span className="inline-block w-10" aria-hidden />
       </span>
 
-      {/* Copy B */}
+      {/* Copy B: starts at +100%, arrives at 0 as A exits */}
       <span
-        className="absolute inset-y-0 flex items-center whitespace-nowrap"
-        style={copyBStyle}
+        aria-hidden
+        className="absolute inset-y-0 left-0 flex items-center whitespace-nowrap pointer-events-none select-none"
+        style={{
+          animation: `marquee-b ${duration} linear infinite`,
+          willChange: "transform",
+          WebkitBackfaceVisibility: "hidden",
+          backfaceVisibility: "hidden",
+        }}
       >
         {text}
-        <span className="inline-block w-12" aria-hidden />
+        <span className="inline-block w-10" aria-hidden />
       </span>
     </div>
   );
