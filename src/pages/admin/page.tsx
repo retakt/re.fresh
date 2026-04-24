@@ -73,27 +73,29 @@ export default function AdminPage() {
   const tiles = isAdmin ? [...MEMBER_TILES, ...ADMIN_ONLY_TILES] : MEMBER_TILES;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Admin</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           {isAdmin ? "Manage your site content and members" : "Manage blog and tutorial content"}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+      {/* Mobile: smaller tiles, tighter grid */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {tiles.map(({ href, icon: Icon, label, desc, iconColor, iconBg, gradient, border }) => (
           <Link
             key={href}
             to={href}
-            className={`flex flex-col gap-4 rounded-xl border bg-gradient-to-br ${gradient} ${border} p-5 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer active:scale-[0.98]`}
+            className={`flex flex-col gap-2 sm:gap-4 rounded-lg sm:rounded-xl border bg-gradient-to-br ${gradient} ${border} p-3 sm:p-5 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer active:scale-[0.98]`}
           >
-            <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center`}>
-              <Icon size={22} className={iconColor} strokeWidth={1.8} />
+            <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl ${iconBg} flex items-center justify-center`}>
+              <Icon size={18} className={`${iconColor} sm:hidden`} strokeWidth={2} />
+              <Icon size={22} className={`${iconColor} hidden sm:block`} strokeWidth={1.8} />
             </div>
             <div>
-              <div className="font-semibold text-sm">{label}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
+              <div className="font-semibold text-xs sm:text-sm">{label}</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-2">{desc}</div>
             </div>
           </Link>
         ))}

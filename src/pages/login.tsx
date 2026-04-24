@@ -14,7 +14,6 @@ export default function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  // ?from= lets us redirect back to the page the user came from
   const from = searchParams.get('from') ?? '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,17 +29,16 @@ export default function LoginPage() {
       return
     }
 
-    // Go back to where they came from
     navigate(from, { replace: true })
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-6">
-      <div className="absolute left-3 top-4 sm:left-5 sm:top-5">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-6 py-6">
+      <div className="absolute left-4 top-4 sm:left-5 sm:top-5">
         <BackButton fallbackTo={from === '/' ? '/' : from} showLabel={false} className="px-2" />
       </div>
 
-      <div className="w-full max-w-sm space-y-8">
+      <div className="w-full max-w-xs space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
             <span className="text-sky-400 dark:text-sky-300">re</span><span className="text-primary">.</span><span className="text-foreground">Takt</span>
@@ -50,7 +48,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">email/username</Label>
+            <Label htmlFor="email" className="text-sm">email/username</Label>
             <Input
               id="email"
               type="text"
@@ -59,11 +57,12 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
+              className="h-11"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">password</Label>
+            <Label htmlFor="password" className="text-sm">password</Label>
             <Input
               id="password"
               type="password"
@@ -72,6 +71,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
+              className="h-11"
             />
           </div>
 
@@ -79,12 +79,12 @@ export default function LoginPage() {
             <p className="text-sm text-red-500 text-center">{error}</p>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full h-11" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-xs text-muted-foreground px-2">
           No public registration yet. Contact the site-owner...
         </p>
       </div>
