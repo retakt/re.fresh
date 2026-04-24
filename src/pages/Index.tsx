@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "@/lib/supabase";
-import { getQuotePalette, DEFAULT_QUOTES, QUOTE_CARD_PALETTES } from "@/lib/quotes";
+import { ALL_QUOTES, shuffleQuotes, QUOTE_CARD_PALETTES } from "@/lib/quotes";
 import { getCardPalette } from "@/lib/cardColors";
 import { format } from "date-fns";
 import { ContentCardSkeleton } from "@/components/ui/skeleton.tsx";
@@ -45,52 +45,52 @@ export default function Index() {
   // Persisted filter — survives refresh
   const [activeFilter, setActiveFilter] = usePersistedState<FilterType>("home-filter", "all");
 
-  // Quotes — persistent rotation using sessionStorage
-  // Index persists across refreshes. On first visit, starts at a random position.
-  // Only the ↻ button advances it manually.
-  const [quotes, setQuotes] = useState<typeof DEFAULT_QUOTES | null>(null);
-  const [quoteIndex, setQuoteIndex] = usePersistedState<number>("quote-index", -1);
-  const [quoteLoadedAt, setQuoteLoadedAt] = usePersistedState<number>("quote-loaded-at", 0);
+  // ── Quotes — local only, no Supabase ──
+  // Pool is shuffled once per session (stored in sessionStorage so it survives
+  // navigation but resets on new tab/hard refresh — giving fresh randomness).
+  // The index advances every 20 minutes. Manual ↻ also advances it.
+  const [pool] = useState<typeof ALL_QUOTES>(() => {
+    try {
+      const stored = sessionStorage.getItem("quote-pool");
+      if (stored) return JSON.parse(stored) as typeof ALL_QUOTES;
+    } catch {}
+    const shuffled = shuffleQuotes(ALL_QUOTES);
+    try { sessionStorage.setItem("quote-pool", JSON.stringify(shuffled)); } catch {}
+    return shuffled;
+  });
 
+  const [quoteIndex, setQuoteIndex] = usePersistedState<number>("quote-index", 0);
+  const [quoteLoadedAt, setQuoteLoadedAt] = usePersistedState<number>("quote-loaded-at", Date.now());
+
+  // Advance index if 20 minutes have passed since last change
   useEffect(() => {
-    void supabase.from("quotes").select("id, text, author").order("created_at", { ascending: false })
-      .then(({ data }) => {
-        const dbQuotes = (data && data.length > 0) ? (data as typeof DEFAULT_QUOTES) : [];
-
-        // Respect hidden defaults from admin panel
-        let hiddenIds: Set<string> = new Set();
-        try { hiddenIds = new Set(JSON.parse(localStorage.getItem("hidden-default-quotes") ?? "[]")); } catch {}
-        const visibleDefaults = DEFAULT_QUOTES.filter((q) => !hiddenIds.has(q.id));
-
-        // Merge and shuffle — truly random, no ordering by source
-        const merged = [...dbQuotes, ...visibleDefaults];
-        const pool = merged.sort(() => Math.random() - 0.5);
-        setQuotes(pool);
-
-        const now = Date.now();
-        const twentyMin = 20 * 60 * 1000;
-
-        if (quoteIndex === -1 || quoteIndex >= pool.length) {
-          setQuoteIndex(Math.floor(Math.random() * pool.length));
-          setQuoteLoadedAt(now);
-        } else if (now - quoteLoadedAt > twentyMin) {
-          setQuoteIndex((prev) => (prev + 1) % pool.length);
-          setQuoteLoadedAt(now);
+    const TWENTY_MIN = 20 * 60 * 1000;
+    const now = Date.now();
+    if (now - quoteLoadedAt > TWENTY_MIN) {
+      setQuoteIndex((i) => (i + 1) % pool.length);
+      setQuoteLoadedAt(now);
+    }
+    // Check again every minute
+    const interval = setInterval(() => {
+      const t = Date.now();
+      setQuoteLoadedAt((prev) => {
+        if (t - prev > TWENTY_MIN) {
+          setQuoteIndex((i) => (i + 1) % pool.length);
+          return t;
         }
+        return prev;
       });
-  }, []);
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [pool.length]);
 
-  const quote = quotes ? quotes[Math.abs(quoteIndex) % quotes.length] : null;
+  const quote = pool[Math.abs(quoteIndex) % pool.length];
   const quotePalette = QUOTE_CARD_PALETTES[Math.abs(quoteIndex) % QUOTE_CARD_PALETTES.length];
 
   const cycleQuote = useCallback(() => {
-    if (!quotes) return;
-    setQuoteIndex((i) => (i + 1) % quotes.length);
-    setQuoteLoadedAt(Date.now()); // reset the 20-min timer on manual cycle
-  }, [quotes?.length]);
-
-  // Remove keyboard bindings — only the ↻ button cycles quotes
-  // (keyboard shortcuts removed per user request)
+    setQuoteIndex((i) => (i + 1) % pool.length);
+    setQuoteLoadedAt(Date.now()); // reset 20-min timer on manual cycle
+  }, [pool.length]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -185,9 +185,6 @@ export default function Index() {
 
       {/* ── QUOTE ── */}
       <AnimatePresence mode="wait">
-        {!quote ? (
-          <div className="h-16 rounded-xl border bg-muted/30 animate-pulse" />
-        ) : (
         <motion.div
           key={quoteIndex}
           initial={{ opacity: 0, y: 4 }}
@@ -197,7 +194,6 @@ export default function Index() {
           className={`relative overflow-hidden rounded-xl border bg-gradient-to-br
             ${quotePalette.bg} ${quotePalette.border} px-3.5 py-3 select-none`}
         >
-          {/* Decorative quote mark — top right watermark */}
           <Quote
             size={32}
             className={`absolute top-2 right-3 opacity-[0.08] ${quotePalette.accent}`}
@@ -208,7 +204,6 @@ export default function Index() {
           <p className={`mt-1 text-[11px] sm:text-xs font-semibold ${quotePalette.accent}`}>
             — {quote.author}
           </p>
-          {/* Cycle button */}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); cycleQuote(); }}
@@ -218,7 +213,6 @@ export default function Index() {
             <RefreshCw size={12} />
           </button>
         </motion.div>
-        )}
       </AnimatePresence>
 
       {/* ── MAIN CONTENT AREA: Latest + Tools ── */}

@@ -1,14 +1,18 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import type { Profile } from "@/lib/supabase";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type AuthContextValue = {
   user: User | null;
@@ -25,16 +29,27 @@ type AuthContextValue = {
   avatarUrl: string | null;
   notificationsEnabled: boolean;
   setNotificationsEnabled: (value: boolean) => void;
-  signIn: (email: string, password: string) => Promise<{
-    data: unknown;
-    error: Error | null;
-  }>;
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{ data: unknown; error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
 };
 
+// ─── Events that should trigger a profile (re-)fetch ─────────────────────────
+// TOKEN_REFRESHED is intentionally excluded — it does NOT change the user's
+// profile data and was the source of the 3rd duplicate /profiles request.
+const PROFILE_FETCH_EVENTS = new Set<AuthChangeEvent>([
+  "INITIAL_SESSION",
+  "SIGNED_IN",
+  "USER_UPDATED",
+]);
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 const NOTIFICATIONS_KEY = "re.takt.notifications.enabled";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getDisplayName(user: User | null, profile: Profile | null) {
   const profileName = profile?.username?.trim();
@@ -58,8 +73,13 @@ function getInitials(value: string) {
 
   if (parts.length === 0) return "RT";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return parts.map((part) => part[0]).join("").toUpperCase();
+  return parts
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -72,27 +92,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return stored ? stored === "true" : true;
   });
 
-  const fetchProfile = async (nextUser: User | null) => {
+  // Prevent concurrent in-flight profile fetches
+  const fetchingRef = useRef(false);
+  // Track the last userId we fetched for — skip if unchanged
+  const lastFetchedUserIdRef = useRef<string | null>(null);
+
+  const fetchProfile = useCallback(async (nextUser: User | null) => {
     if (!nextUser) {
       setProfile(null);
+      lastFetchedUserIdRef.current = null;
       return;
     }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, email, username, avatar_url, role, created_at")
-      .eq("id", nextUser.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Failed to fetch profile", error);
-      setProfile(null);
+    // ← Skip if we already have this user's profile loaded
+    if (
+      lastFetchedUserIdRef.current === nextUser.id &&
+      !fetchingRef.current
+    ) {
       return;
     }
 
-    setProfile(data);
-  };
+    // ← Skip if a fetch is already in-flight
+    if (fetchingRef.current) return;
 
+    fetchingRef.current = true;
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, email, username, avatar_url, role, created_at")
+        .eq("id", nextUser.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Failed to fetch profile", error);
+        setProfile(null);
+        return;
+      }
+
+      setProfile(data);
+      lastFetchedUserIdRef.current = nextUser.id;
+    } finally {
+      fetchingRef.current = false;
+    }
+  }, []);
+
+  // Persist notification preference
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -102,33 +147,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [notificationsEnabled]);
 
   useEffect(() => {
-    let active = true;
+    let mounted = true;
 
-    const syncSession = async (nextSession: Session | null) => {
-      const nextUser = nextSession?.user ?? null;
-
-      if (!active) return;
-      setSession(nextSession);
-      setUser(nextUser);
-      await fetchProfile(nextUser);
-      if (active) setLoading(false);
-    };
-
-    supabase.auth.getSession().then(({ data }) => {
-      void syncSession(data.session);
-    });
-
+    // ── Single source of truth: onAuthStateChange ─────────────────────────
+    // Supabase fires INITIAL_SESSION immediately on subscribe (replaces the
+    // old getSession() + onAuthStateChange dual-call pattern that caused 3x
+    // duplicate /profiles requests).
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void syncSession(nextSession);
-    });
+    } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, nextSession: Session | null) => {
+        if (!mounted) return;
+
+        const nextUser = nextSession?.user ?? null;
+
+        setSession(nextSession);
+        setUser(nextUser);
+
+        if (PROFILE_FETCH_EVENTS.has(event)) {
+          // SIGNED_OUT — clear profile immediately without a network call
+          if (!nextUser) {
+            setProfile(null);
+            lastFetchedUserIdRef.current = null;
+            setLoading(false);
+            return;
+          }
+
+          await fetchProfile(nextUser);
+        }
+
+        if (mounted) setLoading(false);
+      },
+    );
 
     return () => {
-      active = false;
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile]);
 
   const value = useMemo<AuthContextValue>(() => {
     const displayName = getDisplayName(user, profile);
@@ -186,13 +242,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: error ?? null };
       },
       refreshProfile: async () => {
+        // Force re-fetch by resetting the cached userId
+        lastFetchedUserIdRef.current = null;
         await fetchProfile(user);
       },
     };
-  }, [loading, notificationsEnabled, profile, session, user]);
+  }, [fetchProfile, loading, notificationsEnabled, profile, session, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 export function useAuthContext() {
   const context = useContext(AuthContext);

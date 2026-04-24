@@ -1,4 +1,5 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import Navbar from "@/components/layout/navbar.tsx";
 import Sidebar from "@/components/layout/sidebar.tsx";
 import BottomNav from "@/components/layout/bottom-nav.tsx";
@@ -6,6 +7,8 @@ import Footer from "@/components/layout/footer.tsx";
 import FloatingPlayer from "@/components/player/FloatingPlayer.tsx";
 
 export default function AppLayout() {
+  const location = useLocation();
+
   return (
     <div className="flex min-h-[var(--app-height)] flex-col bg-background text-foreground">
       <Navbar />
@@ -19,7 +22,17 @@ export default function AppLayout() {
           id="main-content"
           className="flex-1 min-w-0 overflow-x-hidden py-5 sm:py-8 pb-[76px] md:pb-14 md:pl-6 lg:pl-8"
         >
-          <Outlet />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

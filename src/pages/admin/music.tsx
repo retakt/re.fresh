@@ -69,15 +69,10 @@ export default function AdminMusicPage() {
           {tracks.map((track) => (
             <div key={track.id} className="flex items-stretch rounded-xl border bg-card px-3 py-3 min-h-[4.5rem] gap-2">
 
-              {/* LEFT: fixed 3-column grid so every row aligns perfectly */}
-              {/*
-                Col 1 (flex-1): title + badges on line 1
-                Col 2 (w-[7.5rem]): artist marquee — fixed width so it always starts same x
-                Col 3 (w-[5.5rem]): release · year — fixed width
-              */}
+              {/* ── LEFT: 3 lines ── */}
               <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
 
-                {/* Line 1: Title (marquee) + Live/Draft + AUDIO */}
+                {/* Line 1: Title + badges */}
                 <div className="flex items-center gap-1.5 min-w-0">
                   <MarqueeText text={track.title} className="font-semibold text-sm flex-1 min-w-0" />
                   <Badge variant={track.published ? "default" : "secondary"} className="text-[10px] py-0 px-1.5 shrink-0">
@@ -88,21 +83,24 @@ export default function AdminMusicPage() {
                   )}
                 </div>
 
-                {/* Line 2: Artist · Release · Year — each in a fixed-width slot */}
-                <div className="flex items-center text-[11px] text-muted-foreground gap-0">
-                  {/* Artist — fixed width, marquee if long */}
-                  <div className="w-[7rem] shrink-0">
+                {/* Line 2: Artist · Release · Year
+                    Desktop: fixed-width columns for perfect vertical alignment
+                    Mobile: centered, proportional spacing */}
+                <div className="flex items-center text-[11px] text-muted-foreground">
+                  {/* Artist — fixed width on desktop, flex on mobile */}
+                  <div className="md:w-[7rem] min-w-0 flex-1 md:flex-none md:shrink-0">
                     {track.artist
                       ? <MarqueeText text={track.artist} className="text-[11px] text-muted-foreground" />
                       : <span className="text-muted-foreground/30">—</span>
                     }
                   </div>
-                  <span className="text-muted-foreground/30 shrink-0 mx-1">·</span>
-                  {/* Release type — fixed width */}
-                  <span className="w-[3.5rem] shrink-0 capitalize">{track.release_type}</span>
+                  {/* Separator — bolder, more visible */}
+                  <span className="text-foreground/50 font-bold shrink-0 mx-2">·</span>
+                  {/* Release type */}
+                  <span className="md:w-[3.5rem] md:shrink-0 capitalize">{track.release_type}</span>
                   {track.year && (
                     <>
-                      <span className="text-muted-foreground/30 shrink-0 mx-1">·</span>
+                      <span className="text-foreground/50 font-bold shrink-0 mx-2">·</span>
                       <span className="shrink-0">{track.year}</span>
                     </>
                   )}
@@ -118,35 +116,44 @@ export default function AdminMusicPage() {
                 )}
               </div>
 
-              {/* RIGHT: platform icons (bigger) + controls — vertically centered */}
-              <div className="flex flex-col justify-center shrink-0 gap-1.5 items-end">
-                {/* Platform icons — larger, SoundCloud · YouTube · Spotify order */}
-                <div className="flex items-center gap-2">
+              {/* ── RIGHT: 70% socials / 30% controls ──
+                  Social icons are bigger and take most of the space.
+                  Edit/delete are smaller, pushed to bottom-right. */}
+              <div className="flex flex-col justify-between shrink-0 items-end gap-1 min-w-[4.5rem]">
+
+                {/* TOP: Platform icons — large, prominent */}
+                <div className="flex items-center gap-2.5 pt-0.5">
                   {track.soundcloud_url && (
-                    <a href={track.soundcloud_url} target="_blank" rel="noreferrer" title="SoundCloud">
-                      <FaSoundcloud size={16} className="text-orange-500 hover:opacity-70 transition-opacity" />
+                    <a href={track.soundcloud_url} target="_blank" rel="noreferrer" title="SoundCloud"
+                      onClick={(e) => e.stopPropagation()}>
+                      <FaSoundcloud size={18} className="text-orange-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                   {track.youtube_url && (
-                    <a href={track.youtube_url} target="_blank" rel="noreferrer" title="YouTube">
-                      <FaYoutube size={16} className="text-red-500 hover:opacity-70 transition-opacity" />
+                    <a href={track.youtube_url} target="_blank" rel="noreferrer" title="YouTube"
+                      onClick={(e) => e.stopPropagation()}>
+                      <FaYoutube size={18} className="text-red-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                   {track.spotify_url && (
-                    <a href={track.spotify_url} target="_blank" rel="noreferrer" title="Spotify">
-                      <FaSpotify size={16} className="text-green-500 hover:opacity-70 transition-opacity" />
+                    <a href={track.spotify_url} target="_blank" rel="noreferrer" title="Spotify"
+                      onClick={(e) => e.stopPropagation()}>
+                      <FaSpotify size={18} className="text-green-500 hover:opacity-70 transition-opacity" />
                     </a>
                   )}
                 </div>
-                {/* Controls: publish toggle · edit · delete */}
-                <div className="flex items-center gap-0.5">
+
+                {/* BOTTOM: Publish toggle + edit + delete — smaller, bottom-right */}
+                <div className="flex items-center gap-0">
                   <PublishToggle published={track.published} onChange={() => togglePublish(track)} />
                   <Link to={`/admin/music/edit/${track.id}`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 touch-manipulation"><PenLine size={13} /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 touch-manipulation">
+                      <PenLine size={12} />
+                    </Button>
                   </Link>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive touch-manipulation"
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive touch-manipulation"
                     onClick={() => handleDelete(track.id, track.title)}>
-                    <Trash2 size={13} />
+                    <Trash2 size={12} />
                   </Button>
                 </div>
               </div>
