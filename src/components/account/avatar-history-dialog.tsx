@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/dialog.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.tsx";
-import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 
 export type AvatarHistoryItem = {
   id: string;
@@ -90,7 +89,7 @@ export function AvatarHistoryDialog({
                 <p className="text-[10px] text-muted-foreground">{items.length} saved</p>
               </div>
 
-              <ScrollArea className="w-full whitespace-nowrap">
+              <div className="w-full overflow-x-auto scrollbar-none">
                 <div className="flex gap-2.5 pb-2">
                   {items.map((item) => {
                     const isCurrent = item.is_active;
@@ -129,7 +128,7 @@ export function AvatarHistoryDialog({
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           )}
 

@@ -164,6 +164,10 @@ export default defineConfig({
         chunkSizeWarningLimit: 600,
         sourcemap: true,
         rollupOptions: {
+            input: {
+                main: path.resolve(__dirname, "index.html"),
+                yt: path.resolve(__dirname, "yt/index.html"),
+            },
             output: {
                 manualChunks: function (id) {
                     if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/"))
