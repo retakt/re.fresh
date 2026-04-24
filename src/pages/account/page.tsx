@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
   Camera,
@@ -108,27 +108,7 @@ export default function AccountPage() {
     setUsernameDraft(profile?.username ?? "");
   }, [profile?.username]);
 
-  useEffect(() => {
-    if (!user) {
-      setAvatarHistory([]);
-      return;
-    }
-
-    void fetchAvatarHistory();
-  }, [user?.id]);
-
-  // Camera icon: tap = change photo, long press = open history panel
-  const cameraLongPress = useLongPress({
-    onLongPress: () => {
-      if (avatarUrl || avatarHistory.length > 0) {
-        setAvatarPreviewOpen(true);
-      }
-    },
-    onClick: () => fileInputRef.current?.click(),
-    delay: 500,
-  });
-
-  const fetchAvatarHistory = async () => {
+  const fetchAvatarHistory = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -144,7 +124,27 @@ export default function AccountPage() {
     }
 
     setAvatarHistory(data ?? []);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setAvatarHistory([]);
+      return;
+    }
+
+    void fetchAvatarHistory();
+  }, [user?.id, fetchAvatarHistory]);
+
+  // Camera icon: tap = change photo, long press = open history panel
+  const cameraLongPress = useLongPress({
+    onLongPress: () => {
+      if (avatarUrl || avatarHistory.length > 0) {
+        setAvatarPreviewOpen(true);
+      }
+    },
+    onClick: () => fileInputRef.current?.click(),
+    delay: 500,
+  });
 
   const updateAvatarUrl = async (nextUrl: string | null) => {
     if (!user) return false;

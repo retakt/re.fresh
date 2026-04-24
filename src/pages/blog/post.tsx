@@ -104,7 +104,7 @@ export default function BlogPostPage() {
           {!post.published && (
             <Badge variant="secondary">Draft</Badge>
           )}
-          {(post as any).tags && (post as any).tags.map((tag: string) => (
+          {(post.tags ?? []).map((tag: string) => (
             <span
               key={tag}
               className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getTagColor(tag)}`}

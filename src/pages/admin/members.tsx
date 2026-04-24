@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -44,15 +44,15 @@ export default function AdminMembersPage() {
 
   const [savingMemberId, setSavingMemberId] = useState<string | null>(null);
 
-  useEffect(() => { fetchMembers(); }, []);
-
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles").select("*").order("created_at", { ascending: false });
     if (!error && data) setMembers(data);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => { void fetchMembers(); }, [fetchMembers]);
 
   // Always refresh session before calling the invite function
   // This ensures we have a fresh token after JWT key rotation
@@ -92,7 +92,7 @@ export default function AdminMembersPage() {
         toast.success(`Invite sent to ${inviteEmail} ✓`);
         setInviteEmail("");
         setShowInvite(false);
-        setTimeout(fetchMembers, 1500);
+        setTimeout(() => { void fetchMembers(); }, 1500);
       }
     } catch { toast.error("Network error — check connection"); }
     setSending(false);
@@ -103,7 +103,7 @@ export default function AdminMembersPage() {
     setSavingMemberId(id);
     const result = await invokeAdminFunction("admin-manage-member", { action: "delete_member", memberId: id });
     if (!result.ok) toast.error(result.error || "Failed to remove member");
-    else { toast.success("Member removed."); fetchMembers(); }
+    else { toast.success("Member removed."); void fetchMembers(); }
     setSavingMemberId(null);
   };
 
@@ -117,7 +117,7 @@ export default function AdminMembersPage() {
     setSavingMemberId(member.id);
     const result = await invokeAdminFunction("admin-manage-member", { action: "update_role", memberId: member.id, role: nextRole });
     if (!result.ok) toast.error(result.error || "Failed to update role");
-    else { toast.success(`Role → ${nextRole}`); fetchMembers(); }
+    else { toast.success(`Role → ${nextRole}`); void fetchMembers(); }
     setSavingMemberId(null);
   };
 
@@ -127,7 +127,7 @@ export default function AdminMembersPage() {
     setSavingMemberId(member.id);
     const result = await invokeAdminFunction("admin-manage-member", { action: "update_role", memberId: member.id, role });
     if (!result.ok) toast.error(result.error || "Failed to update role");
-    else { toast.success(`Role → ${role}`); setCustomRoleMemberId(null); fetchMembers(); }
+    else { toast.success(`Role → ${role}`); setCustomRoleMemberId(null); void fetchMembers(); }
     setSavingMemberId(null);
   };
 
@@ -137,7 +137,7 @@ export default function AdminMembersPage() {
       action: "update_username", memberId: member.id, username: draftUsername.trim() || null,
     });
     if (!result.ok) toast.error(result.error || "Failed to update username");
-    else { toast.success("Username updated"); setEditingUsernameId(null); fetchMembers(); }
+    else { toast.success("Username updated"); setEditingUsernameId(null); void fetchMembers(); }
     setSavingMemberId(null);
   };
 
@@ -146,7 +146,7 @@ export default function AdminMembersPage() {
     setSavingMemberId(member.id);
     const result = await invokeAdminFunction("admin-update-email", { memberId: member.id, email: draftEmail.trim() });
     if (!result.ok) toast.error(result.error || "Failed to update email");
-    else { toast.success("Email updated"); setEditingEmailId(null); fetchMembers(); }
+    else { toast.success("Email updated"); setEditingEmailId(null); void fetchMembers(); }
     setSavingMemberId(null);
   };
 
@@ -274,7 +274,7 @@ export default function AdminMembersPage() {
                     </div>
                   ) : (
                     <select
-                      value={ROLE_OPTIONS.includes(member.role as any) ? member.role : "custom"}
+                      value={ROLE_OPTIONS.includes(member.role as typeof ROLE_OPTIONS[number]) ? member.role : "custom"}
                       disabled={member.id === user?.id || savingMemberId === member.id}
                       onChange={(e) => handleRoleChange(member, e.target.value)}
                       className="h-7 rounded-md border border-input bg-background px-2 text-xs"
