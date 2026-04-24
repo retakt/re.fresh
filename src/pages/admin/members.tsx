@@ -4,14 +4,7 @@ import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import {
-  ArrowLeft,
-  Plus,
-  X,
-  Mail,
-  Trash2,
-  KeyRound,
-  PencilLine,
-  Shield,
+  ArrowLeft, Plus, X, Mail, Trash2, KeyRound, PencilLine, Shield, Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -31,48 +24,31 @@ export default function AdminMembersPage() {
   const [members, setMembers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
-  const [email, setEmail] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
   const [sending, setSending] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingUsernameId, setEditingUsernameId] = useState<string | null>(null);
+  const [editingEmailId, setEditingEmailId] = useState<string | null>(null);
   const [draftUsername, setDraftUsername] = useState("");
+  const [draftEmail, setDraftEmail] = useState("");
   const [savingMemberId, setSavingMemberId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchMembers();
-  }, []);
+  useEffect(() => { fetchMembers(); }, []);
 
   const fetchMembers = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-
+      .from("profiles").select("*").order("created_at", { ascending: false });
     if (!error && data) setMembers(data);
     setLoading(false);
   };
 
-  const openEdit = (member: Profile) => {
-    setEditingId(member.id);
-    setDraftUsername(member.username ?? "");
-  };
-
   const handleInvite = async () => {
-    if (!email.trim()) {
-      toast.error("Email is required.");
-      return;
-    }
+    if (!inviteEmail.trim()) { toast.error("Email is required."); return; }
     setSending(true);
-
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-
-      if (!token) {
-        toast.error("You must be logged in to invite members.");
-        setSending(false);
-        return;
-      }
+      if (!token) { toast.error("You must be logged in."); setSending(false); return; }
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`,
@@ -83,123 +59,65 @@ export default function AdminMembersPage() {
             Authorization: `Bearer ${token}`,
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email: inviteEmail }),
         },
       );
-
       const result = await response.json();
-
       if (!response.ok || result.error) {
-        const msg = result.error || "Failed to send invite";
-        console.error("Invite error:", response.status, result);
-        toast.error(msg);
+        toast.error(result.error || "Failed to send invite");
       } else {
-        toast.success(`Invite sent to ${email} ✓`);
-        setEmail("");
+        toast.success(`Invite sent to ${inviteEmail} ✓`);
+        setInviteEmail("");
         setShowInvite(false);
         setTimeout(fetchMembers, 1500);
       }
-    } catch {
-      toast.error("Network error - check your connection");
-    }
-
+    } catch { toast.error("Network error"); }
     setSending(false);
   };
 
   const handleRemove = async (id: string, memberEmail: string | null) => {
-    if (!confirm(`Remove ${memberEmail}?`)) return;
+    if (!confirm(`Remove ${memberEmail ?? "this member"}? This cannot be undone.`)) return;
     setSavingMemberId(id);
-    const result = await invokeAdminFunction("admin-manage-member", {
-      action: "delete_member",
-      memberId: id,
-    });
-    if (!result.ok) {
-      toast.error(result.error || "Failed to remove member");
-    } else {
-      toast.success("Member removed.");
-      fetchMembers();
-    }
+    const result = await invokeAdminFunction("admin-manage-member", { action: "delete_member", memberId: id });
+    if (!result.ok) toast.error(result.error || "Failed to remove member");
+    else { toast.success("Member removed."); fetchMembers(); }
     setSavingMemberId(null);
   };
 
-  const handleRoleChange = async (
-    member: Profile,
-    nextRole: Profile["role"],
-  ) => {
-    if (member.id === user?.id) {
-      toast.error("Changing your own role is disabled here for safety.");
-      return;
-    }
-
+  const handleRoleChange = async (member: Profile, nextRole: Profile["role"]) => {
+    if (member.id === user?.id) { toast.error("Cannot change your own role."); return; }
     setSavingMemberId(member.id);
-    const result = await invokeAdminFunction("admin-manage-member", {
-      action: "update_role",
-      memberId: member.id,
-      role: nextRole,
-    });
-
-    if (!result.ok) {
-      toast.error(result.error || "Failed to update role");
-    } else {
-      toast.success(`Role updated to ${nextRole}`);
-      fetchMembers();
-    }
+    const result = await invokeAdminFunction("admin-manage-member", { action: "update_role", memberId: member.id, role: nextRole });
+    if (!result.ok) toast.error(result.error || "Failed to update role");
+    else { toast.success(`Role → ${nextRole}`); fetchMembers(); }
     setSavingMemberId(null);
   };
 
   const handleUsernameSave = async (member: Profile) => {
     setSavingMemberId(member.id);
-    const nextUsername = draftUsername.trim() || null;
-
     const result = await invokeAdminFunction("admin-manage-member", {
-      action: "update_username",
-      memberId: member.id,
-      username: nextUsername,
+      action: "update_username", memberId: member.id, username: draftUsername.trim() || null,
     });
+    if (!result.ok) toast.error(result.error || "Failed to update username");
+    else { toast.success("Username updated"); setEditingUsernameId(null); fetchMembers(); }
+    setSavingMemberId(null);
+  };
 
-    if (!result.ok) {
-      toast.error(result.error || "Failed to update username");
-    } else {
-      toast.success("Username updated");
-      setEditingId(null);
-      fetchMembers();
-    }
+  const handleEmailSave = async (member: Profile) => {
+    if (!draftEmail.trim()) return;
+    setSavingMemberId(member.id);
+    const result = await invokeAdminFunction("admin-update-email", { memberId: member.id, email: draftEmail.trim() });
+    if (!result.ok) toast.error(result.error || "Failed to update email");
+    else { toast.success("Email updated"); setEditingEmailId(null); fetchMembers(); }
     setSavingMemberId(null);
   };
 
   const handleResetPassword = async (member: Profile) => {
-    if (!member.email) {
-      toast.error("This member does not have an email yet.");
-      return;
-    }
-
+    if (!member.email) { toast.error("No email on this member."); return; }
     setSavingMemberId(member.id);
-    const result = await invokeAdminFunction("admin-reset-password", {
-      email: member.email,
-    });
-    if (!result.ok) {
-      toast.error(result.error || "Failed to send reset email");
-    } else {
-      toast.success(`Password reset sent to ${member.email}`);
-    }
-    setSavingMemberId(null);
-  };
-
-  const handleChangeEmail = async (member: Profile) => {
-    const nextEmail = prompt("Enter the new email address", member.email ?? "");
-    if (!nextEmail || !nextEmail.trim()) return;
-
-    setSavingMemberId(member.id);
-    const result = await invokeAdminFunction("admin-update-email", {
-      memberId: member.id,
-      email: nextEmail.trim(),
-    });
-    if (!result.ok) {
-      toast.error(result.error || "Failed to update email");
-    } else {
-      toast.success("Email updated");
-      fetchMembers();
-    }
+    const result = await invokeAdminFunction("admin-reset-password", { email: member.email });
+    if (!result.ok) toast.error(result.error || "Failed to send reset email");
+    else toast.success(`Reset sent to ${member.email}`);
     setSavingMemberId(null);
   };
 
@@ -207,186 +125,151 @@ export default function AdminMembersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link
-            to="/admin"
-            className="mb-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
+          <Link to="/admin" className="mb-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft size={13} /> Admin
           </Link>
           <h1 className="text-2xl font-bold tracking-tight">Members</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage usernames, roles, and member account actions
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Manage roles, usernames, and account actions</p>
         </div>
         {!showInvite && (
           <Button size="sm" className="gap-1.5" onClick={() => setShowInvite(true)}>
-            <Plus size={14} /> Invite member
+            <Plus size={14} /> Invite
           </Button>
         )}
       </div>
 
+      {/* Invite panel */}
       {showInvite && (
-        <div className="space-y-4 rounded-xl border bg-card p-5">
-          <h2 className="text-sm font-semibold">Invite new member</h2>
-          <p className="text-xs text-muted-foreground">
-            They will receive an email with a link to set their password. Then
-            you can promote them to editor or admin from the list below.
-          </p>
+        <div className="space-y-3 rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Invite new member</h2>
+            <button onClick={() => { setShowInvite(false); setInviteEmail(""); }}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+              <X size={14} />
+            </button>
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Email address</Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-              placeholder=""
-              className="text-sm"
-            />
+            <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleInvite()} className="text-sm" />
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleInvite} disabled={sending} className="gap-1.5">
-              <Mail size={13} /> {sending ? "Sending..." : "Send invite"}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => { setShowInvite(false); setEmail(""); }}
-              className="gap-1.5"
-              aria-label="Close"
-              title="Close"
-            >
-              <X size={13} />
-            </Button>
-          </div>
+          <Button size="sm" onClick={handleInvite} disabled={sending} className="gap-1.5">
+            <Mail size={13} /> {sending ? "Sending..." : "Send invite"}
+          </Button>
         </div>
       )}
 
       {loading ? (
         <div className="space-y-2">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-20 rounded-xl border bg-card animate-pulse" />
-          ))}
+          {[1, 2].map((i) => <div key={i} className="h-24 rounded-xl border bg-card animate-pulse" />)}
         </div>
       ) : members.length === 0 ? (
         <p className="text-sm text-muted-foreground">No members yet.</p>
       ) : (
         <div className="space-y-3">
           {members.map((member) => (
-            <div key={member.id} className="rounded-xl border bg-card px-4 py-4">
-              <div className="flex items-start gap-4">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-xs font-semibold">
-                      {member.username || member.email || "Unnamed member"}
-                    </p>
-                    <Badge className={`border-0 text-[10px] py-0 px-1.5 ${ROLE_STYLES[member.role]}`}>
-                      {member.role}
-                    </Badge>
-                    {member.id === user?.id && (
-                      <Badge variant="outline" className="text-[10px] py-0 px-1.5">
-                        You
-                      </Badge>
-                    )}
-                  </div>
+            <div key={member.id} className="rounded-xl border bg-card px-4 py-3 space-y-2">
 
-                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-                    <span className="truncate max-w-[160px]">{member.email ?? "No email"}</span>
-                    <span>·</span>
-                    <span>{new Date(member.created_at).toLocaleDateString()}</span>
-                  </div>
-
-                  {editingId === member.id ? (
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <Input
-                        value={draftUsername}
-                        onChange={(e) => setDraftUsername(e.target.value)}
-                        placeholder="username"
-                        className="h-8 max-w-[14rem]"
-                      />
-                      <Button
-                        size="sm"
-                        className="h-8"
-                        disabled={savingMemberId === member.id}
-                        onClick={() => handleUsernameSave(member)}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8"
-                        onClick={() => setEditingId(null)}
-                      >
-                        Cancel
-                      </Button>
+              {/* Row 1: Email + date + edit email button | Role selector + delete */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  {/* Email line with inline edit */}
+                  {editingEmailId === member.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <Input value={draftEmail} onChange={(e) => setDraftEmail(e.target.value)}
+                        className="h-7 text-xs flex-1 max-w-[200px]" autoFocus
+                        onKeyDown={(e) => { if (e.key === "Enter") handleEmailSave(member); if (e.key === "Escape") setEditingEmailId(null); }} />
+                      <button onClick={() => handleEmailSave(member)} disabled={savingMemberId === member.id}
+                        className="p-1 rounded text-primary hover:bg-primary/10 transition-colors">
+                        <Check size={13} />
+                      </button>
+                      <button onClick={() => setEditingEmailId(null)}
+                        className="p-1 rounded text-muted-foreground hover:bg-secondary transition-colors">
+                        <X size={13} />
+                      </button>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground active:bg-secondary touch-manipulation"
-                        onClick={() => openEdit(member)}
-                        title="Edit username"
-                      >
-                        <PencilLine size={13} />
-                        Username
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground active:bg-secondary touch-manipulation"
-                        disabled={savingMemberId === member.id}
-                        onClick={() => handleResetPassword(member)}
-                        title="Reset password"
-                      >
-                        <KeyRound size={13} />
-                        Reset pw
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground active:bg-secondary touch-manipulation"
-                        disabled={savingMemberId === member.id}
-                        onClick={() => handleChangeEmail(member)}
-                        title="Change email"
-                      >
-                        <Mail size={13} />
-                        Email
-                      </Button>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-medium truncate max-w-[180px]">{member.email ?? "No email"}</span>
+                      <button
+                        onClick={() => { setEditingEmailId(member.id); setDraftEmail(member.email ?? ""); setEditingUsernameId(null); }}
+                        className="p-0.5 rounded text-muted-foreground/50 hover:text-foreground hover:bg-secondary transition-colors"
+                        title="Edit email">
+                        <PencilLine size={11} />
+                      </button>
+                      <span className="text-[10px] text-muted-foreground/50">·</span>
+                      <span className="text-[10px] text-muted-foreground/60">{new Date(member.created_at).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  <div className="flex items-center gap-2">
-                    <Shield size={14} className="text-muted-foreground" />
-                    <select
-                      value={member.role}
-                      disabled={member.id === user?.id || savingMemberId === member.id}
-                      onChange={(e) =>
-                        handleRoleChange(member, e.target.value as Profile["role"])
-                      }
-                      className="h-8 rounded-md border border-input bg-background px-2.5 text-xs"
-                    >
-                      <option value="member">Member</option>
-                      <option value="editor">Editor</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-
+                {/* Right: role selector + delete */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <select
+                    value={member.role}
+                    disabled={member.id === user?.id || savingMemberId === member.id}
+                    onChange={(e) => handleRoleChange(member, e.target.value as Profile["role"])}
+                    className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+                  >
+                    <option value="member">Member</option>
+                    <option value="editor">Editor</option>
+                    <option value="admin">Admin</option>
+                  </select>
                   {member.role !== "admin" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-destructive hover:text-destructive touch-manipulation"
-                      onClick={() => handleRemove(member.id, member.email ?? "this member")}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
+                    <button
+                      onClick={() => handleRemove(member.id, member.email ?? null)}
+                      disabled={savingMemberId === member.id}
+                      className="p-1.5 rounded-lg text-destructive/60 hover:text-destructive hover:bg-destructive/10 transition-colors touch-manipulation"
+                      title="Remove member">
+                      <Trash2 size={13} />
+                    </button>
                   )}
                 </div>
               </div>
+
+              {/* Row 2: Username + role badge + You badge */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {editingUsernameId === member.id ? (
+                  <div className="flex items-center gap-1.5">
+                    <Input value={draftUsername} onChange={(e) => setDraftUsername(e.target.value)}
+                      placeholder="username" className="h-7 text-xs w-32" autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") handleUsernameSave(member); if (e.key === "Escape") setEditingUsernameId(null); }} />
+                    <button onClick={() => handleUsernameSave(member)} disabled={savingMemberId === member.id}
+                      className="p-1 rounded text-primary hover:bg-primary/10 transition-colors">
+                      <Check size={13} />
+                    </button>
+                    <button onClick={() => setEditingUsernameId(null)}
+                      className="p-1 rounded text-muted-foreground hover:bg-secondary transition-colors">
+                      <X size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setEditingUsernameId(member.id); setDraftUsername(member.username ?? ""); setEditingEmailId(null); }}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+                    title="Edit username">
+                    <PencilLine size={11} className="opacity-50 group-hover:opacity-100" />
+                    <span>{member.username ? `@${member.username}` : "set username"}</span>
+                  </button>
+                )}
+                <Badge className={`border-0 text-[10px] py-0 px-1.5 ${ROLE_STYLES[member.role]}`}>
+                  {member.role}
+                </Badge>
+                {member.id === user?.id && (
+                  <Badge variant="outline" className="text-[10px] py-0 px-1.5">You</Badge>
+                )}
+              </div>
+
+              {/* Row 3: Reset password button only */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <Button variant="ghost" size="sm"
+                  className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground active:bg-secondary touch-manipulation"
+                  disabled={savingMemberId === member.id}
+                  onClick={() => handleResetPassword(member)}>
+                  <KeyRound size={12} /> Reset password
+                </Button>
+              </div>
+
             </div>
           ))}
         </div>
