@@ -369,3 +369,19 @@ VITE_SENTRY_TRACES_SAMPLE_RATE=... # optional, 0.2
 | `bb653f2` | beta v1.2 — marquee titles, floating save, avatar panel fixes |
 | `8012e01` | fix: player resume, pill state, drag collapse |
 | `111c778` | fix: marquee jitter, vertical alignment all admin pages |
+| `bcac75c` | docs: add full project summary and roadmap |
+| `9e4dab5` | fix: music card alignment, members layout, social icons |
+| `d1ba89c` | fix: members layout, invite token refresh, icon weights, custom role scaffold |
+
+---
+
+## 9. Pending / Scaffolded (Not Yet Implemented)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Reset Username via email | Scaffolded | `handleResetUsername` in members.tsx — shows "coming soon" toast. Wire up when email flow is ready |
+| Custom roles | Scaffolded | "Custom…" option in role dropdown opens native text input. Backend `update_role` already accepts any string. Future: validate/list custom roles |
+| Custom dialog boxes | Planned | Replace `toast` + `confirm()` with custom modal components |
+| Profile picture in comments | Not started | `avatar_url` not fetched in comments query |
+| About page content | Not started | Real bio + social URLs needed |
+| Tools section | Not started | All 8 tools are `enabled: false` |
