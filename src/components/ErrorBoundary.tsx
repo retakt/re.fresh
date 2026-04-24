@@ -20,6 +20,21 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // Auto-reload on "Invalid hook call" — this is almost always a stale cache issue
+    // where old and new React chunks are mixed. Reloading gets fresh chunks.
+    if (error.message?.includes("Invalid hook call") || error.message?.includes("Hooks can only be called")) {
+      console.warn("[ErrorBoundary] Stale cache detected — reloading...");
+      const reload = () => globalThis.location.reload();
+      if ("caches" in globalThis) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        }).then(reload, reload);
+      } else {
+        reload();
+      }
+      return;
+    }
+
     Sentry.captureException(error, {
       extra: {
         componentStack: info.componentStack,

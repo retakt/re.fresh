@@ -74,18 +74,31 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Navigation (HTML) — network-first, fall back to cached shell
-        // This is the critical fix: never serve a stale shell on Safari
+        // Navigation (HTML) — NetworkFirst so we always try to get fresh HTML
+        // This prevents the stale shell / mixed chunk version problem
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/, /^\/functions/],
 
-        // Hashed JS/CSS assets — cache-first (they never change once deployed)
         runtimeCaching: [
+          // Navigation requests — NetworkFirst with short timeout
+          // Falls back to cached shell only when truly offline
+          {
+            urlPattern: ({ request }: { request: Request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "re-takt-navigation-v4",
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day max
+              },
+            },
+          },
           {
             urlPattern: /\/assets\/.+\.(js|css|woff2?|ttf|otf)$/i,
             handler: "CacheFirst",
             options: {
-              cacheName: "re-takt-assets-v3",
+              cacheName: "re-takt-assets-v4",
               expiration: {
                 maxEntries: 120,
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
@@ -93,11 +106,10 @@ export default defineConfig({
             },
           },
           {
-            // Images from our own origin
             urlPattern: /\/assets\/.+\.(png|jpg|jpeg|webp|svg|gif|ico)$/i,
             handler: "CacheFirst",
             options: {
-              cacheName: "re-takt-images-v3",
+              cacheName: "re-takt-images-v4",
               expiration: {
                 maxEntries: 60,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
@@ -105,11 +117,10 @@ export default defineConfig({
             },
           },
           {
-            // Supabase storage uploads — stale-while-revalidate
             urlPattern: /supabase\.co\/storage/i,
             handler: "StaleWhileRevalidate",
             options: {
-              cacheName: "re-takt-uploads-v3",
+              cacheName: "re-takt-uploads-v4",
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
@@ -118,14 +129,13 @@ export default defineConfig({
           },
         ],
 
-        // Clean up old caches from previous SW versions
+        // Clean up ALL old caches (v3 and earlier) on SW update
         cleanupOutdatedCaches: true,
 
-        // Skip waiting so new SW activates immediately on update
+        // New SW activates immediately — no waiting for old tabs to close
         skipWaiting: true,
         clientsClaim: true,
 
-        // Handle SKIP_WAITING message from workbox-window
         additionalManifestEntries: [],
       },
     }),

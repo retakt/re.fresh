@@ -40,6 +40,46 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) syncViewportHeight();
 });
 
+// ── Stale cache auto-recovery ─────────────────────────────────────────────────
+// "Invalid hook call" almost always means old cached JS chunks are mixed with
+// new ones after a deploy. Detect it early and wipe caches + reload.
+function isStaleChunkError(msg: string) {
+  return (
+    msg.includes("Invalid hook call") ||
+    msg.includes("Hooks can only be called") ||
+    msg.includes("Cannot read properties of null") && msg.includes("useState") ||
+    // Vite chunk load failure — the cached URL no longer exists
+    msg.includes("Failed to fetch dynamically imported module") ||
+    msg.includes("Importing a module script failed")
+  );
+}
+
+function clearCachesAndReload() {
+  const reload = () => globalThis.location.reload();
+  if ("caches" in globalThis) {
+    caches.keys().then((names) => {
+      Promise.all(names.map((n) => caches.delete(n))).then(reload, reload);
+    });
+  } else {
+    reload();
+  }
+}
+
+window.addEventListener("error", (e) => {
+  if (e.message && isStaleChunkError(e.message)) {
+    console.warn("[main] Stale cache error detected — clearing and reloading");
+    clearCachesAndReload();
+  }
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  const msg = e.reason?.message ?? String(e.reason ?? "");
+  if (isStaleChunkError(msg)) {
+    console.warn("[main] Stale cache rejection detected — clearing and reloading");
+    clearCachesAndReload();
+  }
+});
+
 // ── React root ────────────────────────────────────────────────────────────────
 const root = document.getElementById("root")!;
 
@@ -65,19 +105,27 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
   import("workbox-window").then(({ Workbox }) => {
     const wb = new Workbox("/sw.js");
 
-    // When a new SW is waiting, activate it and reload once
+    // When a new SW is waiting, activate it immediately and reload
     wb.addEventListener("waiting", () => {
-      wb.addEventListener("controlling", () => {
-        window.location.reload();
-      });
       wb.messageSkipWaiting();
+    });
+
+    // Once the new SW takes control, reload to get fresh chunks
+    wb.addEventListener("controlling", () => {
+      window.location.reload();
+    });
+
+    // If the SW detects a stale/outdated cache, reload
+    wb.addEventListener("activated", (event) => {
+      if (event.isUpdate) {
+        window.location.reload();
+      }
     });
 
     wb.register().catch((err) => {
       console.warn("SW registration failed:", err);
     });
   }).catch(() => {
-    // workbox-window unavailable — fall back to plain registration
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
   });
 }
