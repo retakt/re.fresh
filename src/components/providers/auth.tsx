@@ -104,15 +104,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // ← Skip if we already have this user's profile loaded
-    if (
-      lastFetchedUserIdRef.current === nextUser.id &&
-      !fetchingRef.current
-    ) {
+    // Skip if we already have this user's profile loaded and no fetch in flight
+    if (lastFetchedUserIdRef.current === nextUser.id && !fetchingRef.current) {
       return;
     }
 
-    // ← Skip if a fetch is already in-flight
+    // If a fetch is in-flight for a DIFFERENT user, reset and proceed
+    if (fetchingRef.current && lastFetchedUserIdRef.current !== nextUser.id) {
+      fetchingRef.current = false;
+    }
+
+    // Skip if same user fetch already in-flight
     if (fetchingRef.current) return;
 
     fetchingRef.current = true;
@@ -132,6 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setProfile(data);
       lastFetchedUserIdRef.current = nextUser.id;
+    } catch (e) {
+      console.error("fetchProfile threw", e);
+      setProfile(null);
     } finally {
       fetchingRef.current = false;
     }
@@ -149,10 +154,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // ── Single source of truth: onAuthStateChange ─────────────────────────
-    // Supabase fires INITIAL_SESSION immediately on subscribe (replaces the
-    // old getSession() + onAuthStateChange dual-call pattern that caused 3x
-    // duplicate /profiles requests).
+    // Safety net — if loading never resolves (e.g. fetchProfile hangs),
+    // force it off after 8 seconds so the app doesn't stay stuck forever.
+    const safetyTimer = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 8000);
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
@@ -164,7 +171,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(nextSession);
         setUser(nextUser);
 
-        // SIGNED_OUT — clear profile immediately, no network call needed
         if (event === "SIGNED_OUT" || !nextUser) {
           setProfile(null);
           lastFetchedUserIdRef.current = null;
@@ -182,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, [fetchProfile]);
