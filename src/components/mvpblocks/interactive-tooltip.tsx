@@ -82,9 +82,16 @@ export function AvatarTooltip({
             <div className="relative flex flex-col items-center justify-center rounded-lg border border-border/60 bg-background/95 px-3 py-1.5 text-xs shadow-xl backdrop-blur-sm">
               <div className="absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 via-transparent to-primary/5" />
               <div className="absolute inset-x-0 -top-px h-px w-[40%] mx-auto bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-              <span className="relative z-10 font-semibold text-foreground">
+              {/* key=label forces remount with animation when username changes */}
+              <motion.span
+                key={label}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="relative z-10 font-semibold text-foreground"
+              >
                 @{label}
-              </span>
+              </motion.span>
             </div>
           </motion.div>
         )}

@@ -23,7 +23,7 @@ const ROLE_STYLES = {
 const ROLE_OPTIONS = ["member", "editor", "admin", "custom"] as const;
 
 export default function AdminMembersPage() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [members, setMembers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -145,7 +145,13 @@ export default function AdminMembersPage() {
     });
     toast.dismiss(toastId);
     if (!result.ok) toast.error(result.error || "Failed to update username");
-    else { toast.success("Username updated"); setEditingUsernameId(null); void fetchMembers(); }
+    else {
+      toast.success("Username updated");
+      setEditingUsernameId(null);
+      void fetchMembers();
+      // If admin changed their own username, refresh auth context so tooltip updates immediately
+      if (member.id === user?.id) void refreshProfile();
+    }
     setSavingMemberId(null);
   };
 
