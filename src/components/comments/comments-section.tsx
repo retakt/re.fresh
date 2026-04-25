@@ -304,8 +304,9 @@ function CommentCard({
             {format(new Date(comment.created_at), "MMM d · h:mm a")}
           </span>
           {comment.anchor_id && !comment.parent_id && (
-            <Badge variant="secondary" className="text-[9px] py-0 px-1">
-              ↩ {comment.anchor_label?.replace(/^[^:]+:\s*/, "") ?? "block"}
+            <Badge variant="secondary" className="text-[9px] py-0 px-1 gap-0.5">
+              <Reply size={9} strokeWidth={2.5} />
+              {comment.anchor_label?.replace(/^[^:]+:\s*/, "") ?? "block"}
             </Badge>
           )}
         </div>
@@ -654,7 +655,10 @@ export default function CommentsSection({ postId, activeAnchor, onClearAnchor }:
       <div className="rounded-xl border bg-card/70 p-3 space-y-2">
         {composerLabel && (
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-[10px]">↩ {composerLabel}</Badge>
+            <Badge variant="secondary" className="text-[10px] gap-1">
+                <Reply size={10} strokeWidth={2.5} />
+                {composerLabel}
+              </Badge>
             <button type="button"
               onClick={() => { setReplyParent(null); onClearAnchor(); }}
               className="text-[10px] text-muted-foreground hover:text-foreground">

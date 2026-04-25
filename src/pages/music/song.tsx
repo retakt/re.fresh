@@ -169,7 +169,7 @@ export default function SongPage() {
           </div>
         </div>
 
-        {/* Play + social links — all same height, wrap on small screens */}
+        {/* Play + social links */}
         <div className="flex flex-wrap items-center gap-2 mt-5">
           {track.audio_url ? (
             <button

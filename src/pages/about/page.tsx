@@ -2,54 +2,40 @@ import { Globe } from "lucide-react";
 import { motion } from "motion/react";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh.tsx";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
-
-import { siSpotify, siGithub, siTelegram, siGmail } from "simple-icons";
-
-/* ---------------- ICON WRAPPER ---------------- */
-
-function Icon({ icon }: { icon: { path: string } }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="w-4 h-4 fill-current transition-colors"
-    >
-      <path d={icon.path} />
-    </svg>
-  );
-}
+import { FaGithub, FaSpotify, FaTelegram } from "react-icons/fa";
+import { SiGmail } from "react-icons/si";
 
 /* ---------------- SOCIAL LINKS ---------------- */
 
 const SOCIAL_LINKS = [
   {
-    icon: () => <Icon icon={siGithub} />,
+    icon: () => <FaGithub className="w-4 h-4" />,
     href: "https://github.com/retakt",
-    // active colour shown on tap (mobile) and hover (desktop)
-    activeColor: "hover:text-white active:text-white focus:text-white hover:bg-zinc-800 active:bg-zinc-800",
+    activeColor: "hover:text-white active:text-white hover:bg-zinc-800 active:bg-zinc-800",
     glowColor: "active:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]",
   },
   {
-    icon: () => <Icon icon={siGmail} />,
+    icon: () => <SiGmail className="w-4 h-4" />,
     href: "mailto:hello@retakt.com",
-    activeColor: "hover:text-red-400 active:text-red-400 focus:text-red-400 hover:bg-red-500/10 active:bg-red-500/10",
+    activeColor: "hover:text-red-400 active:text-red-400 hover:bg-red-500/10 active:bg-red-500/10",
     glowColor: "active:drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]",
   },
   {
-    icon: () => <Icon icon={siSpotify} />,
+    icon: () => <FaSpotify className="w-4 h-4" />,
     href: "...",
-    activeColor: "hover:text-[#1DB954] active:text-[#1DB954] focus:text-[#1DB954] hover:bg-[#1DB954]/10 active:bg-[#1DB954]/10",
+    activeColor: "hover:text-[#1DB954] active:text-[#1DB954] hover:bg-[#1DB954]/10 active:bg-[#1DB954]/10",
     glowColor: "active:drop-shadow-[0_0_8px_rgba(29,185,84,0.4)]",
   },
   {
     icon: () => <Globe className="w-3.5 h-3.5" />,
     href: "...",
-    activeColor: "hover:text-blue-400 active:text-blue-400 focus:text-blue-400 hover:bg-blue-400/10 active:bg-blue-400/10",
+    activeColor: "hover:text-blue-400 active:text-blue-400 hover:bg-blue-400/10 active:bg-blue-400/10",
     glowColor: "active:drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]",
   },
   {
-    icon: () => <Icon icon={siTelegram} />,
+    icon: () => <FaTelegram className="w-4 h-4" />,
     href: "https://t.me/akiratakt7",
-    activeColor: "hover:text-[#26A5E4] active:text-[#26A5E4] focus:text-[#26A5E4] hover:bg-[#26A5E4]/10 active:bg-[#26A5E4]/10",
+    activeColor: "hover:text-[#26A5E4] active:text-[#26A5E4] hover:bg-[#26A5E4]/10 active:bg-[#26A5E4]/10",
     glowColor: "active:drop-shadow-[0_0_8px_rgba(38,165,228,0.4)]",
   },
 ];

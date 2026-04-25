@@ -1,14 +1,13 @@
+import { useState, useCallback } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import Navbar from "@/components/layout/navbar.tsx";
 import Sidebar from "@/components/layout/sidebar.tsx";
-import BottomNav from "@/components/layout/bottom-nav.tsx";
 import Footer from "@/components/layout/footer.tsx";
 import FloatingPlayer from "@/components/player/FloatingPlayer.tsx";
 import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
 
-// Per-page fallback — shown when a page crashes (e.g. admin panel scroll freeze)
 function PageFallback() {
   const navigate = useNavigate();
   return (
@@ -39,19 +38,30 @@ function PageFallback() {
 
 export default function AppLayout() {
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const openSidebar  = useCallback(() => setSidebarOpen(true),  []);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   return (
     <div className="flex min-h-[var(--app-height)] flex-col bg-background text-foreground">
-      <Navbar />
+      <Navbar onMenuToggle={openSidebar} />
 
+      {/* Mobile drawer — fixed, outside flex row, only rendered on mobile */}
+      <div className="md:hidden">
+        <Sidebar open={sidebarOpen} onClose={closeSidebar} />
+      </div>
+
+      {/* ── DESKTOP layout — unchanged from before ── */}
       <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6">
+        {/* Desktop sidebar — exactly as it was */}
         <div className="hidden md:block w-44 shrink-0 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)]">
           <Sidebar />
         </div>
 
         <main
           id="main-content"
-          className="flex-1 min-w-0 overflow-x-hidden py-5 sm:py-8 pb-[76px] md:pb-14 md:pl-6 lg:pl-8"
+          className="flex-1 min-w-0 overflow-x-hidden py-5 sm:py-8 md:pb-14 md:pl-6 lg:pl-8"
         >
           <AnimatePresence mode="sync" initial={false}>
             <motion.div
@@ -70,7 +80,6 @@ export default function AppLayout() {
       </div>
 
       <Footer />
-      <BottomNav />
       <FloatingPlayer />
     </div>
   );
