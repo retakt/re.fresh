@@ -99,33 +99,17 @@ requestAnimationFrame(() => {
   });
 });
 
-// ── Service Worker (Workbox via vite-plugin-pwa) ──────────────────────────────
-// Only register in production — vite-plugin-pwa doesn't generate sw.js in dev.
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  import("workbox-window").then(({ Workbox }) => {
-    const wb = new Workbox("/sw.js");
-
-    // When a new SW is waiting, activate it immediately and reload
-    wb.addEventListener("waiting", () => {
-      wb.messageSkipWaiting();
-    });
-
-    // Once the new SW takes control, reload to get fresh chunks
-    wb.addEventListener("controlling", () => {
-      window.location.reload();
-    });
-
-    // If the SW detects a stale/outdated cache, reload
-    wb.addEventListener("activated", (event) => {
-      if (event.isUpdate) {
-        window.location.reload();
-      }
-    });
-
-    wb.register().catch((err) => {
-      console.warn("SW registration failed:", err);
-    });
-  }).catch(() => {
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+// ── Service Worker — disabled ─────────────────────────────────────────────────
+// PWA/SW removed — was causing stale chunk crashes on every deploy.
+// Unregister any previously installed SW so users get clean state.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((r) => r.unregister());
   });
+  // Also wipe all SW caches
+  if ("caches" in window) {
+    caches.keys().then((names) => {
+      names.forEach((name) => caches.delete(name));
+    });
+  }
 }

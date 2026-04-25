@@ -169,15 +169,6 @@ export default function AdminQuotesPage() {
     .map((q) => ({ ...q, isDb: false }));
   const allQuotes = [...dbQuotes, ...defaultRows];
 
-  // ── Map to PinListItem — pinned state driven by pinnedId ──────────────────
-  const pinListItems: PinListItem[] = allQuotes.map((q, i) => ({
-    id: i,
-    name: `— ${q.author}`,
-    info: q.text.length > 72 ? q.text.slice(0, 72) + "…" : q.text,
-    icon: Quote,
-    pinned: q.id === pinnedId,
-  }));
-
   // ── Radial menu items per quote ───────────────────────────────────────────
   const getMenuItems = (q: QuoteRow): MenuItem[] => [
     { id: 1, label: "Edit", icon: PenLine },
