@@ -29,15 +29,15 @@ export function AvatarTooltip({
   }, []);
 
   const [hovered, setHovered] = useState(false);
-  const springConfig = { stiffness: 150, damping: 8 };
+  const springConfig = { stiffness: 120, damping: 5 };
 
   const x = useMotionValue(0);
   const rotate = useSpring(
-    useTransform(x, [-100, 100], [-35, 35]),
+    useTransform(x, [-100, 100], [-45, 45]),
     springConfig,
   );
   const translateX = useSpring(
-    useTransform(x, [-100, 100], [-40, 40]),
+    useTransform(x, [-100, 100], [-52, 52]),
     springConfig,
   );
 

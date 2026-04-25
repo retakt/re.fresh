@@ -49,7 +49,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
         className={`sticky top-0 z-50 w-full transition-all duration-500 ${
           isScrolled
             ? "border-b border-border/60 bg-background/95 backdrop-blur-md shadow-sm"
-            : "border-b border-transparent bg-background/95 backdrop-blur-md"
+            : "border-b border-transparent md:border-border/60 md:shadow-sm bg-background/95 backdrop-blur-md"
         }`}
         variants={containerVariants}
         initial="hidden"

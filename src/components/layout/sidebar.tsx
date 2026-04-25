@@ -110,7 +110,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
       {/* Backdrop — solid dark overlay, no blur needed */}
       <div
         className={cn(
-          "md:hidden fixed top-0 left-0 w-full h-dvh z-[60] bg-black/50 transition-opacity duration-300",
+          "md:hidden fixed top-0 left-0 w-full min-h-full h-[max(100dvh,100%)] z-[60] bg-black/40 backdrop-blur-[2px] transition-opacity duration-300",
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
@@ -119,7 +119,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
 
       {/* Drawer panel — responsive: max 256px, never more than 75% of viewport */}
       <aside
-        style={{ width: "min(192px, 75vw)" }}
+        style={{ width: "min(160px, 70vw)" }}
         className={cn(
           "md:hidden fixed top-0 left-0 z-[70] flex flex-col",
           "h-full min-h-dvh",

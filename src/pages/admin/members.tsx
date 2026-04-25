@@ -101,7 +101,9 @@ export default function AdminMembersPage() {
   const handleRemove = async (id: string, memberEmail: string | null) => {
     if (!confirm(`Remove ${memberEmail ?? "this member"}? This cannot be undone.`)) return;
     setSavingMemberId(id);
+    const toastId = toast.loading("Removing member…");
     const result = await invokeAdminFunction("admin-manage-member", { action: "delete_member", memberId: id });
+    toast.dismiss(toastId);
     if (!result.ok) toast.error(result.error || "Failed to remove member");
     else { toast.success("Member removed."); void fetchMembers(); }
     setSavingMemberId(null);
@@ -115,7 +117,9 @@ export default function AdminMembersPage() {
       return;
     }
     setSavingMemberId(member.id);
+    const toastId = toast.loading("Updating role…");
     const result = await invokeAdminFunction("admin-manage-member", { action: "update_role", memberId: member.id, role: nextRole });
+    toast.dismiss(toastId);
     if (!result.ok) toast.error(result.error || "Failed to update role");
     else { toast.success(`Role → ${nextRole}`); void fetchMembers(); }
     setSavingMemberId(null);
@@ -125,7 +129,9 @@ export default function AdminMembersPage() {
     const role = draftCustomRole.trim();
     if (!role) return;
     setSavingMemberId(member.id);
+    const toastId = toast.loading("Updating role…");
     const result = await invokeAdminFunction("admin-manage-member", { action: "update_role", memberId: member.id, role });
+    toast.dismiss(toastId);
     if (!result.ok) toast.error(result.error || "Failed to update role");
     else { toast.success(`Role → ${role}`); setCustomRoleMemberId(null); void fetchMembers(); }
     setSavingMemberId(null);
@@ -133,9 +139,11 @@ export default function AdminMembersPage() {
 
   const handleUsernameSave = async (member: Profile) => {
     setSavingMemberId(member.id);
+    const toastId = toast.loading("Saving username…");
     const result = await invokeAdminFunction("admin-manage-member", {
       action: "update_username", memberId: member.id, username: draftUsername.trim() || null,
     });
+    toast.dismiss(toastId);
     if (!result.ok) toast.error(result.error || "Failed to update username");
     else { toast.success("Username updated"); setEditingUsernameId(null); void fetchMembers(); }
     setSavingMemberId(null);

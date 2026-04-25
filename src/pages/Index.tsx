@@ -94,64 +94,78 @@ export default function Index() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [postsRes, tutorialsRes, musicRes] = await Promise.all([
-        supabase
-          .from("posts")
-          .select("id, title, slug, created_at")
-          .eq("published", true)
-          .order("created_at", { ascending: false })
-          .limit(10),
-        supabase
-          .from("tutorials")
-          .select("id, title, slug, created_at, difficulty")
-          .eq("published", true)
-          .order("created_at", { ascending: false })
-          .limit(10),
-        supabase
-          .from("music")
-          .select("id, title, created_at, genre, release_type, album")
-          .eq("published", true)
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
-
-      const mapped: ContentItem[] = [
-        ...(postsRes.data || []).map((p) => ({
-          id: p.id,
-          title: p.title,
-          type: "blog" as const,
-          href: `/blog/${p.slug}`,
-          date: p.created_at,
-          meta: "Blog",
-        })),
-        ...(tutorialsRes.data || []).map((t) => ({
-          id: t.id,
-          title: t.title,
-          type: "tutorial" as const,
-          href: `/tutorials/${t.slug}`,
-          date: t.created_at,
-          meta: t.difficulty ?? "Tutorial",
-        })),
-        ...(musicRes.data || []).map((m) => ({
-          id: m.id,
-          title: m.title,
-          type: "music" as const,
-          href: (m.release_type === "album" || m.release_type === "ep") && m.album
-            ? `/music/album/${encodeURIComponent(m.album)}`
-            : `/music/song/${m.id}`,
-          date: m.created_at,
-          meta: m.genre ?? m.release_type ?? "Music",
-        })),
-      ];
-
-      mapped.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      // 10-second timeout — if Supabase is slow, show empty state instead of infinite skeleton
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 10_000)
       );
-      setItems(mapped);
-      setLoading(false);
+
+      try {
+        const [postsRes, tutorialsRes, musicRes] = await Promise.race([
+          Promise.all([
+            supabase
+              .from("posts")
+              .select("id, title, slug, created_at")
+              .eq("published", true)
+              .order("created_at", { ascending: false })
+              .limit(10),
+            supabase
+              .from("tutorials")
+              .select("id, title, slug, created_at, difficulty")
+              .eq("published", true)
+              .order("created_at", { ascending: false })
+              .limit(10),
+            supabase
+              .from("music")
+              .select("id, title, created_at, genre, release_type, album")
+              .eq("published", true)
+              .order("created_at", { ascending: false })
+              .limit(10),
+          ]),
+          timeout,
+        ]);
+
+        const mapped: ContentItem[] = [
+          ...(postsRes.data || []).map((p) => ({
+            id: p.id,
+            title: p.title,
+            type: "blog" as const,
+            href: `/blog/${p.slug}`,
+            date: p.created_at,
+            meta: "Blog",
+          })),
+          ...(tutorialsRes.data || []).map((t) => ({
+            id: t.id,
+            title: t.title,
+            type: "tutorial" as const,
+            href: `/tutorials/${t.slug}`,
+            date: t.created_at,
+            meta: t.difficulty ?? "Tutorial",
+          })),
+          ...(musicRes.data || []).map((m) => ({
+            id: m.id,
+            title: m.title,
+            type: "music" as const,
+            href: (m.release_type === "album" || m.release_type === "ep") && m.album
+              ? `/music/album/${encodeURIComponent(m.album)}`
+              : `/music/song/${m.id}`,
+            date: m.created_at,
+            meta: m.genre ?? m.release_type ?? "Music",
+          })),
+        ];
+
+        mapped.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        setItems(mapped);
+      } catch {
+        // Timeout or network error — show empty state, don't hang forever
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchAll();
+    void fetchAll();
   }, []);
 
   const filtered = useMemo(() => {
