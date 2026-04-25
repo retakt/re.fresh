@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { useAuth } from "@/hooks/useAuth";
-import { AvatarTooltip } from "@/components/mvpblocks/interactive-tooltip";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -36,6 +35,14 @@ export default function UserMenu() {
   } = useAuth();
   const [open, setOpen] = useState(false);
 
+  // Close dropdown on scroll — prevents the stuck/overlapping state on mobile
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, { passive: true, capture: true });
+    return () => window.removeEventListener("scroll", close, { capture: true });
+  }, [open]);
+
   const email = profile?.email ?? user?.email ?? "Not signed in";
 
   const handleLogout = async () => {
@@ -50,31 +57,30 @@ export default function UserMenu() {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <AvatarTooltip label={isAuthenticated ? (profile?.username ?? null) : null}>
-        <DropdownMenuTrigger asChild className="outline-none">
-          <button
-            className="rounded-full border border-border/70 bg-card/70 p-1 text-foreground outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            aria-label="Open account menu"
-          >
-            <Avatar className="size-7 border border-border/70">
-              {isAuthenticated && avatarUrl && (
-                <AvatarImage 
-                  src={avatarUrl} 
-                  alt={displayName}
-                  loading="lazy"
-                />
-              )}
-              <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
-                {isAuthenticated ? initials : <UserCircle2 size={16} strokeWidth={2} />}
-              </AvatarFallback>
-            </Avatar>
-          </button>
-        </DropdownMenuTrigger>
-      </AvatarTooltip>
+      <DropdownMenuTrigger asChild className="outline-none">
+        <button
+          className="rounded-full border border-border/70 bg-card/70 p-1 text-foreground outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          aria-label="Open account menu"
+        >
+          <Avatar className="size-7 border border-border/70">
+            {isAuthenticated && avatarUrl && (
+              <AvatarImage
+                src={avatarUrl}
+                alt={displayName}
+                loading="lazy"
+              />
+            )}
+            <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
+              {isAuthenticated ? initials : <UserCircle2 size={16} strokeWidth={2} />}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
 
       <DropdownMenuContent
         align="end"
         sideOffset={8}
+        collisionPadding={12}
         className="w-40 rounded-xl border-border/70 bg-card p-0 shadow-lg overflow-hidden"
       >
         {/* Header */}

@@ -24,6 +24,7 @@ import type { ContentBlock } from "@/lib/content-blocks";
 type UserMeta = {
   username: string | null;
   role: "admin" | "editor" | "member";
+  // badge: string | null;  ← add here when profiles.badge column is ready
 };
 
 type VoteState = Record<string, 1 | -1 | 0>;
@@ -64,6 +65,8 @@ function getUserColor(userId: string): string {
 }
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
+// When a `badge` field is added to UserMeta, add a BadgeDisplay component here
+// following the same pattern — check for badge value, render styled pill.
 function RoleBadge({ role }: { role: UserMeta["role"] }) {
   if (role === "member") return null;
   return (
@@ -455,13 +458,21 @@ export default function CommentsSection({ postId, activeAnchor, onClearAnchor }:
     const rows = (data ?? []) as PostComment[];
     setComments(rows);
 
-    // Fetch user profiles
+    // Fetch user profiles — public read policy allows anon access to id, username, role.
+    // When a `badge` column is added to profiles, add it to this select and to UserMeta above.
     const userIds = [...new Set(rows.map((c) => c.user_id))];
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
-        .from("profiles").select("id, username, role").in("id", userIds);
+        .from("profiles")
+        .select("id, username, role")
+        // badge: add here when ready → .select("id, username, role, badge")
+        .in("id", userIds);
       const map = new Map<string, UserMeta>();
-      (profiles ?? []).forEach((p: any) => map.set(p.id, { username: p.username ?? null, role: p.role ?? "member" }));
+      (profiles ?? []).forEach((p: any) => map.set(p.id, {
+        username: p.username?.trim() || null,
+        role: p.role ?? "member",
+        // badge: p.badge ?? null,
+      }));
       setMetaMap(map);
     }
 

@@ -1,13 +1,32 @@
 import { useState, useEffect, useCallback } from "react";
+import { motion, LayoutGroup, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { Plus, Trash2, Check, X, Quote, PenLine } from "lucide-react";
+import { Plus, Trash2, Check, X, Quote, PenLine, Pin } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { DEFAULT_QUOTES } from "@/lib/quotes";
+import { RadialMenu } from "@/components/ui/radial-menu";
+import type { MenuItem } from "@/components/ui/radial-menu";
 
+// ── Pinned quote persistence ──────────────────────────────────────────────────
+const PINNED_QUOTE_KEY = "pinned-quote-id";
+
+function getPinnedQuoteId(): string | null {
+  try { return localStorage.getItem(PINNED_QUOTE_KEY); }
+  catch { return null; }
+}
+
+function setPinnedQuoteId(id: string | null) {
+  try {
+    if (id === null) localStorage.removeItem(PINNED_QUOTE_KEY);
+    else localStorage.setItem(PINNED_QUOTE_KEY, id);
+  } catch {}
+}
+
+// ── Hidden defaults (existing logic) ─────────────────────────────────────────
 const HIDDEN_DEFAULTS_KEY = "hidden-default-quotes";
 
 function getHiddenDefaults(): Set<string> {
@@ -21,17 +40,11 @@ function hideDefault(id: string) {
   localStorage.setItem(HIDDEN_DEFAULTS_KEY, JSON.stringify([...set]));
 }
 
-function restoreDefault(id: string) {
-  const set = getHiddenDefaults();
-  set.delete(id);
-  localStorage.setItem(HIDDEN_DEFAULTS_KEY, JSON.stringify([...set]));
-}
-
 type QuoteRow = {
   id: string;
   text: string;
   author: string;
-  isDb: boolean; // true = from DB (editable/deletable), false = built-in default
+  isDb: boolean;
 };
 
 export default function AdminQuotesPage() {
@@ -44,6 +57,8 @@ export default function AdminQuotesPage() {
   const [saving, setSaving] = useState(false);
   const [tableExists, setTableExists] = useState(true);
   const [hiddenDefaults, setHiddenDefaults] = useState<Set<string>>(getHiddenDefaults);
+  // Track which quote is pinned — synced with localStorage
+  const [pinnedId, setPinnedId] = useState<string | null>(getPinnedQuoteId);
 
   const fetchDbQuotes = useCallback(async () => {
     setLoading(true);
@@ -71,7 +86,6 @@ export default function AdminQuotesPage() {
   };
 
   const openEdit = (q: QuoteRow) => {
-    // DB quotes: edit in place. Default quotes: pre-fill and save as new DB quote
     setEditingId(q.isDb ? q.id : null);
     setText(q.text);
     setAuthor(q.author);
@@ -91,7 +105,6 @@ export default function AdminQuotesPage() {
       return;
     }
     setSaving(true);
-
     if (editingId) {
       const { error } = await supabase
         .from("quotes")
@@ -113,26 +126,71 @@ export default function AdminQuotesPage() {
     if (!confirm("Delete this quote?")) return;
     const { error } = await supabase.from("quotes").delete().eq("id", id);
     if (error) toast.error("Failed to delete");
-    else { toast.success("Deleted."); void fetchDbQuotes(); }
+    else {
+      // If deleted quote was pinned, unpin it
+      if (pinnedId === id) {
+        setPinnedId(null);
+        setPinnedQuoteId(null);
+      }
+      toast.success("Deleted.");
+      void fetchDbQuotes();
+    }
   };
 
   const handleHideDefault = (id: string) => {
     if (!confirm("Hide this default quote from the rotation?")) return;
     hideDefault(id);
     setHiddenDefaults(getHiddenDefaults());
+    if (pinnedId === id) {
+      setPinnedId(null);
+      setPinnedQuoteId(null);
+    }
     toast.success("Hidden from rotation.");
   };
 
-  const handleRestoreDefault = (id: string) => {
-    restoreDefault(id);
-    setHiddenDefaults(getHiddenDefaults());
-    toast.success("Restored to rotation.");
+  // ── Pin logic — max 1 pinned at a time ────────────────────────────────────
+  const handleTogglePin = (id: string) => {
+    if (pinnedId === id) {
+      // Unpin — drop back to list
+      setPinnedId(null);
+      setPinnedQuoteId(null);
+      toast.success("Quote unpinned");
+    } else {
+      // Pin this one — replaces any existing pin
+      setPinnedId(id);
+      setPinnedQuoteId(id);
+      toast.success("Quote pinned to home");
+    }
   };
 
-  // One flat list: DB quotes first, then visible built-in defaults
-  const defaultRows: QuoteRow[] = DEFAULT_QUOTES.filter((q) => !hiddenDefaults.has(q.id)).map((q) => ({ ...q, isDb: false }));
-  const hiddenRows: QuoteRow[] = DEFAULT_QUOTES.filter((q) => hiddenDefaults.has(q.id)).map((q) => ({ ...q, isDb: false }));
+  // ── Build flat quote list ─────────────────────────────────────────────────
+  const defaultRows: QuoteRow[] = DEFAULT_QUOTES
+    .filter((q) => !hiddenDefaults.has(q.id))
+    .map((q) => ({ ...q, isDb: false }));
   const allQuotes = [...dbQuotes, ...defaultRows];
+
+  // ── Map to PinListItem — pinned state driven by pinnedId ──────────────────
+  const pinListItems: PinListItem[] = allQuotes.map((q, i) => ({
+    id: i,
+    name: `— ${q.author}`,
+    info: q.text.length > 72 ? q.text.slice(0, 72) + "…" : q.text,
+    icon: Quote,
+    pinned: q.id === pinnedId,
+  }));
+
+  // ── Radial menu items per quote ───────────────────────────────────────────
+  const getMenuItems = (q: QuoteRow): MenuItem[] => [
+    { id: 1, label: "Edit", icon: PenLine },
+    { id: 2, label: "Delete", icon: Trash2, variant: "destructive" },
+  ];
+
+  const handleMenuSelect = (item: MenuItem, q: QuoteRow) => {
+    if (item.label === "Edit") openEdit(q);
+    else if (item.label === "Delete") {
+      if (q.isDb) void handleDelete(q.id);
+      else { handleHideDefault(q.id); }
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -141,6 +199,7 @@ export default function AdminQuotesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Music Quotes</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {allQuotes.length} quotes · rotates every 20 min
+            {pinnedId && <span className="ml-2 text-primary font-medium">· 1 pinned</span>}
           </p>
         </div>
         {!showForm && tableExists && (
@@ -196,68 +255,129 @@ export default function AdminQuotesPage() {
           {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl border bg-card animate-pulse" />)}
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {allQuotes.map((q) => (
-            <div key={`${q.isDb ? "db" : "def"}-${q.id}`}
-              className="group flex items-start gap-3 rounded-xl border bg-card px-4 py-3 hover:shadow-sm transition-all">
-              <Quote size={12} className="text-muted-foreground/40 shrink-0 mt-1" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm leading-relaxed text-foreground">{q.text}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">— {q.author}</p>
-              </div>
-              {/* Actions — always visible on mobile, hover-reveal on desktop */}
-              <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                <button onClick={() => openEdit(q)}
-                  className="p-2 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-secondary active:bg-secondary transition-colors touch-manipulation"
-                  style={{ minWidth: 32, minHeight: 32 }}
-                  title="Edit">
-                  <PenLine size={14} />
-                </button>
-                {q.isDb ? (
-                  <button onClick={() => handleDelete(q.id)}
-                    className="p-2 rounded-lg hover:bg-red-500/10 active:bg-red-500/10 transition-colors touch-manipulation"
-                    style={{ minWidth: 32, minHeight: 32 }}
-                    title="Delete">
-                    <Trash2 size={14} className="text-red-500/70" />
-                  </button>
-                ) : (
-                  <button onClick={() => handleHideDefault(q.id)}
-                    className="p-2 rounded-lg hover:bg-red-500/10 active:bg-red-500/10 transition-colors touch-manipulation"
-                    style={{ minWidth: 32, minHeight: 32 }}
-                    title="Hide from rotation">
-                    <Trash2 size={14} className="text-red-500/70" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Hidden defaults — show at bottom with restore option */}
-          {hiddenRows.length > 0 && (
-            <>
-              <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider px-1 pt-3">
-                Hidden ({hiddenRows.length}) — not in rotation
-              </p>
-              {hiddenRows.map((q) => (
-                <div key={`hidden-${q.id}`}
-                  className="group flex items-start gap-3 rounded-xl border border-dashed bg-card/50 px-4 py-3 opacity-50 hover:opacity-80 transition-all">
-                  <Quote size={12} className="text-muted-foreground/30 shrink-0 mt-1" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm leading-relaxed text-muted-foreground line-through">{q.text}</p>
-                    <p className="text-xs text-muted-foreground/60 mt-0.5">— {q.author}</p>
-                  </div>
-                  <button onClick={() => handleRestoreDefault(q.id)}
-                    className="p-2 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-secondary active:bg-secondary transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shrink-0 touch-manipulation"
-                    style={{ minWidth: 32, minHeight: 32 }}
-                    title="Restore to rotation">
-                    <Plus size={14} />
-                  </button>
-                </div>
-              ))}
-            </>
+        // PinList handles the animation — we intercept clicks via onItemClick
+        // by wrapping each item row in a RadialMenu for Edit/Delete
+        // and using the PinList's built-in onClick for pin toggling.
+        // Since PinList manages its own internal state, we sync via key prop
+        // when pinnedId changes externally.
+        <div className="space-y-3">
+          {/* Render our own animated list using PinList's layout primitives */}
+          {allQuotes.length > 0 && (
+            <QuotePinList
+              quotes={allQuotes}
+              pinnedId={pinnedId}
+              onTogglePin={handleTogglePin}
+              onMenuSelect={handleMenuSelect}
+              getMenuItems={getMenuItems}
+            />
           )}
         </div>
       )}
     </div>
+  );
+}
+
+// ── Separate component so we can use motion layout cleanly ────────────────────
+function QuotePinList({
+  quotes,
+  pinnedId,
+  onTogglePin,
+  onMenuSelect,
+  getMenuItems,
+}: {
+  quotes: QuoteRow[];
+  pinnedId: string | null;
+  onTogglePin: (id: string) => void;
+  onMenuSelect: (item: MenuItem, q: QuoteRow) => void;
+  getMenuItems: (q: QuoteRow) => MenuItem[];
+}) {
+  const pinned = quotes.filter((q) => q.id === pinnedId);
+  const unpinned = quotes.filter((q) => q.id !== pinnedId);
+
+  const springTransition = { stiffness: 320, damping: 20, mass: 0.8, type: "spring" as const };
+
+  const renderRow = (q: QuoteRow, isPinned: boolean) => (
+    <motion.div
+      key={q.id}
+      layoutId={`quote-${q.id}`}
+      transition={springTransition}
+    >
+      <RadialMenu
+        menuItems={getMenuItems(q)}
+        onSelect={(item) => onMenuSelect(item, q)}
+        size={180}
+      >
+        <div
+          onClick={() => onTogglePin(q.id)}
+          className="flex items-center justify-between gap-4 rounded-2xl bg-neutral-200 dark:bg-neutral-800 p-2 cursor-pointer group"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="rounded-lg bg-background p-2 shrink-0">
+              <Quote className="size-5 text-neutral-500 dark:text-neutral-400" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold truncate">— {q.author}</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium line-clamp-1">
+                {q.text.length > 72 ? q.text.slice(0, 72) + "…" : q.text}
+              </div>
+            </div>
+          </div>
+          <div className={`flex items-center justify-center size-8 rounded-full shrink-0 transition-all
+            ${isPinned
+              ? "bg-neutral-400 dark:bg-neutral-600"
+              : "bg-neutral-400 dark:bg-neutral-600 opacity-0 group-hover:opacity-100"
+            }`}
+          >
+            <Pin className={`size-4 text-white ${isPinned ? "fill-white" : ""}`} />
+          </div>
+        </div>
+      </RadialMenu>
+    </motion.div>
+  );
+
+  return (
+    <LayoutGroup>
+      <div className="space-y-10">
+        {/* Pinned section */}
+        <div className="space-y-3 relative z-10">
+          <AnimatePresence>
+            {pinned.length > 0 && (
+              <motion.p
+                layout
+                key="pinned-label"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+                className="font-medium px-3 text-neutral-500 dark:text-neutral-300 text-sm"
+              >
+                Pinned
+              </motion.p>
+            )}
+          </AnimatePresence>
+          {pinned.map((q) => renderRow(q, true))}
+        </div>
+
+        {/* All quotes section */}
+        <div className="space-y-3 relative z-10">
+          <AnimatePresence>
+            {unpinned.length > 0 && (
+              <motion.p
+                layout
+                key="all-label"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+                className="font-medium px-3 text-neutral-500 dark:text-neutral-300 text-sm"
+              >
+                All Quotes
+              </motion.p>
+            )}
+          </AnimatePresence>
+          {unpinned.map((q) => renderRow(q, false))}
+        </div>
+      </div>
+    </LayoutGroup>
   );
 }

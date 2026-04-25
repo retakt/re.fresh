@@ -86,11 +86,11 @@ export default defineConfig({
             urlPattern: ({ request }: { request: Request }) => request.mode === "navigate",
             handler: "NetworkFirst",
             options: {
-              cacheName: "re-takt-navigation-v4",
+              cacheName: "re-takt-navigation-v5",
               networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 5,
-                maxAgeSeconds: 60 * 60 * 24, // 1 day max
+                maxAgeSeconds: 60 * 60 * 24,
               },
             },
           },
@@ -98,10 +98,10 @@ export default defineConfig({
             urlPattern: /\/assets\/.+\.(js|css|woff2?|ttf|otf)$/i,
             handler: "CacheFirst",
             options: {
-              cacheName: "re-takt-assets-v4",
+              cacheName: "re-takt-assets-v5",
               expiration: {
                 maxEntries: 120,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
           },
@@ -109,10 +109,10 @@ export default defineConfig({
             urlPattern: /\/assets\/.+\.(png|jpg|jpeg|webp|svg|gif|ico)$/i,
             handler: "CacheFirst",
             options: {
-              cacheName: "re-takt-images-v4",
+              cacheName: "re-takt-images-v5",
               expiration: {
                 maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
             },
           },
@@ -120,10 +120,10 @@ export default defineConfig({
             urlPattern: /supabase\.co\/storage/i,
             handler: "StaleWhileRevalidate",
             options: {
-              cacheName: "re-takt-uploads-v4",
+              cacheName: "re-takt-uploads-v5",
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
             },
           },
@@ -189,6 +189,7 @@ export default defineConfig({
           if (id.includes("node_modules/@sentry/")) return "sentry";
           if (id.includes("node_modules/workbox-") || id.includes("node_modules/vite-plugin-pwa")) return "pwa";
           if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion")) return "motion";
+          if (id.includes("node_modules/@base-ui/")) return "base-ui";
         },
       },
     },

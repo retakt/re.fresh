@@ -46,9 +46,8 @@ export default function Index() {
   const [activeFilter, setActiveFilter] = usePersistedState<FilterType>("home-filter", "all");
 
   // ── Quotes — local only, no Supabase ──
-  // Pool is shuffled once per session (stored in sessionStorage so it survives
-  // navigation but resets on new tab/hard refresh — giving fresh randomness).
-  // The index advances every 20 minutes. Manual ↻ also advances it.
+  // If a quote is pinned via admin, show it persistently.
+  // Manual ↻ clears the pin and resumes normal rotation.
   const [pool] = useState<typeof ALL_QUOTES>(() => {
     try {
       const stored = sessionStorage.getItem("quote-pool");
@@ -62,15 +61,38 @@ export default function Index() {
   const [quoteIndex, setQuoteIndex] = usePersistedState<number>("quote-index", 0);
   const [quoteLoadedAt, setQuoteLoadedAt] = usePersistedState<number>("quote-loaded-at", Date.now());
 
-  // Advance index if 20 minutes have passed since last change
+  // Read pinned quote id — reactive state so it picks up changes
+  const [pinnedQuoteId, setPinnedQuoteIdState] = useState<string | null>(() => {
+    try { return localStorage.getItem("pinned-quote-id"); } catch { return null; }
+  });
+
+  // Re-sync when returning to the page (e.g. navigating from admin)
   useEffect(() => {
+    const sync = () => {
+      try { setPinnedQuoteIdState(localStorage.getItem("pinned-quote-id")); } catch {}
+    };
+    window.addEventListener("focus", sync);
+    // Also sync on storage events (cross-tab)
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("focus", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const pinnedQuote = pinnedQuoteId
+    ? (ALL_QUOTES.find((q) => q.id === pinnedQuoteId) ?? null)
+    : null;
+
+  // Advance index if 20 minutes have passed — only when no pin active
+  useEffect(() => {
+    if (pinnedQuote) return; // pinned quote bypasses rotation
     const TWENTY_MIN = 20 * 60 * 1000;
     const now = Date.now();
     if (now - quoteLoadedAt > TWENTY_MIN) {
       setQuoteIndex((i) => (i + 1) % pool.length);
       setQuoteLoadedAt(now);
     }
-    // Check again every minute
     const interval = setInterval(() => {
       const t = Date.now();
       setQuoteLoadedAt((prev) => {
@@ -82,14 +104,17 @@ export default function Index() {
       });
     }, 60_000);
     return () => clearInterval(interval);
-  }, [pool.length]);
+  }, [pool.length, pinnedQuote]);
 
-  const quote = pool[Math.abs(quoteIndex) % pool.length];
+  // Active quote — pinned takes priority
+  const quote = pinnedQuote ?? pool[Math.abs(quoteIndex) % pool.length];
   const quotePalette = QUOTE_CARD_PALETTES[Math.abs(quoteIndex) % QUOTE_CARD_PALETTES.length];
 
   const cycleQuote = useCallback(() => {
+    // Clear pin if one is active, then cycle
+    try { localStorage.removeItem("pinned-quote-id"); } catch {}
     setQuoteIndex((i) => (i + 1) % pool.length);
-    setQuoteLoadedAt(Date.now()); // reset 20-min timer on manual cycle
+    setQuoteLoadedAt(Date.now());
   }, [pool.length]);
 
   useEffect(() => {

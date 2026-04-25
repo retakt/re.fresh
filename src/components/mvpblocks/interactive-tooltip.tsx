@@ -1,5 +1,3 @@
-'use client';
-
 import {
   AnimatePresence,
   motion,
@@ -21,13 +19,31 @@ export function AvatarTooltip({
   label: string | null | undefined;
   children: React.ReactNode;
 }) {
-  // Detect touch/coarse pointer — skip tooltip entirely on mobile
   const [isFinePointer, setIsFinePointer] = useState(false);
 
   useEffect(() => {
-    setIsFinePointer(window.matchMedia("(pointer: fine)").matches);
+    const mq = window.matchMedia("(pointer: fine)");
+    setIsFinePointer(mq.matches);
+    // Also update if pointer type changes (e.g. switching input device)
+    const handler = (e: MediaQueryListEvent) => setIsFinePointer(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
+  // No label or touch device — just render children, no motion overhead
+  if (!label || !isFinePointer) return <>{children}</>;
+
+  return <AvatarTooltipInner label={label}>{children}</AvatarTooltipInner>;
+}
+
+// Split into inner component so motion values only mount on desktop with a label
+function AvatarTooltipInner({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   const [hovered, setHovered] = useState(false);
   const springConfig = { stiffness: 120, damping: 5 };
 
@@ -45,9 +61,6 @@ export function AvatarTooltip({
     const rect = e.currentTarget.getBoundingClientRect();
     x.set(e.clientX - rect.left - rect.width / 2);
   };
-
-  // No label or touch device — just render children as-is
-  if (!label || !isFinePointer) return <>{children}</>;
 
   return (
     <div
@@ -82,7 +95,6 @@ export function AvatarTooltip({
             <div className="relative flex flex-col items-center justify-center rounded-lg border border-border/60 bg-background/95 px-3 py-1.5 text-xs shadow-xl backdrop-blur-sm">
               <div className="absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 via-transparent to-primary/5" />
               <div className="absolute inset-x-0 -top-px h-px w-[40%] mx-auto bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-              {/* key=label forces remount with animation when username changes */}
               <motion.span
                 key={label}
                 initial={{ opacity: 0, y: 4 }}

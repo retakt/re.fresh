@@ -1,17 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Trash2, PenLine, Plus } from "lucide-react";
+import { Trash2, PenLine, Plus, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
+import { RadialMenu } from "@/components/ui/radial-menu";
+import type { MenuItem } from "@/components/ui/radial-menu";
 
 export default function AdminFilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchFiles = useCallback(async () => {
     setLoading(true);
@@ -34,6 +37,18 @@ export default function AdminFilesPage() {
     const { error } = await supabase.from("files").update({ published: !f.published }).eq("id", f.id);
     if (error) toast.error("Failed to update");
     else void fetchFiles();
+  };
+
+  const getMenuItems = (f: FileItem): MenuItem[] => [
+    { id: 1, label: "Edit", icon: PenLine },
+    { id: 2, label: f.published ? "Unpublish" : "Publish", icon: f.published ? EyeOff : Eye },
+    { id: 3, label: "Delete", icon: Trash2, variant: "destructive" },
+  ];
+
+  const handleMenuSelect = (item: MenuItem, f: FileItem) => {
+    if (item.label === "Edit") navigate(`/admin/files/edit/${f.id}`);
+    else if (item.label === "Publish" || item.label === "Unpublish") void togglePublish(f);
+    else if (item.label === "Delete") void handleDelete(f.id, f.name);
   };
 
   return (
@@ -59,46 +74,35 @@ export default function AdminFilesPage() {
       ) : (
         <div className="space-y-2">
           {files.map((f) => (
-            <div key={f.id} className="flex items-stretch gap-3 rounded-xl border bg-card px-4 py-3 min-h-[4.5rem]">
-
-              {/* LEFT */}
-              <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
-                {/* Line 1: Name + badge */}
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <MarqueeText text={f.name} className="font-semibold text-sm flex-1 min-w-0" />
-                  <Badge variant={f.published ? "default" : "secondary"} className="text-[10px] py-0 px-1.5 shrink-0">
-                    {f.published ? "Live" : "Draft"}
-                  </Badge>
-                </div>
-                {/* Line 2: Category · Size */}
-                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                  {f.category && <span className="truncate max-w-[100px]">{f.category}</span>}
-                  {f.category && f.file_size && <span className="text-muted-foreground/40 shrink-0">·</span>}
-                  {f.file_size && <span className="shrink-0">{f.file_size}</span>}
-                </div>
-                {/* Line 3: File type */}
-                {f.file_type && (
-                  <div>
-                    <span className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground uppercase">{f.file_type}</span>
+            <RadialMenu
+              key={f.id}
+              menuItems={getMenuItems(f)}
+              onSelect={(item) => handleMenuSelect(item, f)}
+            >
+              <div className="flex items-stretch gap-3 rounded-xl border bg-card px-4 py-3 min-h-[4.5rem] cursor-context-menu">
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <MarqueeText text={f.name} className="font-semibold text-sm flex-1 min-w-0" />
+                    <Badge variant={f.published ? "default" : "secondary"} className="text-[10px] py-0 px-1.5 shrink-0">
+                      {f.published ? "Live" : "Draft"}
+                    </Badge>
                   </div>
-                )}
-              </div>
-
-              {/* RIGHT: vertically centered */}
-              <div className="flex flex-col justify-center shrink-0">
-                <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    {f.category && <span className="truncate max-w-[100px]">{f.category}</span>}
+                    {f.category && f.file_size && <span className="text-muted-foreground/40 shrink-0">·</span>}
+                    {f.file_size && <span className="shrink-0">{f.file_size}</span>}
+                  </div>
+                  {f.file_type && (
+                    <div>
+                      <span className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground uppercase">{f.file_type}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col justify-center shrink-0">
                   <PublishToggle published={f.published} onChange={() => togglePublish(f)} />
-                  <Link to={`/admin/files/edit/${f.id}`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 touch-manipulation"><PenLine size={13} /></Button>
-                  </Link>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive touch-manipulation"
-                    onClick={() => handleDelete(f.id, f.name)}>
-                    <Trash2 size={13} />
-                  </Button>
                 </div>
               </div>
-
-            </div>
+            </RadialMenu>
           ))}
         </div>
       )}
