@@ -13,23 +13,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: "retakt-auth",
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    lock: async (name, acquireTimeout, fn) => {
-      // Use Web Locks API if available, otherwise just run the function directly
-      if (typeof navigator !== "undefined" && navigator.locks) {
-        return navigator.locks.request(
-          name,
-          { ifAvailable: false },
-          async (lock) => {
-            if (!lock) {
-              // Lock not available — run anyway to avoid hanging
-              return fn();
-            }
-            return fn();
-          }
-        );
-      }
-      return fn();
-    },
+    // Disable Web Locks — prevents lock conflict on refresh/navigation
+    // The lock was causing onAuthStateChange to silently fail after page reload
+    lock: <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn(),
   },
 })
 
