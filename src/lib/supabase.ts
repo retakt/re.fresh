@@ -13,6 +13,23 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: "retakt-auth",
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    lock: async (name, acquireTimeout, fn) => {
+      // Use Web Locks API if available, otherwise just run the function directly
+      if (typeof navigator !== "undefined" && navigator.locks) {
+        return navigator.locks.request(
+          name,
+          { ifAvailable: false },
+          async (lock) => {
+            if (!lock) {
+              // Lock not available — run anyway to avoid hanging
+              return fn();
+            }
+            return fn();
+          }
+        );
+      }
+      return fn();
+    },
   },
 })
 

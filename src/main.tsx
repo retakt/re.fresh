@@ -87,9 +87,7 @@ createRoot(root, {
   onUncaughtError: Sentry.reactErrorHandler(),
   onRecoverableError: Sentry.reactErrorHandler(),
 }).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+  <App />
 );
 
 // Mark theme as loaded so CSS transitions kick in AFTER first paint
