@@ -4,7 +4,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -92,53 +91,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return stored ? stored === "true" : true;
   });
 
-  // Prevent concurrent in-flight profile fetches
-  const fetchingRef = useRef(false);
-  // Track the last userId we fetched for — skip if unchanged
-  const lastFetchedUserIdRef = useRef<string | null>(null);
-
-  const fetchProfile = useCallback(async (nextUser: User | null) => {
-    if (!nextUser) {
-      setProfile(null);
-      lastFetchedUserIdRef.current = null;
-      return;
-    }
-
-    // Skip if we already have this user's profile loaded and no fetch in flight
-    if (lastFetchedUserIdRef.current === nextUser.id && !fetchingRef.current) {
-      return;
-    }
-
-    // If a fetch is in-flight for a DIFFERENT user, reset and proceed
-    if (fetchingRef.current && lastFetchedUserIdRef.current !== nextUser.id) {
-      fetchingRef.current = false;
-    }
-
-    // Skip if same user fetch already in-flight
-    if (fetchingRef.current) return;
-
-    fetchingRef.current = true;
-
+  const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, email, username, avatar_url, role, created_at")
-        .eq("id", nextUser.id)
+        .eq("id", userId)
         .maybeSingle();
-
       if (error) {
-        console.error("Failed to fetch profile", error);
-        setProfile(null);
-        return;
+        console.error("[auth] fetchProfile error", error);
+        return null;
       }
-
-      setProfile(data);
-      lastFetchedUserIdRef.current = nextUser.id;
+      return data;
     } catch (e) {
-      console.error("fetchProfile threw", e);
-      setProfile(null);
-    } finally {
-      fetchingRef.current = false;
+      console.error("[auth] fetchProfile threw", e);
+      return null;
     }
   }, []);
 
@@ -154,12 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Safety net — if loading never resolves (e.g. fetchProfile hangs),
-    // force it off after 8 seconds so the app doesn't stay stuck forever.
-    const safetyTimer = setTimeout(() => {
-      if (mounted) setLoading(false);
-    }, 8000);
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
@@ -167,28 +128,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
 
         const nextUser = nextSession?.user ?? null;
-
         setSession(nextSession);
         setUser(nextUser);
 
-        if (event === "SIGNED_OUT" || !nextUser) {
+        if (!nextUser || event === "SIGNED_OUT") {
           setProfile(null);
-          lastFetchedUserIdRef.current = null;
           if (mounted) setLoading(false);
           return;
         }
 
         if (PROFILE_FETCH_EVENTS.has(event)) {
-          await fetchProfile(nextUser);
+          const data = await fetchProfile(nextUser.id);
+          if (mounted) setProfile(data);
         }
 
         if (mounted) setLoading(false);
       },
     );
 
+    // Hard safety — never hang longer than 10s
+    const safety = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 10_000);
+
     return () => {
       mounted = false;
-      clearTimeout(safetyTimer);
+      clearTimeout(safety);
       subscription.unsubscribe();
     };
   }, [fetchProfile]);
@@ -249,9 +214,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: error ?? null };
       },
       refreshProfile: async () => {
-        // Force re-fetch by resetting the cached userId
-        lastFetchedUserIdRef.current = null;
-        await fetchProfile(user);
+        if (!user) return;
+        const data = await fetchProfile(user.id);
+        setProfile(data);
       },
     };
   }, [fetchProfile, loading, notificationsEnabled, profile, session, user]);
