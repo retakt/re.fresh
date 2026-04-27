@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
+import { toast } from "../src/lib/toast";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

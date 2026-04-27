@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { GraduationCap, Plus, BookMarked, ArrowRight, RefreshCw } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty.tsx";
@@ -14,6 +14,7 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { prefetchPostData } from "@/lib/prefetch";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { MarqueeText } from "@/components/ui/marquee-text";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
@@ -27,6 +28,12 @@ export default function TutorialsPage() {
   const [error, setError] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = usePersistedState<string[]>("tutorials-tag-filter", []);
   const { canManageEditorial } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const tag = searchParams.get("tag");
+    if (tag) setTagFilter([tag]);
+  }, []);
 
   const fetchTutorials = useCallback(async () => {
     setLoading(true);
@@ -76,9 +83,9 @@ export default function TutorialsPage() {
         subtitle2="Guides, Tricks and some Lessons everyone should know!"
         action={canManageEditorial ? (
           <Link to="/admin/tutorials/new">
-            <Button size="sm" className="gap-1.5">
+            <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
               <Plus size={14} /> Add tutorial
-            </Button>
+            </MagneticButton>
           </Link>
         ) : undefined}
       />

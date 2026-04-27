@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { ArrowLeft, PenLine, CalendarDays } from "lucide-react";
@@ -25,6 +25,7 @@ export default function TutorialPostPage() {
   const [loading, setLoading] = useState(!getPrefetchedData<Tutorial>('tutorials', slug ?? ''));
   const [notFound, setNotFound] = useState(false);
   const { canManageEditorial } = useAuth();
+  const navigate = useNavigate();
 
   // Swipe right from left edge to go back on mobile
   useSwipeBack();
@@ -83,7 +84,7 @@ export default function TutorialPostPage() {
           </Link>
           {canManageEditorial && (
             <Link to={`/admin/tutorials/edit/${tutorial.id}`}>
-              <Button variant="ghost" size="sm" className="gap-1.5">
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground hover:bg-transparent">
                 <PenLine size={13} /> Edit
               </Button>
             </Link>
@@ -93,37 +94,48 @@ export default function TutorialPostPage() {
         {/* Badges */}
         <div className="flex flex-wrap gap-2 items-center mb-3">
           {tutorial.difficulty && (
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-              DIFFICULTY_COLORS[tutorial.difficulty.toLowerCase() as keyof typeof DIFFICULTY_COLORS] ??
-              "bg-secondary text-secondary-foreground"
-            }`}>
+            <button
+              onClick={() => navigate(`/tutorials?tag=${encodeURIComponent(tutorial.difficulty!)}`)}
+              className={`text-xs px-2.5 py-1 rounded-full font-medium hover:opacity-80 transition-opacity ${
+                DIFFICULTY_COLORS[tutorial.difficulty.toLowerCase() as keyof typeof DIFFICULTY_COLORS] ??
+                "bg-secondary text-secondary-foreground"
+              }`}
+            >
               {tutorial.difficulty}
-            </span>
+            </button>
           )}
           {tutorial.category && tutorial.category.split(", ").map((cat) => (
-            <span key={cat} className={`text-xs px-2.5 py-1 rounded-full font-medium ${getTagColor(cat)}`}>
+            <button
+              key={cat}
+              onClick={() => navigate(`/tutorials?tag=${encodeURIComponent(cat)}`)}
+              className={`text-xs px-2.5 py-1 rounded-full font-medium hover:opacity-80 transition-opacity ${getTagColor(cat)}`}
+            >
               {cat}
-            </span>
+            </button>
           ))}
           {(tutorial.tags ?? []).map((tag) => (
-            <span key={tag} className={`text-xs px-2.5 py-1 rounded-full font-semibold ${getTagColor(tag)}`}>
+            <button
+              key={tag}
+              onClick={() => navigate(`/tutorials?tag=${encodeURIComponent(tag)}`)}
+              className={`text-xs px-2.5 py-1 rounded-full font-semibold hover:opacity-80 transition-opacity ${getTagColor(tag)}`}
+            >
               #{tag}
-            </span>
+            </button>
           ))}
           {!tutorial.published && <Badge variant="secondary">Draft</Badge>}
         </div>
 
-        <h1 className="text-3xl font-bold tracking-tight text-balance mb-3">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-balance mb-3">
           {tutorial.title}
         </h1>
 
         {tutorial.excerpt && (
-          <p className="text-muted-foreground text-base leading-relaxed mb-4">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-4">
             {tutorial.excerpt}
           </p>
         )}
 
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CalendarDays size={13} />
             {format(new Date(tutorial.created_at), "MMMM d, yyyy")}

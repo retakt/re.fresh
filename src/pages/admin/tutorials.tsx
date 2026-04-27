@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PenLine, Plus, Trash2, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { supabase } from "@/lib/supabase";
@@ -10,6 +10,7 @@ import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 import { RadialMenu } from "@/components/ui/radial-menu";
 import type { MenuItem } from "@/components/ui/radial-menu";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 export default function AdminTutorialsPage() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
@@ -58,7 +59,9 @@ export default function AdminTutorialsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Tutorials</h1>
         </div>
         <Link to="/admin/tutorials/new">
-          <Button size="sm" className="gap-1.5"><Plus size={14} /> New tutorial</Button>
+          <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
+            <Plus size={14} /> New tutorial
+          </MagneticButton>
         </Link>
       </div>
 
@@ -69,7 +72,11 @@ export default function AdminTutorialsPage() {
       ) : tutorials.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-sm text-muted-foreground">No tutorials yet.</p>
-          <Link to="/admin/tutorials/new"><Button size="sm" className="mt-4">Create your first tutorial</Button></Link>
+          <Link to="/admin/tutorials/new">
+            <MagneticButton size="sm" className="mt-4" strength={0.3} radius={100}>
+              Create your first tutorial
+            </MagneticButton>
+          </Link>
         </div>
       ) : (
         <div className="space-y-2">

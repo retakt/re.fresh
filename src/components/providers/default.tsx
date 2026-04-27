@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "./query-client.tsx";
 import { ThemeProvider } from "./theme.tsx";
-import { Toaster } from "../ui/sonner.tsx";
+import { ToastProvider } from "./toast.tsx";
+import { ContextMenuProvider } from "./context-menu.tsx";
 import { TooltipProvider } from "../ui/tooltip.tsx";
 import { PlayerProvider } from "@/lib/player.tsx";
 import { AuthProvider } from "./auth.tsx";
@@ -12,8 +13,11 @@ export function DefaultProviders({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
           <AuthProvider>
             <PlayerProvider>
-              <Toaster />
-              {children}
+              <ToastProvider>
+                <ContextMenuProvider>
+                  {children}
+                </ContextMenuProvider>
+              </ToastProvider>
             </PlayerProvider>
           </AuthProvider>
         </ThemeProvider>

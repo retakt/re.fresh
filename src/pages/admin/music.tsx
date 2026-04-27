@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Trash2, PenLine, Plus, Eye, EyeOff } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 import { RadialMenu } from "@/components/ui/radial-menu";
 import type { MenuItem } from "@/components/ui/radial-menu";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 export default function AdminMusicPage() {
   const [tracks, setTracks] = useState<Music[]>([]);
@@ -57,7 +58,9 @@ export default function AdminMusicPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Music</h1>
         <Link to="/admin/music/new">
-          <Button size="sm" className="gap-1.5"><Plus size={14} /> Add track</Button>
+          <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
+            <Plus size={14} /> Add track
+          </MagneticButton>
         </Link>
       </div>
 
@@ -68,7 +71,11 @@ export default function AdminMusicPage() {
       ) : tracks.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-sm text-muted-foreground">No tracks yet.</p>
-          <Link to="/admin/music/new"><Button size="sm" className="mt-4">Add your first track</Button></Link>
+          <Link to="/admin/music/new">
+            <MagneticButton size="sm" className="mt-4" strength={0.3} radius={100}>
+              Add your first track
+            </MagneticButton>
+          </Link>
         </div>
       ) : (
         <div className="space-y-2">

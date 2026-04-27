@@ -7,7 +7,7 @@ import {
   Plus, X, Mail, Trash2, KeyRound, PencilLine, Shield, Check,
   AtSign,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
 import type { Profile } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";

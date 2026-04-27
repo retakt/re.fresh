@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Upload, X, File, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 interface FileUploadProps {

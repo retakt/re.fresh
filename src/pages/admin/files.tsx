@@ -3,13 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Trash2, PenLine, Plus, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 import { RadialMenu } from "@/components/ui/radial-menu";
 import type { MenuItem } from "@/components/ui/radial-menu";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 export default function AdminFilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -58,7 +59,9 @@ export default function AdminFilesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Files</h1>
         </div>
         <Link to="/admin/files/new">
-          <Button size="sm" className="gap-1.5"><Plus size={14} /> Add file</Button>
+          <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
+            <Plus size={14} /> Add file
+          </MagneticButton>
         </Link>
       </div>
 
@@ -69,7 +72,11 @@ export default function AdminFilesPage() {
       ) : files.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-sm text-muted-foreground">No files yet.</p>
-          <Link to="/admin/files/new"><Button size="sm" className="mt-4">Add your first file</Button></Link>
+          <Link to="/admin/files/new">
+            <MagneticButton size="sm" className="mt-4" strength={0.3} radius={100}>
+              Add your first file
+            </MagneticButton>
+          </Link>
         </div>
       ) : (
         <div className="space-y-2">

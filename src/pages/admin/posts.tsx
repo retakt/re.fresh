@@ -3,13 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Trash2, PenLine, Plus, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/lib/supabase";
 import { PublishToggle } from "@/components/ui/publish-toggle";
 import { MarqueeText } from "@/components/ui/marquee-text";
 import { RadialMenu } from "@/components/ui/radial-menu";
 import type { MenuItem } from "@/components/ui/radial-menu";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 export default function AdminPostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -59,7 +60,9 @@ export default function AdminPostsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Posts</h1>
         </div>
         <Link to="/admin/posts/new">
-          <Button size="sm" className="gap-1.5"><Plus size={14} /> New post</Button>
+          <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
+            <Plus size={14} /> New post
+          </MagneticButton>
         </Link>
       </div>
 
@@ -70,7 +73,11 @@ export default function AdminPostsPage() {
       ) : posts.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-sm text-muted-foreground">No posts yet.</p>
-          <Link to="/admin/posts/new"><Button size="sm" className="mt-4">Create your first post</Button></Link>
+          <Link to="/admin/posts/new">
+            <MagneticButton size="sm" className="mt-4" strength={0.3} radius={100}>
+              Create your first post
+            </MagneticButton>
+          </Link>
         </div>
       ) : (
         <div className="space-y-2">

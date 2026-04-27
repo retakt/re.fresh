@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Check, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -13,6 +13,8 @@ import type { Tutorial } from "@/lib/supabase";
 import { useBackNav } from "@/hooks/use-back-nav";
 import { useAuth } from "@/hooks/useAuth";
 import { FloatingSave } from "@/components/ui/floating-save";
+import ButtonCopy from "@/components/ui/smoothui/button-copy";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -220,11 +222,23 @@ export default function TutorialEditorPage() {
           </div>
           <div className="space-y-1.5">
             <Label>Slug</Label>
-            <Input
-              value={form.slug}
-              onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-              placeholder="tutorial-slug"
-            />
+            <div className="flex gap-2">
+              <Input
+                value={form.slug}
+                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+                placeholder="tutorial-slug"
+                className="flex-1"
+              />
+              {form.slug && (
+                <ButtonCopy
+                  onCopy={async () => {
+                    await navigator.clipboard.writeText(form.slug);
+                    toast.success("Slug copied");
+                  }}
+                  className="!min-h-[40px] !min-w-[40px] !p-2"
+                />
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>Category</Label>
@@ -420,10 +434,10 @@ export default function TutorialEditorPage() {
       </div>
 
       <div className="flex gap-2 pt-2">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
+        <MagneticButton onClick={handleSave} disabled={saving} className="gap-2" strength={0.3} radius={150}>
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
           {isEditing ? "Save changes" : "Create tutorial"}
-        </Button>
+        </MagneticButton>
         <Button variant="ghost" onClick={() => goBack()}>
           Cancel
         </Button>

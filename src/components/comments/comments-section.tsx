@@ -4,11 +4,13 @@ import remarkGfm from "remark-gfm";
 import { format } from "date-fns";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowUp, ArrowDown, Reply, Copy, Trash2,
+  ArrowUp, ArrowDown, Reply, Trash2,
   ChevronDown, ChevronRight, Send, Paperclip,
   Image as ImageIcon, Video, X, MessageSquare, LogIn,
 } from "lucide-react";
-import { toast } from "sonner";
+import ButtonCopy from "@/components/ui/smoothui/button-copy";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -42,26 +44,9 @@ interface CommentsSectionProps {
   onClearAnchor: () => void;
 }
 
-// ─── Username colour ──────────────────────────────────────────────────────────
-const USERNAME_COLORS = [
-  "text-sky-500 dark:text-sky-400",
-  "text-violet-500 dark:text-violet-400",
-  "text-emerald-500 dark:text-emerald-400",
-  "text-amber-500 dark:text-amber-400",
-  "text-rose-500 dark:text-rose-400",
-  "text-cyan-500 dark:text-cyan-400",
-  "text-fuchsia-500 dark:text-fuchsia-400",
-  "text-orange-500 dark:text-orange-400",
-  "text-lime-500 dark:text-lime-400",
-  "text-teal-500 dark:text-teal-400",
-];
-
-function getUserColor(userId: string): string {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = (hash * 31 + userId.charCodeAt(i)) >>> 0;
-  }
-  return USERNAME_COLORS[hash % USERNAME_COLORS.length];
+// ─── Username colour — always green with glow ─────────────────────────────────
+function getUserColor(_userId: string): string {
+  return "text-emerald-500 dark:text-emerald-400";
 }
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
@@ -136,10 +121,15 @@ function MarkdownRenderer({ content }: { content: string }) {
         const code = extractText(children);
         return (
           <pre className="group relative my-3 overflow-x-auto rounded-lg border bg-background p-3 text-xs">
-            <button type="button" onClick={async () => { await navigator.clipboard.writeText(code); toast.success("Copied"); }}
-              className="absolute right-2 top-2 rounded border bg-background/90 px-1.5 py-0.5 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">
-              Copy
-            </button>
+            <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ButtonCopy
+                onCopy={async () => {
+                  await navigator.clipboard.writeText(code);
+                  toast.success("Copied");
+                }}
+                className="!min-h-[28px] !min-w-[28px] !p-1.5 !border-0 bg-background/90 hover:bg-background text-muted-foreground hover:text-foreground"
+              />
+            </div>
             {children}
           </pre>
         );
@@ -301,7 +291,7 @@ function CommentCard({
       <div className="flex-1 min-w-0 pb-2">
         {/* Header */}
         <div className="flex flex-wrap items-center gap-1.5 mb-1">
-          <span className={cn("text-xs font-semibold", colorClass.split(" ")[0])}>{displayName}</span>
+          <span className={cn("text-xs font-semibold drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]", colorClass.split(" ")[0])}>{displayName}</span>
           {comment.userMeta && <RoleBadge role={comment.userMeta.role} />}
           <span className="text-[10px] text-foreground/55 font-medium">
             {format(new Date(comment.created_at), "MMM d · h:mm a")}
@@ -358,14 +348,10 @@ function CommentCard({
                 <Reply size={12} strokeWidth={2} /> Reply
               </button>
 
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="flex items-center justify-center w-7 h-7 rounded text-foreground/50 hover:text-foreground hover:bg-secondary/60 active:bg-secondary/60 transition-colors touch-manipulation"
-                title="Copy"
-              >
-                <Copy size={13} strokeWidth={2} />
-              </button>
+              <ButtonCopy
+                onCopy={handleCopy}
+                className="!min-h-[28px] !min-w-[28px] !p-1.5 !border-0 bg-transparent hover:bg-secondary/60 text-foreground/50 hover:text-foreground"
+              />
 
               {(isOwn || isAdmin) && (
                 <button
@@ -657,7 +643,7 @@ export default function CommentsSection({ postId, activeAnchor, onClearAnchor }:
             Comments {totalCount > 0 && `· ${totalCount}`}
           </h2>
         </div>
-        <Badge variant="secondary" className="gap-1 text-[10px]">
+        <Badge variant="secondary" className="gap-1 text-[10px] text-emerald-500 dark:text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]">
           @ {profile?.username ?? profile?.email ?? "you"}
         </Badge>
       </div>
@@ -716,9 +702,9 @@ export default function CommentsSection({ postId, activeAnchor, onClearAnchor }:
             </button>
             <span className="text-[10px] text-muted-foreground/40 ml-1 hidden sm:inline">⌘↵ to post</span>
           </div>
-          <Button type="button" onClick={submitComment} disabled={submitting} className="h-7 gap-1.5 px-3 text-[11px]">
+          <MagneticButton type="button" onClick={submitComment} disabled={submitting} className="h-7 gap-1.5 px-3 text-[11px]" strength={0.3} radius={80}>
             <Send size={12} /> {submitting ? "Posting…" : "Post"}
-          </Button>
+          </MagneticButton>
         </div>
       </div>
 

@@ -22,7 +22,8 @@ import { AvatarHistoryDialog } from "@/components/account/avatar-history-dialog.
 import type { AvatarHistoryItem } from "@/components/account/avatar-history-dialog.tsx";
 import { supabase } from "@/lib/supabase";
 import type { ProfileAvatarHistory } from "@/lib/supabase";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 const ROLE_BADGE: Record<string, string> = {
   admin: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/35 dark:text-fuchsia-300",
@@ -487,9 +488,9 @@ export default function AccountPage() {
                   if (e.key === "Escape") setIsEditingUsername(false);
                 }}
               />
-              <Button size="sm" className="h-8 px-3" disabled={usernameSaving} onClick={saveUsername}>
+              <MagneticButton size="sm" className="h-8 px-3" disabled={usernameSaving} onClick={saveUsername} strength={0.3} radius={80}>
                 {usernameSaving ? <Loader2 size={12} className="animate-spin" /> : "Save"}
-              </Button>
+              </MagneticButton>
               <button
                 onClick={() => { setUsernameDraft(profile?.username ?? ""); setIsEditingUsername(false); }}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"

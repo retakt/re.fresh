@@ -22,6 +22,7 @@ const AboutPage        = lazy(() => import("./pages/about/page.tsx"));
 const AccountPage      = lazy(() => import("./pages/account/page.tsx"));
 const FilesPage        = lazy(() => import("./pages/files/page.tsx"));
 const LoginPage        = lazy(() => import("./pages/login.tsx"));
+const SignupPage       = lazy(() => import("./pages/signup.tsx"));
 const NotFound         = lazy(() => import("./pages/NotFound.tsx"));
 const SearchPage       = lazy(() => import("./pages/search/page.tsx"));
 
@@ -41,154 +42,165 @@ const AdminQuotesPage    = lazy(() => import("./pages/admin/quotes.tsx"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  
+  useEffect(() => { 
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
   return null;
+}
+
+function AppContent() {
+  return (
+    <BrowserRouter>
+      <ScrollToTop />
+      {/* No fallback - let the index.html shell handle initial loading */}
+      <Suspense>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/"                  element={<Index />} />
+            <Route path="/blog"              element={<BlogPage />} />
+            <Route path="/blog/:slug"        element={<BlogPostPage />} />
+            <Route path="/music"             element={<MusicPage />} />
+            <Route path="/music/album/:albumName" element={<AlbumPage />} />
+            <Route path="/music/song/:id"    element={<SongPage />} />
+            <Route path="/tutorials"         element={<TutorialsPage />} />
+            <Route path="/tutorials/:slug"   element={<TutorialPostPage />} />
+            <Route path="/about"             element={<AboutPage />} />
+            <Route path="/account"           element={
+              <ProtectedRoute><AccountPage /></ProtectedRoute>
+            } />
+            <Route path="/files"             element={<FilesPage />} />
+            <Route path="/search"            element={<SearchPage />} />
+
+            {/* Admin routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <AdminPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/editor" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <EditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/posts" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <AdminPostsPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/posts/new" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <PostEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/posts/edit/:id" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <PostEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/music" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <AdminMusicPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/music/new" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <MusicEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/music/edit/:id" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <MusicEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/tutorials" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <AdminTutorialsPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/tutorials/new" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <TutorialEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/tutorials/edit/:id" element={
+              <ProtectedRoute allowedRoles={["admin", "editor"]}>
+                <Suspense>
+                  <TutorialEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/files" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <AdminFilesPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/files/new" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <FileEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/files/edit/:id" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <FileEditorPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/members" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <AdminMembersPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/quotes" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <AdminQuotesPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+          </Route>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="*"      element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  );
 }
 
 export default function App() {
   return (
     <DefaultProviders>
       <ErrorBoundary>
-        <BrowserRouter>
-          <ScrollToTop />
-          {/* Single top-level Suspense — PageLoadingFallback shows on first load */}
-          <Suspense fallback={<PageLoadingFallback />}>
-            <Routes>
-              <Route element={<AppLayout />}>
-                <Route path="/"                  element={<Index />} />
-                <Route path="/blog"              element={<BlogPage />} />
-                <Route path="/blog/:slug"        element={<BlogPostPage />} />
-                <Route path="/music"             element={<MusicPage />} />
-                <Route path="/music/album/:albumName" element={<AlbumPage />} />
-                <Route path="/music/song/:id"    element={<SongPage />} />
-                <Route path="/tutorials"         element={<TutorialsPage />} />
-                <Route path="/tutorials/:slug"   element={<TutorialPostPage />} />
-                <Route path="/about"             element={<AboutPage />} />
-                <Route path="/account"           element={
-                  <ProtectedRoute><AccountPage /></ProtectedRoute>
-                } />
-                <Route path="/files"             element={<FilesPage />} />
-                <Route path="/search"            element={<SearchPage />} />
-
-                {/* Admin routes */}
-                <Route path="/admin" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={5} />}>
-                      <AdminPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/editor" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={2} />}>
-                      <EditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/posts" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={3} />}>
-                      <AdminPostsPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/posts/new" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <PostEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/posts/edit/:id" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <PostEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/music" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={4} />}>
-                      <AdminMusicPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/music/new" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <MusicEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/music/edit/:id" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <MusicEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/tutorials" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={3} />}>
-                      <AdminTutorialsPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/tutorials/new" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <TutorialEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/tutorials/edit/:id" element={
-                  <ProtectedRoute allowedRoles={["admin", "editor"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <TutorialEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/files" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={3} />}>
-                      <AdminFilesPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/files/new" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <FileEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/files/edit/:id" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<PostDetailSkeleton />}>
-                      <FileEditorPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/members" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={5} />}>
-                      <AdminMembersPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/quotes" element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Suspense fallback={<AdminTableSkeleton rows={3} />}>
-                      <AdminQuotesPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
-              </Route>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="*"      element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <AppContent />
       </ErrorBoundary>
     </DefaultProviders>
   );

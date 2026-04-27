@@ -3,15 +3,17 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
-import { Textarea } from "@/components/ui/textarea.tsx";
 import { Check, Loader2, Music2, X } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import ImageUpload from "@/components/ImageUpload.tsx";
 import { useBackNav } from "@/hooks/use-back-nav";
 import { FloatingSave } from "@/components/ui/floating-save";
+import ButtonCopy from "@/components/ui/smoothui/button-copy";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
+import RichTextEditor from "@/components/rich-text-editor.tsx";
 
 type FormData = {
   title: string;
@@ -125,14 +127,14 @@ export default function MusicEditorPage() {
 
     if (isEditing) {
       const { error } = await supabase.from("music").update(payload).eq("id", id);
-      if (error) toast.error("Failed to save track");
-      else { toast.success("Track saved."); goBack(); }
+      if (error) { toast.error("Failed to save track: " + error.message); setSaving(false); return; }
+      toast.success("Track saved.");
     } else {
       const { error } = await supabase.from("music").insert([payload]);
-      if (error) toast.error("Failed to add track");
-      else { toast.success("Track added."); goBack(); }
+      if (error) { toast.error("Failed to add track: " + error.message); setSaving(false); return; }
+      toast.success("Track added.");
     }
-    setSaving(false);
+    goBack();
   };
 
   if (loading) {
@@ -156,16 +158,18 @@ export default function MusicEditorPage() {
         {/* Basic info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label>Title *</Label>
-            <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Track title" />
+            <Label htmlFor="title">Title *</Label>
+            <Input id="title" name="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Track title" />
           </div>
           <div className="space-y-1.5">
-            <Label>Artist</Label>
-            <Input value={form.artist} onChange={(e) => setForm({ ...form, artist: e.target.value })} placeholder="Artist name" />
+            <Label htmlFor="artist">Artist</Label>
+            <Input id="artist" name="artist" value={form.artist} onChange={(e) => setForm({ ...form, artist: e.target.value })} placeholder="Artist name" />
           </div>
           <div className="space-y-1.5">
-            <Label>Release Type</Label>
+            <Label htmlFor="release_type">Release Type</Label>
             <select
+              id="release_type"
+              name="release_type"
               value={form.release_type}
               onChange={(e) => setForm({ ...form, release_type: e.target.value })}
               className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
@@ -176,20 +180,20 @@ export default function MusicEditorPage() {
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label>Album / EP Name</Label>
-            <Input value={form.album} onChange={(e) => setForm({ ...form, album: e.target.value })} placeholder="Album or EP name" />
+            <Label htmlFor="album">Album / EP Name</Label>
+            <Input id="album" name="album" value={form.album} onChange={(e) => setForm({ ...form, album: e.target.value })} placeholder="Album or EP name" />
           </div>
           <div className="space-y-1.5">
-            <Label>Genre</Label>
-            <Input value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })} placeholder="e.g. Electronic" />
+            <Label htmlFor="genre">Genre</Label>
+            <Input id="genre" name="genre" value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })} placeholder="e.g. Electronic" />
           </div>
           <div className="space-y-1.5">
-            <Label>Year</Label>
-            <Input value={form.year} onChange={(e) => handleYearChange(e.target.value)} placeholder={CURRENT_YEAR.toString()} maxLength={4} inputMode="numeric" />
+            <Label htmlFor="year">Year</Label>
+            <Input id="year" name="year" value={form.year} onChange={(e) => handleYearChange(e.target.value)} placeholder={CURRENT_YEAR.toString()} maxLength={4} inputMode="numeric" />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Tags <span className="text-muted-foreground font-normal">(comma separated)</span></Label>
-            <Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="lo-fi, chill, beats" />
+            <Label htmlFor="tags">Tags <span className="text-muted-foreground font-normal">(comma separated)</span></Label>
+            <Input id="tags" name="tags" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="lo-fi, chill, beats" />
           </div>
         </div>
 
@@ -201,17 +205,30 @@ export default function MusicEditorPage() {
 
         {/* Audio URL */}
         <div className="rounded-xl border-2 border-dashed border-primary/20 bg-primary/5 p-4 space-y-1.5">
-          <Label className="flex items-center gap-2">
+          <Label htmlFor="audio_url" className="flex items-center gap-2">
             <Music2 size={13} className="text-primary" />
             Audio File URL
             <span className="text-xs text-muted-foreground font-normal">(Supabase Storage public URL)</span>
           </Label>
-          <Input
-            value={form.audio_url}
-            onChange={(e) => setForm({ ...form, audio_url: e.target.value })}
-            placeholder="https://xxxx.supabase.co/storage/v1/object/public/audio/song.mp3"
-            className="font-mono text-xs"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="audio_url"
+              name="audio_url"
+              value={form.audio_url}
+              onChange={(e) => setForm({ ...form, audio_url: e.target.value })}
+              placeholder="https://xxxx.supabase.co/storage/v1/object/public/audio/song.mp3"
+              className="font-mono text-xs flex-1"
+            />
+            {form.audio_url && (
+              <ButtonCopy
+                onCopy={async () => {
+                  await navigator.clipboard.writeText(form.audio_url);
+                  toast.success("Audio URL copied");
+                }}
+                className="!min-h-[40px] !min-w-[40px] !p-2"
+              />
+            )}
+          </div>
           <p className="text-[10px] text-muted-foreground">
             Upload your MP3 to Supabase Storage → audio bucket → copy public URL → paste here
           </p>
@@ -222,23 +239,60 @@ export default function MusicEditorPage() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Platform Links</p>
           <div className="space-y-2">
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-2"><FaSpotify size={13} className="text-green-500" /> Spotify URL</Label>
-              <Input value={form.spotify_url} onChange={(e) => setForm({ ...form, spotify_url: e.target.value })} placeholder="https://open.spotify.com/track/..." />
+              <Label htmlFor="spotify_url" className="flex items-center gap-2"><FaSpotify size={13} className="text-green-500" /> Spotify URL</Label>
+              <div className="flex gap-2">
+                <Input id="spotify_url" name="spotify_url" value={form.spotify_url} onChange={(e) => setForm({ ...form, spotify_url: e.target.value })} placeholder="https://open.spotify.com/track/..." className="flex-1" />
+                {form.spotify_url && (
+                  <ButtonCopy
+                    onCopy={async () => {
+                      await navigator.clipboard.writeText(form.spotify_url);
+                      toast.success("Spotify URL copied");
+                    }}
+                    className="!min-h-[40px] !min-w-[40px] !p-2"
+                  />
+                )}
+              </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-2"><FaSoundcloud size={13} className="text-orange-500" /> SoundCloud URL</Label>
-              <Input value={form.soundcloud_url} onChange={(e) => setForm({ ...form, soundcloud_url: e.target.value })} placeholder="https://soundcloud.com/..." />
+              <Label htmlFor="soundcloud_url" className="flex items-center gap-2"><FaSoundcloud size={13} className="text-orange-500" /> SoundCloud URL</Label>
+              <div className="flex gap-2">
+                <Input id="soundcloud_url" name="soundcloud_url" value={form.soundcloud_url} onChange={(e) => setForm({ ...form, soundcloud_url: e.target.value })} placeholder="https://soundcloud.com/..." className="flex-1" />
+                {form.soundcloud_url && (
+                  <ButtonCopy
+                    onCopy={async () => {
+                      await navigator.clipboard.writeText(form.soundcloud_url);
+                      toast.success("SoundCloud URL copied");
+                    }}
+                    className="!min-h-[40px] !min-w-[40px] !p-2"
+                  />
+                )}
+              </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-2"><FaYoutube size={13} className="text-red-500" /> YouTube URL</Label>
-              <Input value={form.youtube_url} onChange={(e) => setForm({ ...form, youtube_url: e.target.value })} placeholder="https://youtube.com/watch?v=..." />
+              <Label htmlFor="youtube_url" className="flex items-center gap-2"><FaYoutube size={13} className="text-red-500" /> YouTube URL</Label>
+              <div className="flex gap-2">
+                <Input id="youtube_url" name="youtube_url" value={form.youtube_url} onChange={(e) => setForm({ ...form, youtube_url: e.target.value })} placeholder="https://youtube.com/watch?v=..." className="flex-1" />
+                {form.youtube_url && (
+                  <ButtonCopy
+                    onCopy={async () => {
+                      await navigator.clipboard.writeText(form.youtube_url);
+                      toast.success("YouTube URL copied");
+                    }}
+                    className="!min-h-[40px] !min-w-[40px] !p-2"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="space-y-1.5">
           <Label>Description</Label>
-          <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="About this track..." rows={3} />
+          <RichTextEditor
+            value={form.description}
+            onChange={(html) => setForm({ ...form, description: html })}
+            placeholder="About this track..."
+          />
         </div>
 
         <div className="flex items-center gap-2 pt-1">
@@ -248,10 +302,10 @@ export default function MusicEditorPage() {
       </div>
 
       <div className="flex gap-2 pt-2">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
+        <MagneticButton onClick={handleSave} disabled={saving} className="gap-2" strength={0.3} radius={150}>
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
           {isEditing ? "Save changes" : "Add track"}
-        </Button>
+        </MagneticButton>
         <Button variant="ghost" onClick={() => goBack()}>Cancel</Button>
       </div>
     </div>

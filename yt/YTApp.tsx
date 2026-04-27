@@ -1,5 +1,5 @@
 import { ThemeProvider } from "next-themes";
-import { Toaster } from "sonner";
+import { ToastProvider } from "../src/components/providers/toast";
 import YTPage from "./YTPage";
 
 export default function YTApp() {
@@ -11,8 +11,9 @@ export default function YTApp() {
       storageKey="yt-theme"
       disableTransitionOnChange
     >
-      <YTPage />
-      <Toaster richColors position="top-center" />
+      <ToastProvider>
+        <YTPage />
+      </ToastProvider>
     </ThemeProvider>
   );
 }

@@ -6,13 +6,13 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "@/lib/supabase";
-import { ALL_QUOTES, shuffleQuotes, QUOTE_CARD_PALETTES } from "@/lib/quotes";
+import { ALL_QUOTES, QUOTE_CARD_PALETTES } from "@/lib/quotes";
 import { getCardPalette } from "@/lib/cardColors";
 import { format } from "date-fns";
-import { ContentCardSkeleton } from "@/components/ui/skeleton.tsx";
 import { PageHeader } from "@/components/layout/page-header.tsx";
 import { TOOLS } from "@/features/tools";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { ContentCardSkeleton } from "@/components/ui/skeleton.tsx";
 
 type FilterType = "all" | "blog" | "tutorial" | "music";
 
@@ -45,77 +45,21 @@ export default function Index() {
   // Persisted filter — survives refresh
   const [activeFilter, setActiveFilter] = usePersistedState<FilterType>("home-filter", "all");
 
-  // ── Quotes — local only, no Supabase ──
-  // If a quote is pinned via admin, show it persistently.
-  // Manual ↻ clears the pin and resumes normal rotation.
-  const [pool] = useState<typeof ALL_QUOTES>(() => {
-    try {
-      const stored = sessionStorage.getItem("quote-pool");
-      if (stored) return JSON.parse(stored) as typeof ALL_QUOTES;
-    } catch {}
-    const shuffled = shuffleQuotes(ALL_QUOTES);
-    try { sessionStorage.setItem("quote-pool", JSON.stringify(shuffled)); } catch {}
-    return shuffled;
-  });
+  // ── Quotes — date-based, stable all day, no sessionStorage ──────────────
+  // Same quote all day for everyone. Changes at midnight. ↻ cycles manually.
+  const getDailyIndex = () => {
+    const d = new Date();
+    const dayNumber = Math.floor(d.getTime() / (1000 * 60 * 60 * 24));
+    return dayNumber % ALL_QUOTES.length;
+  };
 
-  const [quoteIndex, setQuoteIndex] = usePersistedState<number>("quote-index", 0);
-  const [quoteLoadedAt, setQuoteLoadedAt] = usePersistedState<number>("quote-loaded-at", Date.now());
-
-  // Read pinned quote id — reactive state so it picks up changes
-  const [pinnedQuoteId, setPinnedQuoteIdState] = useState<string | null>(() => {
-    try { return localStorage.getItem("pinned-quote-id"); } catch { return null; }
-  });
-
-  // Re-sync when returning to the page (e.g. navigating from admin)
-  useEffect(() => {
-    const sync = () => {
-      try { setPinnedQuoteIdState(localStorage.getItem("pinned-quote-id")); } catch {}
-    };
-    window.addEventListener("focus", sync);
-    // Also sync on storage events (cross-tab)
-    window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener("focus", sync);
-      window.removeEventListener("storage", sync);
-    };
-  }, []);
-
-  const pinnedQuote = pinnedQuoteId
-    ? (ALL_QUOTES.find((q) => q.id === pinnedQuoteId) ?? null)
-    : null;
-
-  // Advance index if 20 minutes have passed — only when no pin active
-  useEffect(() => {
-    if (pinnedQuote) return; // pinned quote bypasses rotation
-    const TWENTY_MIN = 20 * 60 * 1000;
-    const now = Date.now();
-    if (now - quoteLoadedAt > TWENTY_MIN) {
-      setQuoteIndex((i) => (i + 1) % pool.length);
-      setQuoteLoadedAt(now);
-    }
-    const interval = setInterval(() => {
-      const t = Date.now();
-      setQuoteLoadedAt((prev) => {
-        if (t - prev > TWENTY_MIN) {
-          setQuoteIndex((i) => (i + 1) % pool.length);
-          return t;
-        }
-        return prev;
-      });
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [pool.length, pinnedQuote]);
-
-  // Active quote — pinned takes priority
-  const quote = pinnedQuote ?? pool[Math.abs(quoteIndex) % pool.length];
-  const quotePalette = QUOTE_CARD_PALETTES[Math.abs(quoteIndex) % QUOTE_CARD_PALETTES.length];
+  const [quoteIndex, setQuoteIndex] = useState(getDailyIndex);
+  const quotePalette = QUOTE_CARD_PALETTES[quoteIndex % QUOTE_CARD_PALETTES.length];
+  const quote = ALL_QUOTES[quoteIndex];
 
   const cycleQuote = useCallback(() => {
-    // Clear pin if one is active, then cycle
-    try { localStorage.removeItem("pinned-quote-id"); } catch {}
-    setQuoteIndex((i) => (i + 1) % pool.length);
-    setQuoteLoadedAt(Date.now());
-  }, [pool.length]);
+    setQuoteIndex((i) => (i + 1) % ALL_QUOTES.length);
+  }, []);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -208,12 +152,6 @@ export default function Index() {
   };
 
   return (
-    /*
-      No fixed height, no overflow-hidden on outer shell.
-      Each section manages its own height.
-      On small phones everything stacks and the page scrolls naturally.
-      On desktop the two-column layout sits side by side.
-    */
     <div className="w-full max-w-2xl space-y-4 pb-4">
 
       {/* ── HERO ── */}
@@ -262,90 +200,95 @@ export default function Index() {
           {/* Header + filters */}
           <div className="flex items-center justify-between">
             <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
-              {FILTER_LABELS[activeFilter]}
+              {loading ? "Latest" : FILTER_LABELS[activeFilter]}
             </h2>
-            <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: "linear-gradient(135deg, rgba(17,216,194,0.10) 0%, rgba(17,216,194,0.05) 100%)", border: "1px solid rgba(17,216,194,0.18)" }}>
-              {FILTERS.map((f) => (
-                <button
-                  key={f.value}
-                  onClick={() => setActiveFilter(f.value)}
-                  className={`relative px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors
-                    outline-none
-                    ${activeFilter === f.value
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  {activeFilter === f.value && (
-                    <motion.span
-                      layoutId="activeFilter"
-                      className="absolute inset-0 bg-background rounded-md shadow-sm"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.28 }}
-                    />
-                  )}
-                  <span className="relative z-10">{f.label}</span>
-                </button>
-              ))}
-            </div>
+            {loading ? (
+              <div className="h-7 w-32 bg-muted/30 rounded-lg animate-pulse" />
+            ) : (
+              <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: "linear-gradient(135deg, rgba(17,216,194,0.10) 0%, rgba(17,216,194,0.05) 100%)", border: "1px solid rgba(17,216,194,0.18)" }}>
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setActiveFilter(f.value)}
+                    className={`relative px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-colors
+                      outline-none
+                      ${activeFilter === f.value
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                      }`}
+                  >
+                    {activeFilter === f.value && (
+                      <motion.span
+                        layoutId="activeFilter"
+                        className="absolute inset-0 bg-background rounded-md shadow-sm"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.28 }}
+                      />
+                    )}
+                    <span className="relative z-10">{f.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <ContentCardSkeleton key={i} />
-              ))
-            ) : (
+              // Show skeletons during loading to prevent content sliding from bottom
               <>
-                <AnimatePresence mode="popLayout">
-                  {filtered.map((item) => {
-                    const palette = getCardPalette(item.id);
-                    const Icon = typeIcon(item.type);
-                    return (
-                      <motion.div
-                        key={`${activeFilter}-${item.id}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.12 }}
-                      >
-                        <Link
-                          to={item.href}
-                          className={`group flex items-center gap-3.5 rounded-xl border
-                            bg-gradient-to-r ${palette.gradient} ${palette.border}
-                            px-3.5 py-3 sm:px-4 sm:py-3.5 transition-all
-                            outline-none hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5 active:scale-[0.99]`}
-                        >
-                          <div className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
-                            <Icon size={13} className={palette.iconColor} strokeWidth={2} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">
-                                {item.title}
-                              </span>
-                              <ArrowRight
-                                size={11}
-                                className="shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground transition-all group-hover:translate-x-0.5"
-                              />
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              {item.meta && (
-                                <span className={`text-[10px] font-semibold px-1.5 py-px rounded-full ${palette.badge}`}>
-                                  {item.meta}
-                                </span>
-                              )}
-                              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/50">
-                                <CalendarDays size={9} />
-                                {format(new Date(item.date), "MMM d, yyyy")}
-                              </span>
-                            </div>
-                          </div>
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <ContentCardSkeleton key={i} />
+                ))}
               </>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {filtered.map((item) => {
+                  const palette = getCardPalette(item.id);
+                  const Icon = typeIcon(item.type);
+                  return (
+                    <motion.div
+                      key={`${activeFilter}-${item.id}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.12 }}
+                    >
+                      <Link
+                        to={item.href}
+                        className={`group flex items-center gap-3.5 rounded-xl border
+                          bg-gradient-to-r ${palette.gradient} ${palette.border}
+                          px-3.5 py-3 sm:px-4 sm:py-3.5 transition-all
+                          outline-none hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5 active:scale-[0.99]`}
+                      >
+                        <div className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
+                          <Icon size={13} className={palette.iconColor} strokeWidth={2} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                              {item.title}
+                            </span>
+                            <ArrowRight
+                              size={11}
+                              className="shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground transition-all group-hover:translate-x-0.5"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {item.meta && (
+                              <span className={`text-[10px] font-semibold px-1.5 py-px rounded-full ${palette.badge}`}>
+                                {item.meta}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/50">
+                              <CalendarDays size={9} />
+                              {format(new Date(item.date), "MMM d, yyyy")}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             )}
           </div>
         </section>

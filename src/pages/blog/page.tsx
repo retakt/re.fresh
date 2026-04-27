@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { CalendarDays, PenLine, BookOpen, ArrowRight, RefreshCw } from "lucide-react";
@@ -16,6 +16,7 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { prefetchPostData } from "@/lib/prefetch";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { MarqueeText } from "@/components/ui/marquee-text";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -23,6 +24,12 @@ export default function BlogPage() {
   const [error, setError] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = usePersistedState<string[]>("blog-tag-filter", []);
   const { canManageEditorial } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const tag = searchParams.get("tag");
+    if (tag) setTagFilter([tag]);
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -72,9 +79,9 @@ export default function BlogPage() {
         subtitle="Articles & thoughts..."
         action={canManageEditorial ? (
           <Link to="/admin/posts/new">
-            <Button size="sm" className="gap-1.5">
+            <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
               <PenLine size={14} /> New post
-            </Button>
+            </MagneticButton>
           </Link>
         ) : undefined}
       />

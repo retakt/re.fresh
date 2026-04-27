@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { CalendarDays, ArrowLeft, PenLine } from "lucide-react";
@@ -12,7 +12,9 @@ import { getBlockLabel, parseContentBlocks } from "@/lib/content-blocks";
 import { getPrefetchedData } from "@/lib/prefetch";
 import { useSwipeBack } from "@/hooks/use-swipe-back";
 import { getTagColor } from "@/lib/tagColors";
+import { getCardPalette } from "@/lib/cardColors";
 import { PostDetailSkeleton } from "@/components/ui/skeleton";
+import { PostContentRenderer } from "@/components/post-content-renderer";
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -22,6 +24,7 @@ export default function BlogPostPage() {
   const [activeAnchorId, setActiveAnchorId] = useState<string | null>(null);
   const { canManageEditorial, isAuthenticated } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleReplyRedirect = () => {
     window.location.href = `/login?from=${encodeURIComponent(location.pathname)}`;
@@ -81,7 +84,7 @@ export default function BlogPostPage() {
   return (
     <article className="max-w-3xl flex flex-col min-h-[80vh]">
       {/* Gradient header band */}
-      <div className="relative mb-8 overflow-hidden rounded-lg border border-sky-100/80 bg-gradient-to-b from-sky-100/55 via-sky-50/35 to-transparent px-5 py-7 shadow-sm sm:px-7 sm:py-8 dark:border-sky-900/30 dark:from-sky-950/35 dark:via-sky-950/12 dark:to-transparent">
+      <div className={`relative mb-8 overflow-hidden rounded-lg border border-border/60 px-5 py-7 shadow-sm sm:px-7 sm:py-8 bg-gradient-to-b ${getCardPalette(post.id).headerGradient}`}>
         {/* Nav row */}
         <div className="flex items-center justify-between mb-6">
           <Link
@@ -92,7 +95,7 @@ export default function BlogPostPage() {
           </Link>
           {canManageEditorial && (
             <Link to={`/admin/posts/edit/${post.id}`}>
-              <Button variant="ghost" size="sm" className="gap-1.5">
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground hover:bg-transparent">
                 <PenLine size={13} /> Edit
               </Button>
             </Link>
@@ -105,26 +108,27 @@ export default function BlogPostPage() {
             <Badge variant="secondary">Draft</Badge>
           )}
           {(post.tags ?? []).map((tag: string) => (
-            <span
+            <button
               key={tag}
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getTagColor(tag)}`}
+              onClick={() => navigate(`/blog?tag=${encodeURIComponent(tag)}`)}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold hover:opacity-80 transition-opacity ${getTagColor(tag)}`}
             >
               #{tag}
-            </span>
+            </button>
           ))}
         </div>
 
-        <h1 className="text-3xl font-bold tracking-tight text-balance mb-3">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-balance mb-3">
           {post.title}
         </h1>
 
         {post.excerpt && (
-          <p className="text-muted-foreground text-base leading-relaxed mb-4">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-4">
             {post.excerpt}
           </p>
         )}
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CalendarDays size={13} />
             {format(new Date(post.created_at), "MMMM d, yyyy")}
@@ -139,6 +143,10 @@ export default function BlogPostPage() {
             src={post.cover_image}
             alt={post.title}
             className="w-full max-h-80 object-cover"
+            style={{
+              objectPosition: post.cover_image_position ?? "50% 50%",
+              opacity: post.cover_image_opacity ?? 1,
+            }}
           />
         </div>
       )}
@@ -146,43 +154,33 @@ export default function BlogPostPage() {
       {/* Content */}
       {post.content && (
         <div className="px-1 sm:px-2">
-          <div className="prose prose-sm max-w-2xl dark:prose-invert prose-headings:tracking-tight prose-headings:text-slate-950 prose-p:leading-7 prose-p:text-slate-700 prose-li:text-slate-700 prose-a:text-sky-700 hover:prose-a:text-sky-800 prose-strong:text-slate-900 prose-blockquote:border-l-sky-200 prose-blockquote:text-slate-600 prose-img:rounded-lg dark:prose-headings:text-slate-50 dark:prose-p:text-slate-200 dark:prose-li:text-slate-200 dark:prose-a:text-sky-300 dark:hover:prose-a:text-sky-200 dark:prose-strong:text-slate-100 dark:prose-blockquote:border-l-sky-800 dark:prose-blockquote:text-slate-300">
+          <div className="prose prose-sm max-w-2xl prose-headings:tracking-tight prose-p:leading-7 prose-img:rounded-lg prose-ul:list-disc prose-ol:list-decimal prose-li:ml-4">
             {blocks.length > 0
-              ? blocks.map((block) => (
-                  <section
-                    key={block.id}
-                    id={block.id}
-                    className={`group relative mb-4 rounded-xl border transition-colors ${
-                      activeAnchorId === block.id
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-transparent hover:border-border/70 hover:bg-muted/20"
-                    }`}
-                  >
-                    {block.canAnchor && (
-                      <button
-                        type="button"
-                        onClick={() => isAuthenticated ? setActiveAnchorId(block.id) : handleReplyRedirect()}
-                        className="absolute right-2 top-2 z-10 rounded-full border border-border/70 bg-background/95 px-2.5 py-1 text-[10px] font-medium text-muted-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
-                      >
-                        Reply
-                      </button>
-                    )}
-                    <div
-                      className="not-prose px-1 py-1 sm:px-2"
-                      dangerouslySetInnerHTML={{ __html: block.html }}
-                    />
-                    {block.canAnchor && (
-                      <button
-                        type="button"
-                        onClick={() => isAuthenticated ? setActiveAnchorId(block.id) : handleReplyRedirect()}
-                        className="mb-2 ml-1 inline-flex items-center gap-1 rounded-full bg-muted/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                      >
-                        Comment on {getBlockLabel(block)}
-                      </button>
-                    )}
-                  </section>
-                ))
-              : (
+              ? blocks.map((block) => {
+                  // Check if block contains code blocks
+                  const hasCodeBlock = block.html.includes('data-animated-code');
+                  
+                  return (
+                    <section
+                      key={block.id}
+                      id={block.id}
+                      className="group relative"
+                    >
+                      {hasCodeBlock ? (
+                        <PostContentRenderer 
+                          html={block.html}
+                        />
+                      ) : (
+                        <div
+                          dangerouslySetInnerHTML={{ __html: block.html }}
+                        />
+                      )}
+                    </section>
+                  );
+                })
+              : post.content.includes('data-animated-code') ? (
+                <PostContentRenderer html={post.content} />
+              ) : (
                 <div dangerouslySetInnerHTML={{ __html: post.content }} />
               )}
           </div>

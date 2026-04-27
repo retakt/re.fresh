@@ -8,11 +8,13 @@ import { Badge } from "@/components/ui/badge.tsx";
 import RichTextEditor from "@/components/rich-text-editor.tsx";
 import ImageUpload from "@/components/ImageUpload.tsx";
 import { Loader2, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/lib/supabase";
 import { useBackNav } from "@/hooks/use-back-nav";
 import { FloatingSave } from "@/components/ui/floating-save";
+import ButtonCopy from "@/components/ui/smoothui/button-copy";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 function slugify(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -28,6 +30,8 @@ export default function PostEditorPage() {
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
   const [coverImage, setCoverImage] = useState("");
+  const [coverImagePosition, setCoverImagePosition] = useState("50% 50%");
+  const [coverImageOpacity, setCoverImageOpacity] = useState(1);
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
   const [tagLibraryValue, setTagLibraryValue] = useState("");
@@ -73,6 +77,8 @@ export default function PostEditorPage() {
       setExcerpt(data.excerpt || "");
       setContent(data.content || "");
       setCoverImage(data.cover_image || "");
+      setCoverImagePosition(data.cover_image_position || "50% 50%");
+      setCoverImageOpacity(data.cover_image_opacity ?? 1);
       setTags(data.tags || []);
       setPublished(data.published);
       setLoading(false);
@@ -111,19 +117,23 @@ export default function PostEditorPage() {
       excerpt: excerpt || null,
       content: content || null,
       cover_image: coverImage || null,
+      cover_image_position: coverImagePosition || null,
+      cover_image_opacity: coverImageOpacity,
       tags,
       published,
       updated_at: new Date().toISOString(),
     };
 
     if (isEditing) {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from("posts")
         .update(payload)
-        .eq("id", id);
+        .eq("id", id)
+        .select();
 
       if (error) {
-        toast.error("Failed to save post");
+        console.error("Supabase update error:", error);
+        toast.error(`Failed to save post: ${error.message || 'Unknown error'}`);
       } else {
         toast.success("Post saved!");
         goBack();
@@ -178,12 +188,24 @@ export default function PostEditorPage() {
 
           <div className="space-y-1.5">
             <Label htmlFor="slug">Slug *</Label>
-            <Input
-              id="slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="post-slug"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="post-slug"
+                className="flex-1"
+              />
+              {slug && (
+                <ButtonCopy
+                  onCopy={async () => {
+                    await navigator.clipboard.writeText(slug);
+                    toast.success("Slug copied");
+                  }}
+                  className="!min-h-[40px] !min-w-[40px] !p-2"
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -272,7 +294,14 @@ export default function PostEditorPage() {
         {/* Cover image */}
         <div className="space-y-1.5">
           <Label>Cover image</Label>
-          <ImageUpload value={coverImage} onChange={setCoverImage} />
+          <ImageUpload
+            value={coverImage}
+            onChange={setCoverImage}
+            position={coverImagePosition}
+            onPositionChange={setCoverImagePosition}
+            opacity={coverImageOpacity}
+            onOpacityChange={setCoverImageOpacity}
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -297,10 +326,10 @@ export default function PostEditorPage() {
       </div>
 
       <div className="flex gap-2 pt-2">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
+        <MagneticButton onClick={handleSave} disabled={saving} className="gap-2" strength={0.3} radius={150}>
           {saving && <Loader2 size={14} className="animate-spin" />}
           {isEditing ? "Save changes" : "Create post"}
-        </Button>
+        </MagneticButton>
         <Button variant="ghost" onClick={() => goBack()}>
           Cancel
         </Button>

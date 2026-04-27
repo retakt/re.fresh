@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { Moon, Sun, Search, Menu } from "lucide-react";
+import { Moon, Sun, Search } from "lucide-react";
 import { useTheme } from "@/components/providers/theme.tsx";
 import UserMenu from "@/components/account/user-menu.tsx";
+import AnimatedMenuIcon from "@/components/ui/animated-menu-icon.tsx";
 
 interface NavbarProps {
   onMenuToggle: () => void;
+  isSidebarOpen?: boolean;
 }
 
 // Entrance animation — stagger children from top
@@ -24,7 +26,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export default function Navbar({ onMenuToggle }: NavbarProps) {
+export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarProps) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -58,16 +60,17 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:px-4 lg:px-6">
 
           {/* Left: hamburger — mobile only */}
-          <motion.button
-            type="button"
-            onClick={onMenuToggle}
-            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
-            aria-label="Toggle navigation menu"
+          <motion.div
+            className="md:hidden"
             variants={itemVariants}
             whileTap={{ scale: 0.92 }}
           >
-            <Menu size={19} strokeWidth={2} />
-          </motion.button>
+            <AnimatedMenuIcon 
+              isOpen={isSidebarOpen} 
+              onClick={onMenuToggle}
+              size={24}
+            />
+          </motion.div>
 
           {/* Desktop left slot — placeholder for logo animation */}
           <motion.div

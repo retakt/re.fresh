@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
-import { cn } from "@/lib/utils.ts";
+import { cn } from "@/lib/utils";
 
 function Dialog({
   ...props
@@ -133,9 +133,42 @@ function DialogDescription({
   );
 }
 
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn("flex flex-col gap-2", className)}
+      {...props}
+    />
+  );
+}
+
+function DialogCloseIcon({
+  className,
+  isDismissable = true,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Close> & { isDismissable?: boolean }) {
+  if (!isDismissable) return null;
+  return (
+    <DialogPrimitive.Close
+      data-slot="dialog-close-icon"
+      className={cn(
+        "absolute rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden disabled:pointer-events-none",
+        className,
+      )}
+      {...props}
+    >
+      <XIcon className="size-4" />
+      <span className="sr-only">Close</span>
+    </DialogPrimitive.Close>
+  );
+}
+
 export {
   Dialog,
+  DialogBody,
   DialogClose,
+  DialogCloseIcon,
   DialogContent,
   DialogDescription,
   DialogFooter,

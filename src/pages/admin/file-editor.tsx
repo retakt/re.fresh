@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Check, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
 import FileUpload from "@/components/FileUpload";
 import { useBackNav } from "@/hooks/use-back-nav";
 import { FloatingSave } from "@/components/ui/floating-save";
+import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 
 type FormData = {
   name: string;
@@ -158,10 +159,10 @@ export default function FileEditorPage() {
       </div>
 
       <div className="flex gap-2 pt-2">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
+        <MagneticButton onClick={handleSave} disabled={saving} className="gap-2" strength={0.3} radius={150}>
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
           {isEditing ? "Save changes" : "Add file"}
-        </Button>
+        </MagneticButton>
         <Button variant="ghost" onClick={() => goBack()}>Cancel</Button>
       </div>
     </div>

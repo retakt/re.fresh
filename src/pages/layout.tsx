@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, LayoutGroup } from "motion/react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import Navbar from "@/components/layout/navbar.tsx";
 import Sidebar from "@/components/layout/sidebar.tsx";
@@ -40,12 +40,27 @@ export default function AppLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const openSidebar  = useCallback(() => setSidebarOpen(true),  []);
+  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
+  // Lock body scroll when sidebar is open on mobile
+  useEffect(() => {
+    // Remove body scroll lock - backdrop prevents interaction
+    // if (sidebarOpen) {
+    //   document.body.style.overflow = 'hidden';
+    // } else {
+    //   document.body.style.overflow = '';
+    // }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [sidebarOpen]);
 
   return (
     <div className="flex min-h-[var(--app-height)] flex-col bg-background text-foreground">
-      <Navbar onMenuToggle={openSidebar} />
+      <Navbar onMenuToggle={toggleSidebar} isSidebarOpen={sidebarOpen} />
 
       {/* Mobile drawer — fixed, outside flex row, only rendered on mobile */}
       <div className="md:hidden">
@@ -64,6 +79,7 @@ export default function AppLayout() {
           className="flex-1 min-w-0 overflow-x-hidden py-5 sm:py-8 md:pb-14 md:pl-6 lg:pl-8"
         >
           <AnimatePresence mode="sync" initial={false}>
+            <LayoutGroup>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0 }}
@@ -75,6 +91,7 @@ export default function AppLayout() {
                 <Outlet />
               </ErrorBoundary>
             </motion.div>
+            </LayoutGroup>
           </AnimatePresence>
         </main>
       </div>

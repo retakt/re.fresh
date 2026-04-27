@@ -26,6 +26,8 @@ export type Post = {
   content: string | null
   excerpt: string | null
   cover_image: string | null
+  cover_image_position: string | null
+  cover_image_opacity: number | null
   tags: string[]
   published: boolean
   created_at: string
@@ -47,6 +49,7 @@ export type Music = {
   audio_url: string | null
   cover_image: string | null
   description: string | null
+  album_description: string | null
   published: boolean
   created_at: string
   updated_at: string

@@ -56,71 +56,71 @@
 :root {
   --radius: 0.75rem;
   --app-height: 100dvh;
-  --background: oklch(0.985 0.005 80);
+  --background: oklch(94.912% 0.01448 106.794);
   --foreground: oklch(0.14 0.012 260);
-  --card: oklch(1 0 0);
+  --card: oklch(97% 0.008 106.794);
   --card-foreground: oklch(0.14 0.012 260);
-  --popover: oklch(1 0 0);
+  --popover: oklch(97% 0.008 106.794);
   --popover-foreground: oklch(0.14 0.012 260);
-  --primary: oklch(0.52 0.20 340);
+  --primary: oklch(0.72 0.2 352.53);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.93 0.015 80);
+  --secondary: oklch(91% 0.008 106.794);
   --secondary-foreground: oklch(0.24 0.012 260);
-  --muted: oklch(0.93 0.008 80);
+  --muted: oklch(89% 0.006 106.794);
   --muted-foreground: oklch(0.46 0.018 260);
   --accent: oklch(0.88 0.04 180);
   --accent-foreground: oklch(0.22 0.04 200);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.88 0.008 80);
-  --input: oklch(0.88 0.008 80);
-  --ring: oklch(0.52 0.20 340);
-  --chart-1: oklch(0.52 0.20 340);
+  --border: oklch(87% 0.008 106.794);
+  --input: oklch(87% 0.008 106.794);
+  --ring: oklch(0.72 0.2 352.53);
+  --chart-1: oklch(0.72 0.2 352.53);
   --chart-2: oklch(0.65 0.12 180);
   --chart-3: oklch(0.72 0.14 85);
   --chart-4: oklch(0.62 0.16 300);
   --chart-5: oklch(0.68 0.15 220);
-  --sidebar: oklch(0.975 0.006 80);
+  --sidebar: oklch(96% 0.006 106.794);
   --sidebar-foreground: oklch(0.14 0.012 260);
-  --sidebar-primary: oklch(0.52 0.20 340);
+  --sidebar-primary: oklch(0.72 0.2 352.53);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.93 0.015 80);
+  --sidebar-accent: oklch(91% 0.008 106.794);
   --sidebar-accent-foreground: oklch(0.24 0.012 260);
-  --sidebar-border: oklch(0.88 0.008 80);
-  --sidebar-ring: oklch(0.52 0.20 340);
+  --sidebar-border: oklch(87% 0.008 106.794);
+  --sidebar-ring: oklch(0.72 0.2 352.53);
 }
 
 .dark {
-  --background: oklch(0.12 0.008 260);
-  --foreground: oklch(0.82 0.006 90);
-  --card: oklch(0.17 0.01 260);
-  --card-foreground: oklch(0.82 0.006 90);
-  --popover: oklch(0.17 0.01 260);
-  --popover-foreground: oklch(0.82 0.006 90);
-  --primary: oklch(0.74 0.16 340);
-  --primary-foreground: oklch(0.12 0.008 260);
-  --secondary: oklch(0.21 0.012 260);
-  --secondary-foreground: oklch(0.82 0.007 92);
-  --muted: oklch(0.21 0.012 260);
-  --muted-foreground: oklch(0.67 0.01 240);
+  --background: oklch(0.12 0.006 260);
+  --foreground: oklch(0.82 0.004 90);
+  --card: oklch(0.17 0.008 260);
+  --card-foreground: oklch(0.82 0.004 90);
+  --popover: oklch(0.17 0.008 260);
+  --popover-foreground: oklch(0.82 0.004 90);
+  --primary: oklch(0.72 0.2 352.53);
+  --primary-foreground: oklch(0.12 0.006 260);
+  --secondary: oklch(0.21 0.008 260);
+  --secondary-foreground: oklch(0.82 0.004 90);
+  --muted: oklch(0.21 0.008 260);
+  --muted-foreground: oklch(0.67 0.006 240);
   --accent: oklch(0.3 0.06 190);
   --accent-foreground: oklch(0.88 0.04 180);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 11%);
-  --ring: oklch(0.74 0.16 340);
-  --chart-1: oklch(0.74 0.16 340);
+  --ring: oklch(0.72 0.2 352.53);
+  --chart-1: oklch(0.72 0.2 352.53);
   --chart-2: oklch(0.65 0.12 180);
   --chart-3: oklch(0.72 0.14 85);
   --chart-4: oklch(0.62 0.16 300);
   --chart-5: oklch(0.68 0.15 220);
-  --sidebar: oklch(0.15 0.009 260);
-  --sidebar-foreground: oklch(0.82 0.006 90);
-  --sidebar-primary: oklch(0.74 0.16 340);
-  --sidebar-primary-foreground: oklch(0.12 0.008 260);
-  --sidebar-accent: oklch(0.21 0.012 260);
-  --sidebar-accent-foreground: oklch(0.82 0.007 92);
+  --sidebar: oklch(0.15 0.006 260);
+  --sidebar-foreground: oklch(0.82 0.004 90);
+  --sidebar-primary: oklch(0.72 0.2 352.53);
+  --sidebar-primary-foreground: oklch(0.12 0.006 260);
+  --sidebar-accent: oklch(0.21 0.008 260);
+  --sidebar-accent-foreground: oklch(0.82 0.004 90);
   --sidebar-border: oklch(1 0 0 / 9%);
-  --sidebar-ring: oklch(0.74 0.16 340);
+  --sidebar-ring: oklch(0.72 0.2 352.53);
 }
 
 @layer base {
@@ -211,7 +211,56 @@ html.light {
     0 0 0 1px rgba(255,255,255,0.05);
 }
 
-/* Tiptap editor placeholder */
+/* ── Prose overrides — match site font & theme colors ── */
+.prose {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  color: var(--foreground);
+}
+.prose p {
+  font-weight: 450;
+  color: var(--foreground);
+}
+.prose strong {
+  font-weight: 700;
+  color: var(--foreground);
+}
+.prose em {
+  color: var(--foreground);
+}
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+.prose a {
+  color: var(--primary);
+}
+.prose code {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  color: var(--foreground);
+}
+.prose blockquote {
+  color: var(--muted-foreground);
+  border-left-color: var(--border);
+}
+/* Remove prose-invert white overrides — use theme tokens instead */
+.dark .prose,
+.prose-invert {
+  color: var(--foreground);
+}
+.dark .prose p,
+.prose-invert p {
+  color: var(--foreground);
+}
+.dark .prose strong,
+.prose-invert strong {
+  color: var(--foreground);
+}
+.dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4,
+.prose-invert h1, .prose-invert h2, .prose-invert h3, .prose-invert h4 {
+  color: var(--foreground);
+}
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -362,185 +411,238 @@ input[type="range"]::-moz-range-thumb {
   100% { transform: translateX(0%); }
 }
 
-/* ── Glass Toast ─────────────────────────────────────────────────────────── */
-/*
- * Sonner v2 reads color vars from [data-sonner-toaster][data-sonner-theme]
- * selectors. We override them here so the glass tints respond to the theme
- * class on <html> without any JS isDark logic.
- *
- * Mobile centering fix: Sonner's own CSS cancels translateX(-50%) on screens
- * < 600px and uses --mobile-offset-left/right instead. We set those to 16px
- * so the toast stays centered with equal margins on both sides.
- *
- * The backdrop-filter glass effect is applied via .glass-toast on the
- * individual toast element (not the container) so it blurs correctly.
- */
+/* ── Custom Context Menu Styles ─────────────────────────────────────────── */
 
-/* ── Container positioning ── */
-[data-sonner-toaster] {
-  /* Sonner already sets z-index: 999999999 — no need to override */
-  /* Fix mobile centering: equal offsets = centered */
-  --mobile-offset-left: 16px !important;
-  --mobile-offset-right: 16px !important;
-  --mobile-offset-top: 16px !important;
-  /* Font for the whole toaster */
-  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
+/* Disable default context menu selection highlighting */
+*:not(input):not(textarea):not([contenteditable="true"]) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
-/* ── Light theme color overrides ── */
-[data-sonner-toaster][data-sonner-theme='light'] {
-  --normal-bg:   rgba(255, 253, 250, 0.82);
-  --normal-text: oklch(0.14 0.012 260);
-  --normal-border: rgba(0, 0, 0, 0.08);
-
-  --success-bg:     rgba(236, 253, 243, 0.88);
-  --success-border: rgba(21, 128, 61, 0.18);
-  --success-text:   #15803d;
-
-  --error-bg:     rgba(255, 241, 241, 0.90);
-  --error-border: rgba(185, 28, 28, 0.18);
-  --error-text:   #b91c1c;
-
-  --info-bg:     rgba(239, 246, 255, 0.90);
-  --info-border: rgba(29, 78, 216, 0.18);
-  --info-text:   #1d4ed8;
-
-  --warning-bg:     rgba(255, 251, 235, 0.90);
-  --warning-border: rgba(146, 64, 14, 0.18);
-  --warning-text:   #92400e;
+/* Re-enable selection for text content areas */
+input, textarea, [contenteditable="true"], .selectable-text {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
-/* ── Dark theme color overrides ── */
-[data-sonner-toaster][data-sonner-theme='dark'] {
-  --normal-bg:   rgba(28, 28, 42, 0.85);
-  --normal-text: oklch(0.82 0.006 90);
-  --normal-border: rgba(255, 255, 255, 0.10);
-
-  --success-bg:     rgba(16, 38, 26, 0.90);
-  --success-border: rgba(134, 239, 172, 0.18);
-  --success-text:   #86efac;
-
-  --error-bg:     rgba(40, 16, 16, 0.90);
-  --error-border: rgba(252, 165, 165, 0.18);
-  --error-text:   #fca5a5;
-
-  --info-bg:     rgba(12, 22, 44, 0.90);
-  --info-border: rgba(147, 197, 253, 0.18);
-  --info-text:   #93c5fd;
-
-  --warning-bg:     rgba(38, 28, 8, 0.90);
-  --warning-border: rgba(252, 211, 77, 0.18);
-  --warning-text:   #fcd34d;
+/* Prevent default context menu on images and links */
+img, a {
+  -webkit-touch-callout: none;
 }
 
-/* ── Individual toast — glass effect ── */
-.glass-toast {
-  /* Glass blur — the core effect */
-  backdrop-filter: blur(20px) saturate(1.6) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.6) !important;
-
-  /* Shape */
-  border-radius: 16px !important;
-  border-width: 1px !important;
-  border-style: solid !important;
-
-  /* Depth: outer shadow + subtle inner highlight */
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.10),
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-
-  /* Spacing */
-  padding: 12px 14px !important;
-
-  /* Width: fills phone width with 16px margins, caps at 380px on desktop */
-  width: calc(100vw - 32px) !important;
-  max-width: 380px !important;
-  min-width: 0 !important;
-
-  /* Smooth entry */
-  transition: transform 400ms cubic-bezier(0.21, 1.02, 0.73, 1),
-              opacity 400ms ease,
-              box-shadow 200ms ease !important;
-}
-
-/* ── Title ── */
-.glass-toast-title {
-  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-  letter-spacing: -0.01em !important;
-}
-
-/* ── Description (toast.info/success with description: "...") ── */
-.glass-toast-description {
-  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
-  font-weight: 400 !important;
-  font-size: 11.5px !important;
-  line-height: 1.5 !important;
-  opacity: 0.75 !important;
-  margin-top: 1px !important;
-}
-
-/* ── Icon — slightly larger for readability ── */
-.glass-toast-icon {
-  width: 18px !important;
-  height: 18px !important;
-}
-
-/* ── Close button — bigger tap target on mobile ── */
-.glass-toast-close {
-  width: 24px !important;
-  height: 24px !important;
-  border-radius: 50% !important;
-  opacity: 0.55 !important;
-  transition: opacity 0.15s ease, background 0.15s ease !important;
-}
-.glass-toast-close:hover {
-  opacity: 1 !important;
-}
-
-/* ── Action button ── */
-.glass-toast-action {
-  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 12px !important;
-  border-radius: 8px !important;
-  height: 26px !important;
-}
-
-/* ── Desktop (≥ 640px) — slightly larger text, fixed width ── */
-@media (min-width: 640px) {
-  .glass-toast {
-    width: auto !important;
-    min-width: 300px !important;
-    max-width: 400px !important;
-    padding: 13px 16px !important;
+/* Mobile long-press feedback */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable iOS callout bubble */
+  * {
+    -webkit-touch-callout: none;
   }
-  .glass-toast-title {
-    font-size: 13.5px !important;
+  
+  /* Prevent text selection on mobile */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
   }
-  .glass-toast-description {
-    font-size: 12px !important;
+  
+  /* Re-enable for inputs */
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
   }
 }
 
-/* ── Very small phones (< 360px) — tighter ── */
-@media (max-width: 359px) {
-  [data-sonner-toaster] {
-    --mobile-offset-left: 12px !important;
-    --mobile-offset-right: 12px !important;
+/* Context menu animations */
+@keyframes context-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
   }
-  .glass-toast {
-    width: calc(100vw - 24px) !important;
-    padding: 10px 12px !important;
-    border-radius: 14px !important;
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-  .glass-toast-title {
-    font-size: 12px !important;
+}
+
+@keyframes context-menu-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-  .glass-toast-description {
-    font-size: 11px !important;
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
   }
+}
+
+/* Custom context menu styling */
+[data-radix-context-menu-content] {
+  animation: context-menu-in 0.2s ease-out;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-radix-context-menu-content][data-state="closed"] {
+  animation: context-menu-out 0.15s ease-in;
+}
+
+/* Improve mobile touch targets */
+@media (hover: none) and (pointer: coarse) {
+  [data-radix-context-menu-item] {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+/* Custom Context Menu Styles - AGGRESSIVE FONT SIZE OVERRIDE */
+
+/* Disable default context menu selection highlighting */
+*:not(input):not(textarea):not([contenteditable="true"]) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable selection for text content areas */
+input, textarea, [contenteditable="true"], .selectable-text {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Prevent default context menu on images and links */
+img, a {
+  -webkit-touch-callout: none;
+}
+
+/* Mobile long-press feedback */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable iOS callout bubble */
+  * {
+    -webkit-touch-callout: none;
+  }
+  
+  /* Prevent text selection on mobile */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Re-enable for inputs */
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* Context menu animations */
+@keyframes context-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes context-menu-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+}
+
+/* Custom context menu styling */
+[data-radix-context-menu-content] {
+  animation: context-menu-in 0.2s ease-out;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-radix-context-menu-content][data-state="closed"] {
+  animation: context-menu-out 0.15s ease-in;
+}
+
+/* Improve mobile touch targets */
+@media (hover: none) and (pointer: coarse) {
+  [data-radix-context-menu-item] {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+/* Custom Context Menu Styles */
+
+/* Disable default context menu selection highlighting */
+*:not(input):not(textarea):not([contenteditable="true"]) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable selection for text content areas */
+input, textarea, [contenteditable="true"], .selectable-text {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Prevent default context menu on images and links */
+img, a {
+  -webkit-touch-callout: none;
+}
+
+/* Mobile long-press feedback */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable iOS callout bubble */
+  * {
+    -webkit-touch-callout: none;
+  }
+  
+  /* Prevent text selection on mobile */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Re-enable for inputs */
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* Context menu submenu improvements */
+[data-radix-context-menu-content] {
+  min-width: 9rem !important;
+}
+
+[data-radix-context-menu-sub-content] {
+  min-width: 9rem !important;
 }
