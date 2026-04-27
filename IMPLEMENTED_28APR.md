@@ -49,10 +49,25 @@
 - Uses `writing={true}` and `cursor={true}` props
 - Typing animation plays when code block is rendered
 - Cursor animates during typing effect
-- Background: #D7B397 (cream/coffee)
+- Background: #D7B397 (cream/coffee) - **Static color for both light/dark modes**
 - Border: #c9a582 (darker cream)
 - Header: #2a2a2a (dark gray)
 - Cursor: black
+
+**Why Static Background Color?**
+The code blocks use a fixed cream/coffee background (#D7B397) instead of theme-dependent colors because:
+1. The animate-ui component's syntax highlighting was designed for specific background colors
+2. Theme-dependent backgrounds caused readability issues with syntax highlighting colors
+3. The cream color provides good contrast for both light and dark mode text
+4. Maintains consistent visual identity across theme switches
+
+**Future Improvements:**
+To make code blocks theme-aware from the root, consider:
+1. Modify the animate-ui component's color scheme configuration
+2. Create custom syntax highlighting themes that work with both light/dark backgrounds
+3. Update the `Code` component in `src/components/animate-ui/components/animate/code.tsx` to use theme-based background colors
+4. Test all 19 supported languages with new color schemes
+5. Ensure cursor and text remain visible in both themes
 
 **Supported Languages:**
 JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, Ruby, PHP, Swift, Kotlin, HTML, CSS, SQL, Bash, JSON, YAML
