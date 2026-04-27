@@ -56,18 +56,28 @@
 
 **Why Static Background Color?**
 The code blocks use a fixed cream/coffee background (#D7B397) instead of theme-dependent colors because:
-1. The animate-ui component's syntax highlighting was designed for specific background colors
-2. Theme-dependent backgrounds caused readability issues with syntax highlighting colors
-3. The cream color provides good contrast for both light and dark mode text
-4. Maintains consistent visual identity across theme switches
+1. **DOM Rendering Issue**: The animate-ui component was rendering differently in dark mode vs light mode
+2. In light mode, the code blocks displayed perfectly with proper syntax highlighting
+3. In dark mode, the background color was being overridden or rendered incorrectly by the theme system
+4. The issue stems from how the HTML/CSS theme classes interact with the dynamically rendered React components
+5. Using a static background color bypasses the theme-dependent rendering issues
 
-**Future Improvements:**
-To make code blocks theme-aware from the root, consider:
-1. Modify the animate-ui component's color scheme configuration
-2. Create custom syntax highlighting themes that work with both light/dark backgrounds
-3. Update the `Code` component in `src/components/animate-ui/components/animate/code.tsx` to use theme-based background colors
-4. Test all 19 supported languages with new color schemes
-5. Ensure cursor and text remain visible in both themes
+**Root Cause:**
+- The `PostContentRenderer` component uses `createRoot` to dynamically render React components into HTML
+- Theme classes (light/dark) from the parent HTML don't properly cascade to these dynamically created React roots
+- The `useTheme()` hook in the Code component may not sync correctly with the parent theme context
+- CSS specificity conflicts between global theme styles and component-level styles
+
+**Future Fix (To Tackle from Root):**
+1. **Pass theme context explicitly** to dynamically rendered components in `PostContentRenderer`
+2. **Wrap dynamic React roots** with ThemeProvider to ensure theme context is available
+3. **Use CSS variables** instead of hardcoded colors that can inherit from parent theme
+4. **Refactor PostContentRenderer** to avoid `createRoot` and use proper React component rendering
+5. **Test theme synchronization** between editor view and published blog view
+6. **Update animate-ui integration** to respect parent theme without DOM conflicts
+
+**Temporary Solution:**
+Static cream background provides consistent, readable code blocks across all themes until the root DOM rendering issue is resolved.
 
 **Supported Languages:**
 JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, Ruby, PHP, Swift, Kotlin, HTML, CSS, SQL, Bash, JSON, YAML
