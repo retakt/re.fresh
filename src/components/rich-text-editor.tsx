@@ -364,13 +364,13 @@ export default function RichTextEditor({
   // Close color picker when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (colorRef.current && !colorRef.current.contains(e.target as Node)) {
+      if (colorRef.current && !colorRef.current.contains(e.target as HTMLElement)) {
         setColorOpen(false);
       }
-      if (fontSizeRef.current && !fontSizeRef.current.contains(e.target as Node)) {
+      if (fontSizeRef.current && !fontSizeRef.current.contains(e.target as HTMLElement)) {
         setFontSizeOpen(false);
       }
-      if (codeDialogRef.current && !codeDialogRef.current.contains(e.target as Node)) {
+      if (codeDialogRef.current && !codeDialogRef.current.contains(e.target as HTMLElement)) {
         setCodeDialogOpen(false);
       }
     };
@@ -921,7 +921,16 @@ export default function RichTextEditor({
                       const language = (document.getElementById("code-language") as HTMLSelectElement)?.value || "plaintext";
                       const code = (document.getElementById("code-content") as HTMLTextAreaElement)?.value || "";
                       if (code.trim()) {
-                        editor.chain().focus().setCodeBlock({ code, language }).run();
+                        editor.chain().focus().setCodeBlock({ language }).run();
+                        // Set the code content after creating the block
+                        editor.commands.command(({ tr, state }) => {
+                          const { selection } = state;
+                          const node = selection.$from.node();
+                          if (node.type.name === 'animatedCodeBlock') {
+                            tr.setNodeMarkup(selection.$from.before(), undefined, { language, code });
+                          }
+                          return true;
+                        });
                         setCodeDialogOpen(false);
                         // Clear inputs
                         (document.getElementById("code-content") as HTMLTextAreaElement).value = "";
