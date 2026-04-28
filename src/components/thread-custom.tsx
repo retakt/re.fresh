@@ -148,16 +148,15 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
       onAttachFile({ name: file.name, content });
     };
     reader.readAsText(file);
-    // Reset input so same file can be re-selected
     e.target.value = "";
   };
 
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
-      <div className="flex w-full flex-col gap-2 rounded-(--composer-radius) border bg-background p-(--composer-padding) transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20">
-        {/* File attachment chip */}
+      <div className="flex w-full flex-col rounded-(--composer-radius) border bg-background transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20">
+        {/* File attachment chip — only shown when a file is attached */}
         {attachedFile && (
-          <div className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1 text-xs text-primary w-fit max-w-full">
+          <div className="flex items-center gap-1.5 rounded-lg bg-primary/10 mx-3 mt-2.5 px-2.5 py-1 text-xs text-primary w-fit max-w-full">
             <PaperclipIcon size={11} className="shrink-0" />
             <span className="truncate max-w-[200px]">{attachedFile.name}</span>
             <button
@@ -170,25 +169,10 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
           </div>
         )}
 
-        <ComposerPrimitive.Input
-          placeholder="Send a message..."
-          className="max-h-32 min-h-10 w-full resize-none bg-transparent px-1.75 py-1 text-[16px] sm:text-[14px] leading-[1.3] outline-none placeholder:text-muted-foreground/80"
-          rows={1}
-          autoFocus
-          aria-label="Message input"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              // Blur on mobile to close keyboard after send
-              if (window.innerWidth < 768) {
-                setTimeout(() => (e.target as HTMLTextAreaElement).blur(), 50);
-              }
-            }
-          }}
-        />
-
-        <div className="relative flex items-center justify-between">
+        {/* Single-row: attach icon · input · send button */}
+        <div className="flex items-end gap-1 px-2 py-2">
           {/* File picker */}
-          <div>
+          <div className="shrink-0 self-end pb-0.5">
             <input
               ref={fileInputRef}
               type="file"
@@ -208,28 +192,46 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
             </TooltipIconButton>
           </div>
 
+          {/* Auto-growing textarea */}
+          <ComposerPrimitive.Input
+            placeholder="Send a message..."
+            className="max-h-40 min-h-[2rem] flex-1 resize-none bg-transparent py-1.5 text-[16px] sm:text-[14px] leading-[1.3] outline-none placeholder:text-muted-foreground/80"
+            rows={1}
+            autoFocus
+            aria-label="Message input"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                if (window.innerWidth < 768) {
+                  setTimeout(() => (e.target as HTMLTextAreaElement).blur(), 50);
+                }
+              }
+            }}
+          />
+
           {/* Send / Stop */}
-          <AuiIf condition={(s) => !s.thread.isRunning}>
-            <ComposerPrimitive.Send asChild>
-              <TooltipIconButton
-                tooltip="Send message"
-                side="bottom"
-                type="button"
-                variant="default"
-                size="icon"
-                className="size-8 rounded-full"
-              >
-                <ArrowUpIcon className="size-4" />
-              </TooltipIconButton>
-            </ComposerPrimitive.Send>
-          </AuiIf>
-          <AuiIf condition={(s) => s.thread.isRunning}>
-            <ComposerPrimitive.Cancel asChild>
-              <Button type="button" variant="default" size="icon" className="size-8 rounded-full">
-                <SquareIcon className="size-3 fill-current" />
-              </Button>
-            </ComposerPrimitive.Cancel>
-          </AuiIf>
+          <div className="shrink-0 self-end pb-0.5">
+            <AuiIf condition={(s) => !s.thread.isRunning}>
+              <ComposerPrimitive.Send asChild>
+                <TooltipIconButton
+                  tooltip="Send message"
+                  side="bottom"
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  className="size-8 rounded-full"
+                >
+                  <ArrowUpIcon className="size-4" />
+                </TooltipIconButton>
+              </ComposerPrimitive.Send>
+            </AuiIf>
+            <AuiIf condition={(s) => s.thread.isRunning}>
+              <ComposerPrimitive.Cancel asChild>
+                <Button type="button" variant="default" size="icon" className="size-8 rounded-full">
+                  <SquareIcon className="size-3 fill-current" />
+                </Button>
+              </ComposerPrimitive.Cancel>
+            </AuiIf>
+          </div>
         </div>
       </div>
     </ComposerPrimitive.Root>
