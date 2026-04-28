@@ -5,9 +5,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { PageLoadingFallback } from "./components/ui/page-loading-fallback.tsx";
 import { AdminTableSkeleton, PostDetailSkeleton } from "./components/ui/skeleton.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
-// AppLayout MUST be eagerly imported — it uses context from DefaultProviders
-// and lazy-loading it breaks useContext resolution across the Suspense boundary
 import AppLayout from "./pages/layout.tsx";
+import { ChatProvider } from "./components/providers/chat.tsx";
 
 // ── All page routes lazy-loaded — nothing eagerly parsed on first paint ───────
 const Index            = lazy(() => import("./pages/Index.tsx"));
@@ -202,7 +201,9 @@ export default function App() {
   return (
     <DefaultProviders>
       <ErrorBoundary>
-        <AppContent />
+        <ChatProvider>
+          <AppContent />
+        </ChatProvider>
       </ErrorBoundary>
     </DefaultProviders>
   );

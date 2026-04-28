@@ -173,10 +173,18 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
 
         <ComposerPrimitive.Input
           placeholder="Send a message..."
-          className="max-h-32 min-h-10 w-full resize-none bg-transparent px-1.75 py-1 text-[12px] sm:text-[14px] leading-[1.3] outline-none placeholder:text-muted-foreground/80"
+          className="max-h-32 min-h-10 w-full resize-none bg-transparent px-1.75 py-1 text-[16px] sm:text-[14px] leading-[1.3] outline-none placeholder:text-muted-foreground/80"
           rows={1}
           autoFocus
           aria-label="Message input"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              // Blur on mobile to close keyboard after send
+              if (window.innerWidth < 768) {
+                setTimeout(() => (e.target as HTMLTextAreaElement).blur(), 50);
+              }
+            }
+          }}
         />
 
         <div className="relative flex items-center justify-between">
