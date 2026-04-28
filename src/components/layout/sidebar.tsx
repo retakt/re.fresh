@@ -6,6 +6,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { prefetchRoute } from "@/lib/prefetch";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 const NAV_LINKS = [
   { href: "/",          icon: Home,           label: "Home" },
@@ -65,7 +66,15 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
         <div className="mt-auto pt-6 text-center">
           <p className="text-xs flex flex-col gap-0.5">
             <span className="text-muted-foreground/50">made by</span>
-            <span className="font-semibold text-muted-foreground/80">Takt Akira</span>
+            <span className="font-semibold">
+              <CanvasText
+                text="Takt Akira"
+                backgroundClassName="bg-muted-foreground"
+                colors={["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ff8c42", "#dfe6e9"]}
+                lineGap={4}
+                animationDuration={3}
+              />
+            </span>
           </p>
         </div>
       </aside>
@@ -187,7 +196,15 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
               >
                 <p className="text-xs flex flex-col gap-0.5 text-center">
                   <span className="text-muted-foreground/50">made by</span>
-                  <span className="font-semibold text-muted-foreground/80">Takt Akira</span>
+                  <span className="font-semibold">
+                    <CanvasText
+                      text="Takt Akira"
+                      backgroundClassName="bg-muted-foreground"
+                      colors={["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ff8c42", "#dfe6e9"]}
+                      lineGap={4}
+                      animationDuration={3}
+                    />
+                  </span>
                 </p>
               </motion.div>
             </motion.div>

@@ -121,8 +121,7 @@ const ThreadWelcome: FC<{ sessionId: string }> = ({ sessionId }) => (
       <h1 className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both font-semibold text-2xl duration-200">
         {WELCOME_TITLE}
       </h1>
-      <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground text-xl delay-75 duration-200">
-        {WELCOME_SUBTITLE}
+      <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground sm:text-xl text-sm delay-75 duration-200">        {WELCOME_SUBTITLE}
       </p>
       <p className="mt-3 text-[10px] text-muted-foreground/40 font-mono">
         session: {sessionId.slice(0, 8)}
@@ -252,7 +251,7 @@ const AssistantMessage: FC = () => (
       <div className="prose prose-sm max-w-none hidden sm:block [&_*]:leading-[1.3]">
         <MessagePrimitive.Parts components={{ Text: MarkdownText, tools: { Fallback: ToolFallback } }} />
       </div>
-      <div className="prose max-w-none sm:hidden [&_*]:leading-[1.3]" style={{ fontSize: "12px" }}>
+      <div className="prose max-w-none sm:hidden [&_*]:leading-[1.3]" style={{ fontSize: "14px" }}>
         <MessagePrimitive.Parts components={{ Text: MarkdownText, tools: { Fallback: ToolFallback } }} />
       </div>
       <MessageError />
@@ -284,7 +283,7 @@ const UserMessage: FC = () => (
     data-role="user"
   >
     <div className="relative col-start-2 min-w-0">
-      <div className="wrap-break-word peer rounded-2xl bg-muted px-4 py-2.5 text-foreground empty:hidden text-sm sm:text-[14px] leading-[1.3]" style={{ fontSize: undefined }}>
+      <div className="wrap-break-word peer rounded-2xl bg-muted px-4 py-2.5 text-foreground empty:hidden text-[14px] sm:text-[14px] leading-[1.3]" style={{ fontSize: undefined }}>
         <MessagePrimitive.Parts />
       </div>
       <div className="absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden">
