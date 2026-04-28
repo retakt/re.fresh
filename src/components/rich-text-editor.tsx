@@ -293,6 +293,7 @@ const CODE_LANGUAGES = [
   { value: "rust", label: "Rust" },
   { value: "php", label: "PHP" },
   { value: "ruby", label: "Ruby" },
+  { value: "b", label: "B" },
   { value: "html", label: "HTML" },
   { value: "css", label: "CSS" },
   { value: "sql", label: "SQL" },
@@ -921,16 +922,14 @@ export default function RichTextEditor({
                       const language = (document.getElementById("code-language") as HTMLSelectElement)?.value || "plaintext";
                       const code = (document.getElementById("code-content") as HTMLTextAreaElement)?.value || "";
                       if (code.trim()) {
-                        editor.chain().focus().setCodeBlock({ language }).run();
-                        // Set the code content after creating the block
-                        editor.commands.command(({ tr, state }) => {
-                          const { selection } = state;
-                          const node = selection.$from.node();
-                          if (node.type.name === 'animatedCodeBlock') {
-                            tr.setNodeMarkup(selection.$from.before(), undefined, { language, code });
-                          }
-                          return true;
-                        });
+                        // Insert code block with both language and code attributes
+                        editor.chain().focus().insertContent({
+                          type: 'animatedCodeBlock',
+                          attrs: {
+                            language,
+                            code,
+                          },
+                        }).run();
                         setCodeDialogOpen(false);
                         // Clear inputs
                         (document.getElementById("code-content") as HTMLTextAreaElement).value = "";

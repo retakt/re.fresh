@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button.tsx";
-import { Disc3, Play, Pause, PenLine, Music2 } from "lucide-react";
+import { Disc3, Play, Pause, PenLine, Music2, Eye } from "lucide-react";
+import { formatViewCount } from "@/hooks/use-view-count";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import { usePlayer, type PlayerTrack } from "@/lib/player";
@@ -161,7 +162,14 @@ export default function AlbumPage() {
                       ? <img src={albumInfo.cover_image} alt={decodedAlbum} className="w-full h-full object-cover" />
                       : <Disc3 size={32} className={`${palette.iconColor} opacity-60`} strokeWidth={1.2} />}
                   </motion.div>                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-medium">{albumInfo?.release_type || "Album"}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-medium">{albumInfo?.release_type || "Album"}</p>
+                      {(albumInfo?.view_count ?? 0) > 0 && (
+                        <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/70 font-medium">
+                          <Eye size={10} />{formatViewCount(albumInfo!.view_count)}
+                        </span>
+                      )}
+                    </div>
                     <h1
                       onClick={() => navigate(`/music/song/${tracks[0].id}`)}
                       className={`text-base font-extrabold tracking-tight leading-tight underline underline-offset-2 cursor-pointer truncate ${palette.iconColor}`}
@@ -200,7 +208,7 @@ export default function AlbumPage() {
                 {editingDesc ? (
                   <RichTextEditor value={albumDesc} onChange={setAlbumDesc} placeholder="Album notes, liner notes, story behind the release..." />
                 ) : albumDesc ? (
-                  <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: albumDesc }} />
+                  <div className="prose prose-sm max-w-none" style={{ lineHeight: "1.3" }} dangerouslySetInnerHTML={{ __html: albumDesc }} />
                 ) : (
                   <p className="text-xs text-muted-foreground/40 italic">{isAdmin ? "Click 'Edit notes' to add album notes." : "No album notes yet."}</p>
                 )}
@@ -220,7 +228,14 @@ export default function AlbumPage() {
 
               {/* Meta */}
               <div className="flex-1 min-w-0 space-y-0.5">
-                <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-medium">{albumInfo?.release_type || "Album"}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-medium">{albumInfo?.release_type || "Album"}</p>
+                  {(albumInfo?.view_count ?? 0) > 0 && (
+                    <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground/70 font-medium">
+                      <Eye size={9} />{formatViewCount(albumInfo!.view_count)}
+                    </span>
+                  )}
+                </div>
                 <h1
                   onClick={() => navigate(`/music/song/${tracks[0].id}`)}
                   className={`text-sm font-extrabold tracking-tight leading-tight underline underline-offset-2 cursor-pointer ${palette.iconColor}`}
@@ -260,7 +275,7 @@ export default function AlbumPage() {
                   <div className="relative">
                     <div
                       className={`prose max-w-none overflow-hidden transition-all duration-300 ${notesExpanded ? "" : "max-h-16"}`}
-                      style={{ fontSize: "11px", lineHeight: "1.5" }}
+                      style={{ fontSize: "11px", lineHeight: "1.3" }}
                       dangerouslySetInnerHTML={{ __html: albumDesc }}
                     />
                     {!notesExpanded && (

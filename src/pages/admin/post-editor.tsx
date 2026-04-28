@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -10,11 +10,12 @@ import ImageUpload from "@/components/ImageUpload.tsx";
 import { Loader2, X } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { supabase } from "@/lib/supabase";
-import type { Post } from "@/lib/supabase";
+import { searchTags, getContentTags, updateContentTags } from "@/lib/tags";
 import { useBackNav } from "@/hooks/use-back-nav";
 import { FloatingSave } from "@/components/ui/floating-save";
 import ButtonCopy from "@/components/ui/smoothui/button-copy";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
+import Combobox from "@/components/ui/smoothui/combobox";
 
 function slugify(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -33,28 +34,9 @@ export default function PostEditorPage() {
   const [coverImagePosition, setCoverImagePosition] = useState("50% 50%");
   const [coverImageOpacity, setCoverImageOpacity] = useState(1);
   const [tags, setTags] = useState<string[]>([]);
-  const [tagDraft, setTagDraft] = useState("");
-  const [tagLibraryValue, setTagLibraryValue] = useState("");
   const [published, setPublished] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEditing);
-  const [allPosts, setAllPosts] = useState<Post[]>([]);
-
-  // Load all posts to build tag library
-  useEffect(() => {
-    supabase
-      .from("posts")
-      .select("tags")
-      .then(({ data }) => {
-        if (data) setAllPosts(data as Post[]);
-      });
-  }, []);
-
-  const tagLibrary = useMemo(() => {
-    const set = new Set<string>();
-    allPosts.forEach((p) => (p.tags ?? []).forEach((t) => set.add(t)));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [allPosts]);
 
   // Load existing post when editing
   useEffect(() => {
@@ -79,8 +61,10 @@ export default function PostEditorPage() {
       setCoverImage(data.cover_image || "");
       setCoverImagePosition(data.cover_image_position || "50% 50%");
       setCoverImageOpacity(data.cover_image_opacity ?? 1);
-      setTags(data.tags || []);
       setPublished(data.published);
+      // Load tags from junction table
+      const existingTags = await getContentTags("post", data.id);
+      setTags(existingTags);
       setLoading(false);
     };
 
@@ -119,30 +103,22 @@ export default function PostEditorPage() {
       cover_image: coverImage || null,
       cover_image_position: coverImagePosition || null,
       cover_image_opacity: coverImageOpacity,
-      tags,
       published,
       updated_at: new Date().toISOString(),
     };
 
     if (isEditing) {
-      const { error, data } = await supabase
-        .from("posts")
-        .update(payload)
-        .eq("id", id)
-        .select();
-
+      const { error } = await supabase.from("posts").update(payload).eq("id", id);
       if (error) {
         console.error("Supabase update error:", error);
         toast.error(`Failed to save post: ${error.message || 'Unknown error'}`);
       } else {
+        await updateContentTags("post", id!, tags);
         toast.success("Post saved!");
         goBack();
       }
     } else {
-      const { error } = await supabase
-        .from("posts")
-        .insert([payload]);
-
+      const { data: newPost, error } = await supabase.from("posts").insert([payload]).select().single();
       if (error) {
         if (error.message.includes("unique")) {
           toast.error("A post with this slug already exists.");
@@ -150,6 +126,7 @@ export default function PostEditorPage() {
           toast.error("Failed to create post");
         }
       } else {
+        await updateContentTags("post", newPost.id, tags);
         toast.success("Post created!");
         goBack();
       }
@@ -221,58 +198,30 @@ export default function PostEditorPage() {
 
         {/* Tags */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <Label>Tags</Label>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2 text-xs"
-              onClick={() => {
-                const next = tagDraft.trim();
-                if (!next) return;
-                addTag(next);
-                setTagDraft("");
-              }}
-            >
-              Add+
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-            <Input
-              value={tagDraft}
-              onChange={(e) => setTagDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const next = tagDraft.trim();
-                  if (!next) return;
-                  addTag(next);
-                  setTagDraft("");
-                }
-              }}
-              placeholder="Type a tag and press Enter or Add+"
-            />
-            <select
-              value={tagLibraryValue}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (!value) return;
-                addTag(value);
-                setTagLibraryValue("");
-              }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Choose existing tag</option>
-              {tagLibrary.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
-            </select>
-          </div>
-
+          <Label>Tags</Label>
+          <Combobox
+            value=""
+            onValueChange={(value) => {
+              if (!value) return;
+              addTag(value);
+            }}
+            onCreateOption={async (value) => {
+              addTag(value);
+              // Save new tag to DB immediately
+              const { createTag } = await import("@/lib/tags");
+              await createTag(value);
+            }}
+            onSearch={async (query) => {
+              const results = await searchTags(query);
+              return results
+                .filter((t) => !tags.some((s) => s.toLowerCase() === t.name.toLowerCase()))
+                .map((t) => ({ value: t.name, label: t.name }));
+            }}
+            placeholder="#tags"
+            searchPlaceholder="Search or type new tag..."
+            emptyText="No tags found."
+            className="w-full"
+          />
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (

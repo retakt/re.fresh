@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen, Music2, GraduationCap,
-  ArrowRight, Quote, CalendarDays, RefreshCw,
+  ArrowRight, Quote, CalendarDays, RefreshCw, Eye,
 } from "lucide-react";
+import { formatViewCount } from "@/hooks/use-view-count";
 import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "@/lib/supabase";
 import { ALL_QUOTES, QUOTE_CARD_PALETTES } from "@/lib/quotes";
@@ -37,6 +38,7 @@ type ContentItem = {
   href: string;
   date: string;
   meta?: string;
+  viewCount?: number;
 };
 
 export default function Index() {
@@ -73,19 +75,19 @@ export default function Index() {
           Promise.all([
             supabase
               .from("posts")
-              .select("id, title, slug, created_at")
+              .select("id, title, slug, created_at, view_count")
               .eq("published", true)
               .order("created_at", { ascending: false })
               .limit(10),
             supabase
               .from("tutorials")
-              .select("id, title, slug, created_at, difficulty")
+              .select("id, title, slug, created_at, difficulty, view_count")
               .eq("published", true)
               .order("created_at", { ascending: false })
               .limit(10),
             supabase
               .from("music")
-              .select("id, title, created_at, genre, release_type, album")
+              .select("id, title, created_at, genre, release_type, album, view_count")
               .eq("published", true)
               .order("created_at", { ascending: false })
               .limit(10),
@@ -101,6 +103,7 @@ export default function Index() {
             href: `/blog/${p.slug}`,
             date: p.created_at,
             meta: "Blog",
+            viewCount: p.view_count ?? 0,
           })),
           ...(tutorialsRes.data || []).map((t) => ({
             id: t.id,
@@ -109,6 +112,7 @@ export default function Index() {
             href: `/tutorials/${t.slug}`,
             date: t.created_at,
             meta: t.difficulty ?? "Tutorial",
+            viewCount: t.view_count ?? 0,
           })),
           ...(musicRes.data || []).map((m) => ({
             id: m.id,
@@ -119,6 +123,7 @@ export default function Index() {
               : `/music/song/${m.id}`,
             date: m.created_at,
             meta: m.genre ?? m.release_type ?? "Music",
+            viewCount: m.view_count ?? 0,
           })),
         ];
 
@@ -157,7 +162,7 @@ export default function Index() {
       {/* ── HERO ── */}
       <PageHeader
         title="Home"
-        subtitle="My stash and everything! Launching soon..."
+        subtitle="Stash and everything! Launching soon..."
       />
 
       {/* ── QUOTE ── */}
@@ -254,17 +259,20 @@ export default function Index() {
                     >
                       <Link
                         to={item.href}
-                        className={`group flex items-center gap-3.5 rounded-xl border
+                        className={`group flex items-center gap-3 rounded-xl border
                           bg-gradient-to-r ${palette.gradient} ${palette.border}
-                          px-3.5 py-3 sm:px-4 sm:py-3.5 transition-all
+                          px-3 py-2.5 transition-all
                           outline-none hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5 active:scale-[0.99]`}
                       >
-                        <div className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
+                        <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
                           <Icon size={13} className={palette.iconColor} strokeWidth={2} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                            <span
+                              className="font-semibold text-foreground group-hover:text-primary transition-colors truncate leading-tight"
+                              style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
+                            >
                               {item.title}
                             </span>
                             <ArrowRight
@@ -272,16 +280,31 @@ export default function Index() {
                               className="shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground transition-all group-hover:translate-x-0.5"
                             />
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="flex items-center gap-1.5 mt-1">
                             {item.meta && (
-                              <span className={`text-[10px] font-semibold px-1.5 py-px rounded-full ${palette.badge}`}>
+                              <span
+                                className={`font-semibold px-2 py-0.5 rounded-full ${palette.badge}`}
+                                style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+                              >
                                 {item.meta}
                               </span>
                             )}
-                            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/50">
+                            <span
+                              className="flex items-center gap-0.5 text-muted-foreground/50"
+                              style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+                            >
                               <CalendarDays size={9} />
                               {format(new Date(item.date), "MMM d, yyyy")}
                             </span>
+                            {(item.viewCount ?? 0) > 0 && (
+                              <span
+                                className="flex items-center gap-0.5 text-muted-foreground/40"
+                                style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+                              >
+                                <Eye size={9} />
+                                {formatViewCount(item.viewCount!)}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </Link>

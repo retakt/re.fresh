@@ -1,21 +1,23 @@
-// Animation constants for SmoothUI components
+// Animation constants for smooth UI components
+
+export const DURATION_INSTANT = {
+  duration: 0,
+};
+
 export const SPRING_DEFAULT = {
   type: "spring" as const,
   stiffness: 300,
-  damping: 25,
-  mass: 0.8,
-};
-
-export const SPRING_FAST = {
-  type: "spring" as const,
-  stiffness: 400,
   damping: 30,
-  mass: 0.6,
 };
 
-export const SPRING_SLOW = {
+export const SPRING_SMOOTH = {
   type: "spring" as const,
   stiffness: 200,
+  damping: 25,
+};
+
+export const SPRING_BOUNCY = {
+  type: "spring" as const,
+  stiffness: 400,
   damping: 20,
-  mass: 1,
 };

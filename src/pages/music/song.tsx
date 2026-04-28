@@ -8,7 +8,9 @@ import {
   Play,
   Pause,
   PenLine,
+  Eye,
 } from "lucide-react";
+import { useViewCount, formatViewCount } from "@/hooks/use-view-count";
 import { supabase } from "@/lib/supabase";
 import type { Music } from "@/lib/supabase";
 import { usePlayer } from "@/lib/player";
@@ -26,6 +28,9 @@ export default function SongPage() {
   const { play, pause, isTrackPlaying, currentTrack } = usePlayer();
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  // Must be before any early returns — Rules of Hooks
+  const viewCount = useViewCount(id, 'music', track?.view_count ?? 0);
 
   useEffect(() => {
     const fetchTrack = async () => {
@@ -141,13 +146,18 @@ export default function SongPage() {
               </motion.div>
             </div>
 
-            {/* Release type + play button */}
-            <div className="flex items-center justify-between gap-2 mt-2">
+            {/* Release type + view count on same line */}
+            <div className="flex items-center gap-2 mt-2">
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">{track.release_type}</p>
+              {viewCount > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/70 font-medium">
+                  <Eye size={10} />{formatViewCount(viewCount)}
+                </span>
+              )}
               {track.audio_url && (
                 <button
                   onClick={handlePlayPause}
-                  className={`w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 active:scale-95 ${palette.playBg} text-white shrink-0`}
+                  className={`ml-auto w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 active:scale-95 ${palette.playBg} text-white shrink-0`}
                 >
                   {isPlaying
                     ? <Pause size={13} fill="currentColor" />
@@ -200,7 +210,7 @@ export default function SongPage() {
           {/* RIGHT: description */}
           <div className="flex-1 min-w-0">
             {track.description
-              ? <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: track.description }} />
+              ? <div className="prose prose-sm max-w-none" style={{ lineHeight: "1.3" }} dangerouslySetInnerHTML={{ __html: track.description }} />
               : <p className="text-xs text-muted-foreground/40 italic">No details yet.</p>}
           </div>
         </div>
@@ -233,7 +243,14 @@ export default function SongPage() {
                   : <Play size={15} fill="currentColor" className="translate-x-px" />}
               </button>
             )}
-            <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-medium">{track.release_type}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-medium">{track.release_type}</p>
+              {viewCount > 0 && (
+                <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground/70 font-medium">
+                  <Eye size={9} />{formatViewCount(viewCount)}
+                </span>
+              )}
+            </div>
             <h1 className="text-sm font-bold tracking-tight leading-tight">{track.title}</h1>
             {track.artist && <p className="text-[11px] text-muted-foreground">{track.artist}</p>}
             <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground/70">
@@ -280,7 +297,7 @@ export default function SongPage() {
             <div className="mt-3">
               <div
                 className={`prose max-w-none overflow-hidden transition-all duration-300 ${descExpanded ? "" : "max-h-16"}`}
-                style={{ fontSize: "12px", lineHeight: "1.6" }}
+                style={{ fontSize: "12px", lineHeight: "1.3" }}
                 dangerouslySetInnerHTML={{ __html: track.description }}
               />
               {!descExpanded && (

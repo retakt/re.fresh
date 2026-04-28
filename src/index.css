@@ -5,6 +5,7 @@
 @import "@fontsource/plus-jakarta-sans/500.css";
 @import "@fontsource/plus-jakarta-sans/600.css";
 @import "@fontsource/plus-jakarta-sans/700.css";
+@import "tw-shimmer";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -222,10 +223,16 @@ html.light {
 }
 .prose strong {
   font-weight: 700;
-  color: var(--foreground);
 }
 .prose em {
   color: var(--foreground);
+}
+
+/* Ensure colored text keeps its color when bold */
+.prose strong[style*="color"],
+.prose strong *[style*="color"],
+.prose *[style*="color"] strong {
+  color: inherit !important;
 }
 .prose h1, .prose h2, .prose h3, .prose h4 {
   font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
@@ -255,11 +262,22 @@ html.light {
 }
 .dark .prose strong,
 .prose-invert strong {
+  font-weight: 700;
   color: var(--foreground);
 }
 .dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4,
 .prose-invert h1, .prose-invert h2, .prose-invert h3, .prose-invert h4 {
   color: var(--foreground);
+}
+
+/* Ensure colored text keeps its color when bold in dark mode */
+.dark .prose strong[style*="color"],
+.dark .prose strong *[style*="color"],
+.dark .prose *[style*="color"] strong,
+.prose-invert strong[style*="color"],
+.prose-invert strong *[style*="color"],
+.prose-invert *[style*="color"] strong {
+  color: inherit !important;
 }
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -394,6 +412,25 @@ input[type="range"]::-moz-range-thumb {
 .dark .sidebar-scroll::-webkit-scrollbar-thumb:hover {
   background: oklch(0.55 0.005 260 / 0.7);
 }
+
+/* ── Chat scrollbar — primary color themed ── */
+.chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+.chat-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--primary) 50%, transparent);
+}
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--primary) 80%, transparent);
+}
 @keyframes musicbar {
   from { transform: scaleY(0.3); }
   to   { transform: scaleY(1); }
@@ -444,13 +481,13 @@ img, a {
   * {
     -webkit-touch-callout: none;
   }
-  
+
   /* Prevent text selection on mobile */
   body {
     -webkit-user-select: none;
     user-select: none;
   }
-  
+
   /* Re-enable for inputs */
   input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;
@@ -534,13 +571,13 @@ img, a {
   * {
     -webkit-touch-callout: none;
   }
-  
+
   /* Prevent text selection on mobile */
   body {
     -webkit-user-select: none;
     user-select: none;
   }
-  
+
   /* Re-enable for inputs */
   input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;
@@ -624,13 +661,13 @@ img, a {
   * {
     -webkit-touch-callout: none;
   }
-  
+
   /* Prevent text selection on mobile */
   body {
     -webkit-user-select: none;
     user-select: none;
   }
-  
+
   /* Re-enable for inputs */
   input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;

@@ -14,6 +14,7 @@ import { FloatingSave } from "@/components/ui/floating-save";
 import ButtonCopy from "@/components/ui/smoothui/button-copy";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 import RichTextEditor from "@/components/rich-text-editor.tsx";
+import Combobox from "@/components/ui/smoothui/combobox";
 
 type FormData = {
   title: string;
@@ -167,17 +168,19 @@ export default function MusicEditorPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="release_type">Release Type</Label>
-            <select
-              id="release_type"
-              name="release_type"
+            <Combobox
               value={form.release_type}
-              onChange={(e) => setForm({ ...form, release_type: e.target.value })}
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="single">Single</option>
-              <option value="album">Album</option>
-              <option value="ep">EP</option>
-            </select>
+              onValueChange={(value) => setForm({ ...form, release_type: value })}
+              options={[
+                { value: "single", label: "Single" },
+                { value: "album", label: "Album" },
+                { value: "ep", label: "EP" },
+              ]}
+              placeholder="Select release type"
+              searchPlaceholder="Search..."
+              emptyText="No release type found"
+              className="w-full"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="album">Album / EP Name</Label>

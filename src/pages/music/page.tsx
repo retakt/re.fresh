@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import {
   Music2, Plus, Disc3, ListMusic,
-  MicVocal, Play, Pause, PenLine, RefreshCw,
+  MicVocal, Play, Pause, PenLine, RefreshCw, Eye,
 } from "lucide-react";
+import { formatViewCount } from "@/hooks/use-view-count";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
 import {
   Empty, EmptyHeader, EmptyMedia,
@@ -157,6 +158,16 @@ function TrackRow({
             )}
           </div>
 
+          {/* View count — centered vertically, before social icons */}
+          {(track.view_count ?? 0) > 0 && (
+            <span
+              className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-secondary/60 text-muted-foreground/70 font-medium shrink-0"
+              style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
+            >
+              <Eye size={9} />{formatViewCount(track.view_count)}
+            </span>
+          )}
+
           {/* Platform icons */}
           {extLinks.length > 0 && (
             <div className="flex items-center gap-1 shrink-0">
@@ -300,8 +311,7 @@ export default function MusicPage() {
       {/* Header */}
       <PageHeader
         title="Music"
-        subtitle="List of my musical works..."
-        subtitle2="Music for life. ~ hmph!"
+        subtitle="Some musical works..."
         action={isAdmin ? (
           <Link to="/admin/music">
             <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>

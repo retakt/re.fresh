@@ -30,6 +30,7 @@ export type Post = {
   cover_image_opacity: number | null
   tags: string[]
   published: boolean
+  view_count: number
   created_at: string
   updated_at: string
 }
@@ -51,6 +52,7 @@ export type Music = {
   description: string | null
   album_description: string | null
   published: boolean
+  view_count: number
   created_at: string
   updated_at: string
 }
@@ -66,6 +68,7 @@ export type Tutorial = {
   cover_image: string | null
   tags: string[]
   published: boolean
+  view_count: number
   created_at: string
   updated_at: string
 }

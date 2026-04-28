@@ -1,19 +1,20 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   Home, BookOpen, Music2, GraduationCap,
-  User, FolderOpen, X,
+  User, FolderOpen, X, MessageSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { prefetchRoute } from "@/lib/prefetch";
 
 const NAV_LINKS = [
-  { href: "/",          icon: Home,          label: "Home" },
-  { href: "/blog",      icon: BookOpen,      label: "Blog" },
-  { href: "/music",     icon: Music2,        label: "Music" },
-  { href: "/tutorials", icon: GraduationCap, label: "Tutorials" },
-  { href: "/about",     icon: User,          label: "About" },
-  { href: "/files",     icon: FolderOpen,    label: "Files" },
+  { href: "/",          icon: Home,           label: "Home" },
+  { href: "/blog",      icon: BookOpen,       label: "Blog" },
+  { href: "/music",     icon: Music2,         label: "Music" },
+  { href: "/tutorials", icon: GraduationCap,  label: "Tutorials" },
+  { href: "/about",     icon: User,           label: "About" },
+  { href: "/files",     icon: FolderOpen,     label: "Files" },
+  { href: "/chat",      icon: MessageSquare,  label: "Chat" },
 ];
 
 interface SidebarProps {

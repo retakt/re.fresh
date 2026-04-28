@@ -56,28 +56,37 @@
         try {
           // next-themes stores under 'theme' key by default
           var stored = localStorage.getItem("theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           var isDark =
             stored === "dark" ||
-            (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches) ||
-            (stored === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            (!stored && prefersDark) ||
+            (stored === "system" && prefersDark);
 
-          // Apply immediately before paint
-          document.documentElement.classList.add(isDark ? "dark" : "light");
+          // Apply immediately before paint - remove opposite class first
+          var html = document.documentElement;
+          html.classList.remove(isDark ? "light" : "dark");
+          html.classList.add(isDark ? "dark" : "light");
+          
           // Set color-scheme so browser native UI matches
-          document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+          html.style.colorScheme = isDark ? "dark" : "light";
+          
+          // Store resolved theme for React components to read synchronously
+          html.setAttribute("data-theme", isDark ? "dark" : "light");
         } catch (e) {}
       })();
     </script>
-
-    <script type="module" crossorigin src="/assets/main-ChSsKIm8.js"></script>
+
+    <!-- Umami Analytics — privacy-first, no cookies -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="28f6a353-b9da-46c5-a8ae-fc48fd00a79f"></script>
+    <script type="module" crossorigin src="/assets/main-KxL_yCbO.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/react-BC315sbK.js">
     <link rel="modulepreload" crossorigin href="/assets/motion-D0ioCj-s.js">
-    <link rel="modulepreload" crossorigin href="/assets/index-BVDX8YS_.js">
-    <link rel="modulepreload" crossorigin href="/assets/radix-BSzCCVll.js">
-    <link rel="modulepreload" crossorigin href="/assets/supabase-9xycA84o.js">
+    <link rel="modulepreload" crossorigin href="/assets/index-CRr_WgLC.js">
+    <link rel="modulepreload" crossorigin href="/assets/radix-ix8YN8sL.js">
+    <link rel="modulepreload" crossorigin href="/assets/supabase-B-ZHADBV.js">
     <link rel="modulepreload" crossorigin href="/assets/sentry-CJdjFCLC.js">
     <link rel="modulepreload" crossorigin href="/assets/router-B1K99Y-a.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-BDt-Rf--.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-AIdhEUVd.css">
   </head>
   <body>
     <div id="root">
@@ -136,6 +145,6 @@
         // Fallback: remove after 8s no matter what
         setTimeout(function() { shell.remove(); observer.disconnect(); }, 8000);
       })();
-    </script>
+    </script>
   </body>
 </html>

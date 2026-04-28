@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Check, Loader2, X } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -9,12 +9,13 @@ import { Badge } from "@/components/ui/badge.tsx";
 import RichTextEditor from "@/components/rich-text-editor.tsx";
 import ImageUpload from "@/components/ImageUpload.tsx";
 import { supabase } from "@/lib/supabase";
-import type { Tutorial } from "@/lib/supabase";
+import { searchTags, getContentTags, updateContentTags, searchCategories, getContentCategories, updateContentCategories } from "@/lib/tags";
 import { useBackNav } from "@/hooks/use-back-nav";
 import { useAuth } from "@/hooks/useAuth";
 import { FloatingSave } from "@/components/ui/floating-save";
 import ButtonCopy from "@/components/ui/smoothui/button-copy";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
+import Combobox from "@/components/ui/smoothui/combobox";
 
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -55,27 +56,7 @@ export default function TutorialEditorPage() {
   const [form, setForm] = useState<FormData>(emptyForm);
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
-  const [tagDraft, setTagDraft] = useState("");
-  const [categoryDraft, setCategoryDraft] = useState("");
   const [customDifficulty, setCustomDifficulty] = useState(false);
-  const [allTutorials, setAllTutorials] = useState<Tutorial[]>([]);
-
-  // Load tag library from existing tutorials — gracefully skip if tags column missing
-  useEffect(() => {
-    supabase.from("tutorials").select("category, difficulty").then(({ data }) => {
-      if (data) setAllTutorials(data as Tutorial[]);
-    });
-  }, []);
-
-  const tagLibrary = useMemo(() => {
-    const set = new Set<string>();
-    allTutorials.forEach((t) => {
-      (t.tags ?? []).forEach((tag) => set.add(tag));
-      if (t.category) set.add(t.category);
-      if (t.difficulty) set.add(t.difficulty);
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [allTutorials]);
 
   // Load existing tutorial when editing
   useEffect(() => {
@@ -98,12 +79,18 @@ export default function TutorialEditorPage() {
         slug: data.slug,
         excerpt: data.excerpt || "",
         content: data.content || "",
-        category: data.category ? data.category.split(", ") : [],
+        category: [],
         difficulty: data.difficulty || "",
         cover_image: data.cover_image || "",
-        tags: data.tags || [],
+        tags: [],
         published: data.published,
       });
+      // Load tags and categories from junction tables
+      const [existingTags, existingCategories] = await Promise.all([
+        getContentTags("tutorial", data.id),
+        getContentCategories("tutorial", data.id),
+      ]);
+      setForm((f) => ({ ...f, tags: existingTags, category: existingCategories }));
       setLoading(false);
     };
 
@@ -149,10 +136,8 @@ export default function TutorialEditorPage() {
       slug: form.slug || slugify(form.title),
       excerpt: form.excerpt || null,
       content: form.content || null,
-      category: form.category.join(", ") || null,
       difficulty: form.difficulty || null,
       cover_image: form.cover_image || null,
-      tags: form.tags,
       published: form.published,
       updated_at: new Date().toISOString(),
     };
@@ -163,29 +148,33 @@ export default function TutorialEditorPage() {
         console.error("Tutorial save error:", error);
         if (error.code === "23514") {
           toast.error("Run this SQL in Supabase: ALTER TABLE tutorials DROP CONSTRAINT IF EXISTS tutorials_difficulty_check;");
-        } else if (error.message.includes("tags")) {
-          toast.error("Run migration v0_1_4 in Supabase SQL editor to add the tags column");
         } else {
           toast.error(`Failed to save: ${error.message}`);
         }
       } else {
+        await Promise.all([
+          updateContentTags("tutorial", id!, form.tags),
+          updateContentCategories("tutorial", id!, form.category),
+        ]);
         toast.success("Tutorial saved.");
         goBack();
       }
     } else {
-      const { error } = await supabase.from("tutorials").insert([payload]);
+      const { data: newTutorial, error } = await supabase.from("tutorials").insert([payload]).select().single();
       if (error) {
         console.error("Tutorial save error:", error);
         if (error.code === "23514") {
           toast.error("Run this SQL in Supabase: ALTER TABLE tutorials DROP CONSTRAINT IF EXISTS tutorials_difficulty_check;");
-        } else if (error.message.includes("tags")) {
-          toast.error("Run migration v0_1_4 in Supabase SQL editor to add the tags column");
         } else if (error.message.includes("unique")) {
           toast.error("A tutorial with this slug already exists.");
         } else {
           toast.error(`Failed to create: ${error.message}`);
         }
       } else {
+        await Promise.all([
+          updateContentTags("tutorial", newTutorial.id, form.tags),
+          updateContentCategories("tutorial", newTutorial.id, form.category),
+        ]);
         toast.success("Tutorial created.");
         goBack();
       }
@@ -242,36 +231,28 @@ export default function TutorialEditorPage() {
           </div>
           <div className="space-y-1.5">
             <Label>Category</Label>
-            <div className="flex gap-2">
-              <Input
-                value={categoryDraft}
-                onChange={(e) => setCategoryDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    const next = categoryDraft.trim();
-                    if (!next) return;
-                    addCategory(next);
-                    setCategoryDraft("");
-                  }
-                }}
-                placeholder="e.g. Music Production"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="shrink-0"
-                onClick={() => {
-                  const next = categoryDraft.trim();
-                  if (!next) return;
-                  addCategory(next);
-                  setCategoryDraft("");
-                }}
-              >
-                Add+
-              </Button>
-            </div>
+            <Combobox
+              value=""
+              onValueChange={(value) => {
+                if (!value) return;
+                addCategory(value);
+              }}
+              onCreateOption={async (value) => {
+                addCategory(value);
+                const { createCategory } = await import("@/lib/tags");
+                await createCategory(value);
+              }}
+              onSearch={async (query) => {
+                const results = await searchCategories(query);
+                return results
+                  .filter((c) => !form.category.some((s) => s.toLowerCase() === c.name.toLowerCase()))
+                  .map((c) => ({ value: c.name, label: c.name }));
+              }}
+              placeholder="#category"
+              searchPlaceholder="Search or type new category..."
+              emptyText="No categories found."
+              className="w-full"
+            />
             {form.category.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {form.category.map((cat) => (
@@ -305,85 +286,44 @@ export default function TutorialEditorPage() {
                 placeholder="e.g. Expert, Pro, Absolute Beginner"
               />
             ) : (
-              <select
+              <Combobox
                 value={form.difficulty}
-                onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value }))}
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="">Select difficulty</option>
-                {DIFFICULTY_PRESETS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+                onValueChange={(value) => setForm((f) => ({ ...f, difficulty: value }))}
+                options={DIFFICULTY_PRESETS.map((p) => ({ value: p, label: p }))}
+                placeholder="Select difficulty"
+                searchPlaceholder="Search difficulty..."
+                emptyText="No difficulty found"
+                className="w-full"
+              />
             )}
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>Excerpt</Label>
-          <Input
-            value={form.excerpt}
-            onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
-            placeholder="Short description"
-          />
-        </div>
-
-        {/* Tags */}
+        {/* Tags — shown right after difficulty */}
         <div className="space-y-2">
           <Label>Tags</Label>
-          {/* Type + Enter or tap Add+ */}
-          <div className="flex gap-2">
-            <Input
-              value={tagDraft}
-              onChange={(e) => setTagDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const next = tagDraft.trim();
-                  if (!next) return;
-                  addTag(next);
-                  setTagDraft("");
-                }
-              }}
-              placeholder="Type a tag…"
-            />
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="shrink-0 px-3"
-              onClick={() => {
-                const next = tagDraft.trim();
-                if (!next) return;
-                addTag(next);
-                setTagDraft("");
-              }}
-            >
-              Add+
-            </Button>
-          </div>
-
-          {/* Library chips — tap to add, no native dropdown */}
-          {tagLibrary.filter((tag) => !form.tags.some((t) => t.toLowerCase() === tag.toLowerCase())).length > 0 && (
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground">From library — tap to add:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {tagLibrary
-                  .filter((tag) => !form.tags.some((t) => t.toLowerCase() === tag.toLowerCase()))
-                  .map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => addTag(tag)}
-                      className="px-2 py-0.5 rounded-full text-[11px] bg-secondary text-muted-foreground hover:bg-primary/15 hover:text-primary active:bg-primary/20 active:text-primary transition-colors"
-                      style={{ touchAction: "manipulation" }}
-                    >
-                      + {tag}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* Applied tags */}
+          <Combobox
+            value=""
+            onValueChange={(value) => {
+              if (!value) return;
+              addTag(value);
+            }}
+            onCreateOption={async (value) => {
+              addTag(value);
+              const { createTag } = await import("@/lib/tags");
+              await createTag(value);
+            }}
+            onSearch={async (query) => {
+              const results = await searchTags(query);
+              return results
+                .filter((t) => !form.tags.some((s) => s.toLowerCase() === t.name.toLowerCase()))
+                .map((t) => ({ value: t.name, label: t.name }));
+            }}
+            placeholder="#tags"
+            searchPlaceholder="Search or type new tag..."
+            emptyText="No tags found."
+            className="w-full"
+          />
           {form.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {form.tags.map((tag) => (
@@ -401,6 +341,15 @@ export default function TutorialEditorPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Excerpt</Label>
+          <Input
+            value={form.excerpt}
+            onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
+            placeholder="Short description"
+          />
         </div>
 
         {/* Cover image */}

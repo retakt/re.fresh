@@ -43,7 +43,10 @@ export const AnimatedCodeBlock = Node.create({
       },
       code: {
         default: "",
-        parseHTML: (element) => element.textContent,
+        parseHTML: (element) => element.getAttribute("data-code") || element.textContent,
+        renderHTML: (attributes) => ({
+          "data-code": attributes.code,
+        }),
       },
     };
   },
@@ -78,6 +81,7 @@ export const AnimatedCodeBlock = Node.create({
       mergeAttributes(HTMLAttributes, {
         "data-animated-code": "true",
         "data-language": node.attrs.language,
+        "data-code": node.attrs.code,
       }),
       ["code", { class: `language-${node.attrs.language}` }, node.attrs.code || ""],
     ];

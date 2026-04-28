@@ -1,16 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-  Home, BookOpen, Music2, GraduationCap, FolderOpen,
+  Home, BookOpen, Music2, GraduationCap, FolderOpen, MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { prefetchRoute } from "@/lib/prefetch";
 
 const TABS = [
-  { href: "/", icon: Home, label: "Home" },
-  { href: "/blog", icon: BookOpen, label: "Blog" },
-  { href: "/music", icon: Music2, label: "Music" },
-  { href: "/tutorials", icon: GraduationCap, label: "Learn" },
-  { href: "/files", icon: FolderOpen, label: "Files" },
+  { href: "/",          icon: Home,           label: "Home" },
+  { href: "/blog",      icon: BookOpen,       label: "Blog" },
+  { href: "/chat",      icon: MessageSquare,  label: "Chat" },
+  { href: "/tutorials", icon: GraduationCap,  label: "Learn" },
+  { href: "/files",     icon: FolderOpen,     label: "Files" },
 ];
 
 export default function BottomNav() {

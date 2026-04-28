@@ -25,6 +25,7 @@ const LoginPage        = lazy(() => import("./pages/login.tsx"));
 const SignupPage       = lazy(() => import("./pages/signup.tsx"));
 const NotFound         = lazy(() => import("./pages/NotFound.tsx"));
 const SearchPage       = lazy(() => import("./pages/search/page.tsx"));
+const ChatPage         = lazy(() => import("./pages/chat/page.tsx"));
 
 // ── Admin / editor (already lazy) ────────────────────────────────────────────
 const AdminPage          = lazy(() => import("./pages/admin/page.tsx"));
@@ -72,6 +73,7 @@ function AppContent() {
             } />
             <Route path="/files"             element={<FilesPage />} />
             <Route path="/search"            element={<SearchPage />} />
+            <Route path="/chat"              element={<ChatPage />} />
 
             {/* Admin routes */}
             <Route path="/admin" element={

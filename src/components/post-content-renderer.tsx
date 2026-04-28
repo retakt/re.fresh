@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { Code, CodeHeader, CodeBlock } from "@/components/animate-ui/components/animate/code";
 import { FileCode } from "lucide-react";
 import { createRoot } from "react-dom/client";
+import { ThemeProvider } from "@/components/providers/theme";
+import { useTheme } from "@/components/providers/theme";
 
 interface PostContentRendererProps {
   html: string;
@@ -10,6 +12,7 @@ interface PostContentRendererProps {
 
 export function PostContentRenderer({ html, className = "" }: PostContentRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -33,19 +36,21 @@ export function PostContentRenderer({ html, className = "" }: PostContentRendere
       // Replace the pre element
       pre.replaceWith(reactContainer);
 
-      // Render the React component
+      // Render the React component wrapped with ThemeProvider to ensure theme context
       const root = createRoot(reactContainer);
       root.render(
-        <Code code={code}>
-          <CodeHeader icon={FileCode} copyButton>
-            {language}
-          </CodeHeader>
-          <CodeBlock 
-            lang={language}
-            writing={true}
-            cursor={true}
-          />
-        </Code>
+        <ThemeProvider>
+          <Code code={code}>
+            <CodeHeader icon={FileCode} copyButton>
+              {language}
+            </CodeHeader>
+            <CodeBlock 
+              lang={language}
+              writing={true}
+              cursor={true}
+            />
+          </Code>
+        </ThemeProvider>
       );
     });
 
@@ -54,7 +59,7 @@ export function PostContentRenderer({ html, className = "" }: PostContentRendere
     while (wrapper.firstChild) {
       containerRef.current.appendChild(wrapper.firstChild);
     }
-  }, [html]);
+  }, [html, theme]); // Re-render when theme changes
 
   return <div ref={containerRef} className={className} />;
 }

@@ -27,7 +27,7 @@ function Code({ className, code, ...props }: CodeProps) {
     <CodeProvider value={{ code }}>
       <div
         className={cn(
-          'relative flex flex-col overflow-hidden border border-[#c9a582] bg-[#D7B397] rounded-lg',
+          'relative flex flex-col overflow-hidden rounded-lg',
           className,
         )}
         {...props}
@@ -53,7 +53,7 @@ function CodeHeader({
   return (
     <div
       className={cn(
-        'bg-[#2a2a2a] shrink-0 gap-x-2 border-b border-[#3a3a3a] text-sm flex text-gray-400 items-center px-4 w-full h-10',
+        'shrink-0 gap-x-2 border-b text-sm flex items-center px-4 w-full h-10',
         className,
       )}
       {...props}
@@ -91,7 +91,7 @@ function CodeBlock({ cursor, className, ...props }: CodeBlockProps) {
         '[&>pre,_&_code]:!bg-transparent [&>pre,_&_code]:[background:transparent_!important] [&>pre,_&_code]:border-none [&_code]:!text-[13px] [&_code_.line]:!px-0',
         '[&>pre]:!m-0 [&>pre]:!p-0',
         cursor &&
-          "data-[done=false]:[&_.line:last-of-type::after]:content-['|'] data-[done=false]:[&_.line:last-of-type::after]:inline-block data-[done=false]:[&_.line:last-of-type::after]:w-[1ch] data-[done=false]:[&_.line:last-of-type::after]:-translate-px data-[done=false]:[&_.line:last-of-type::after]:text-black",
+          "data-[done=false]:[&_.line:last-of-type::after]:content-['|'] data-[done=false]:[&_.line:last-of-type::after]:inline-block data-[done=false]:[&_.line:last-of-type::after]:w-[1ch] data-[done=false]:[&_.line:last-of-type::after]:-translate-px",
         className,
       )}
       code={code}

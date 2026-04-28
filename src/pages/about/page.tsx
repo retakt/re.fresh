@@ -46,7 +46,6 @@ const FACTS = [
   "Music production & sound design",
   "Lazy~Life Enjoyer",
   "Open source is a right!",
-  "Stuck in Matrix... or am I?"
 ];
 
 /* ---------------- PAGE ---------------- */
@@ -65,10 +64,10 @@ export default function AboutPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="space-y-3"
+        className="space-y-2"
       >
-        <h1 className="text-2xl font-bold tracking-tight">About</h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <h1 className="font-bold tracking-tight" style={{ fontSize: "clamp(18px, 5vw, 24px)" }}>About</h1>
+        <p className="text-muted-foreground leading-relaxed" style={{ fontSize: "clamp(12px, 3vw, 14px)" }}>
           Coming soon...
         </p>
       </motion.div>
@@ -78,17 +77,21 @@ export default function AboutPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" }}
-        className="space-y-3"
+        className="space-y-2"
       >
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+        <h2
+          className="font-bold uppercase tracking-widest text-muted-foreground"
+          style={{ fontSize: "clamp(9px, 2.5vw, 11px)" }}
+        >
           Facts
         </h2>
 
-        <ul className="space-y-2">
+        <ul className="space-y-1.5">
           {FACTS.map((fact) => (
             <li
               key={fact}
-              className="flex items-center gap-2.5 text-sm text-foreground"
+              className="flex items-center gap-2.5 text-foreground"
+              style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
               {fact}
@@ -102,9 +105,12 @@ export default function AboutPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.18, ease: "easeOut" }}
-        className="space-y-3"
+        className="space-y-2"
       >
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+        <h2
+          className="font-bold uppercase tracking-widest text-muted-foreground"
+          style={{ fontSize: "clamp(9px, 2.5vw, 11px)" }}
+        >
           Find me
         </h2>
 
