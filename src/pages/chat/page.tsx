@@ -2,7 +2,10 @@ import { useEffect } from "react";
 import { Thread } from "@/components/thread-custom";
 import { useChatContext } from "@/components/providers/chat";
 
-export type AttachedFile = { name: string; content: string };
+export type AttachedFile =
+  | { type: "text"; name: string; content: string }
+  | { type: "image"; name: string; base64: string; mimeType: string }
+  | { type: "audio"; name: string; base64: string; mimeType: string };
 
 export default function ChatPage() {
   const { sessionId, attachedFile, setAttachedFile } = useChatContext();

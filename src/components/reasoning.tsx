@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import {
@@ -131,14 +131,14 @@ function ReasoningTrigger({
     <CollapsibleTrigger
       data-slot="reasoning-trigger"
       className={cn(
-        "aui-reasoning-trigger group/trigger flex max-w-[75%] items-center gap-2 py-1 text-muted-foreground text-sm transition-colors hover:text-foreground",
+        "aui-reasoning-trigger group/trigger flex max-w-[75%] items-center gap-2 py-1 text-muted-foreground text-xs transition-colors hover:text-foreground",
         className,
       )}
       {...props}
     >
       <BrainIcon
         data-slot="reasoning-trigger-icon"
-        className="aui-reasoning-trigger-icon size-4 shrink-0"
+        className="aui-reasoning-trigger-icon size-3 shrink-0"
       />
       <span
         data-slot="reasoning-trigger-label"
@@ -158,7 +158,7 @@ function ReasoningTrigger({
       <ChevronDownIcon
         data-slot="reasoning-trigger-chevron"
         className={cn(
-          "aui-reasoning-trigger-chevron mt-0.5 size-4 shrink-0",
+          "aui-reasoning-trigger-chevron mt-0.5 size-3 shrink-0",
           "transition-transform duration-(--animation-duration) ease-out",
           "group-data-[state=closed]/trigger:-rotate-90",
           "group-data-[state=open]/trigger:rotate-0",
@@ -177,7 +177,7 @@ function ReasoningContent({
     <CollapsibleContent
       data-slot="reasoning-content"
       className={cn(
-        "aui-reasoning-content relative overflow-hidden text-muted-foreground text-sm outline-none",
+        "aui-reasoning-content relative overflow-hidden text-muted-foreground text-[11px] outline-none",
         "group/collapsible-content ease-out",
         "data-[state=closed]:animate-collapsible-up",
         "data-[state=open]:animate-collapsible-down",
@@ -201,6 +201,12 @@ function ReasoningText({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="reasoning-text"
       className={cn(
         "aui-reasoning-text relative z-0 max-h-64 space-y-4 overflow-y-auto ps-6 pt-2 pb-2 leading-relaxed",
+        // Tone down bold/headings inside reasoning — they should not stand out
+        "[&_strong]:font-normal [&_strong]:text-muted-foreground/50",
+        "[&_b]:font-normal [&_b]:text-muted-foreground/50",
+        "[&_h1]:text-muted-foreground/50 [&_h1]:font-normal",
+        "[&_h2]:text-muted-foreground/50 [&_h2]:font-normal",
+        "[&_h3]:text-muted-foreground/50 [&_h3]:font-normal",
         "transform-gpu transition-[transform,opacity]",
         "group-data-[state=open]/collapsible-content:animate-in",
         "group-data-[state=closed]/collapsible-content:animate-out",
@@ -224,6 +230,8 @@ const ReasoningGroupImpl: ReasoningGroupComponent = ({
   startIndex,
   endIndex,
 }) => {
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+
   const isReasoningStreaming = useAuiState((s) => {
     if (s.message.status?.type !== "running") return false;
     const lastIndex = s.message.parts.length - 1;
@@ -233,8 +241,26 @@ const ReasoningGroupImpl: ReasoningGroupComponent = ({
     return lastIndex >= startIndex && lastIndex <= endIndex;
   });
 
+  // Auto-close 300ms after streaming ends, unless user manually opened it
+  const prevStreaming = useRef(false);
+  useEffect(() => {
+    if (prevStreaming.current && !isReasoningStreaming && userOpen === null) {
+      const t = setTimeout(() => setUserOpen(false), 300);
+      return () => clearTimeout(t);
+    }
+    prevStreaming.current = isReasoningStreaming;
+  }, [isReasoningStreaming, userOpen]);
+
+  // While streaming: open automatically. Once done: respect user toggle, default closed.
+  const isOpen = isReasoningStreaming ? true : (userOpen ?? false);
+
   return (
-    <ReasoningRoot defaultOpen={isReasoningStreaming}>
+    <ReasoningRoot
+      open={isOpen}
+      onOpenChange={(v) => {
+        if (!isReasoningStreaming) setUserOpen(v);
+      }}
+    >
       <ReasoningTrigger active={isReasoningStreaming} />
       <ReasoningContent aria-busy={isReasoningStreaming}>
         <ReasoningText>{children}</ReasoningText>

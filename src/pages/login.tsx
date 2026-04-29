@@ -7,6 +7,7 @@ import AnimatedInput from '@/components/ui/animated-input'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Mail, Lock } from 'lucide-react'
 import MagneticButton from '@/components/ui/smoothui/magnetic-button'
+import { EncryptedText } from '@/components/ui/encrypted-text'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -47,7 +48,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-bold tracking-tight">
-            <span className="text-sky-400 dark:text-sky-300">re</span><span className="text-primary">.</span><span className="text-foreground">Takt</span>
+            <span className="text-sky-400 dark:text-sky-300">
+              <EncryptedText text="re" />
+            </span>
+            <span className="text-primary">
+              <EncryptedText text="." />
+            </span>
+            <span className="text-foreground">
+              <EncryptedText text="Takt" />
+            </span>
           </h1>
           <p className="text-base text-muted-foreground">an Isolated Space for you.</p>
         </div>

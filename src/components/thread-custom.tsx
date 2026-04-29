@@ -13,6 +13,7 @@ import {
   ErrorPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
+  useAui,
   useAuiState,
 } from "@assistant-ui/react";
 import {
@@ -34,6 +35,7 @@ import {
 import type { FC } from "react";
 import { useEffect, useRef } from "react";
 import type { AttachedFile } from "@/pages/chat/page";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 // ── Minimal Web Audio tones for mic on/off ────────────────────────────────────
 function playMicTone(type: "on" | "off") {
@@ -66,7 +68,27 @@ function playMicTone(type: "on" | "off") {
 const WELCOME_TITLE = "Good day!";
 const WELCOME_SUBTITLE = (
   <>
-    Whatever you chat here will always be <strong>temporary</strong>!<br />
+    Whatever you chat here will always be{" "}
+    <CanvasText
+      text="temporary"
+      className="text-2xl sm:text-2xl font-bold align-middle"
+      backgroundClassName="bg-[#D03D56]"
+      colors={[
+        "#FF6B8A",
+        "#F0476A",
+        "#E8325A",
+        "#D03D56",
+        "#C32148",
+        "#B5406C",
+        "#FF8FA3",
+        "#F06080",
+        "#E84070",
+        "#FF6B8A",
+      ]}
+      lineGap={1}
+      animationDuration={15}
+    />
+    !<br />
     Don't refresh before you're done.
   </>
 );
@@ -204,8 +226,8 @@ const ThreadWelcome: FC<{ sessionId: string }> = ({ sessionId }) => (
       <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground sm:text-xl text-sm delay-75 duration-200">
         {WELCOME_SUBTITLE}
       </p>
-      <p className="mt-3 font-mono text-[10px] text-muted-foreground/40">
-        session: {sessionId.slice(0, 8)}
+      <p className="mt-4 font-mono text-[12px] text-muted-foreground/40">
+        Uncensored session: {sessionId.slice(0, 8)}
       </p>
       <div className="mt-16 space-y-1">
         {[
@@ -235,6 +257,61 @@ interface ComposerProps {
 
 const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const aui = useAui();
+
+  // ── Message history (↑/↓ navigation) ───────────────────────────────────────
+  const historyRef = useRef<string[]>([]);
+  const historyIdxRef = useRef<number>(-1); // -1 = not navigating
+  const savedDraftRef = useRef<string>(""); // saves current draft when navigating up
+
+  const navigateHistory = (dir: "up" | "down") => {
+    const history = historyRef.current;
+    if (history.length === 0) return;
+
+    const currentText = aui.composer().getState().text;
+
+    if (dir === "up") {
+      if (historyIdxRef.current === -1) {
+        // Save current draft before navigating
+        savedDraftRef.current = currentText;
+        historyIdxRef.current = history.length - 1;
+      } else if (historyIdxRef.current > 0) {
+        historyIdxRef.current -= 1;
+      } else {
+        return; // already at oldest
+      }
+      aui.composer().setText(history[historyIdxRef.current]);
+    } else {
+      if (historyIdxRef.current === -1) return;
+      if (historyIdxRef.current < history.length - 1) {
+        historyIdxRef.current += 1;
+        aui.composer().setText(history[historyIdxRef.current]);
+      } else {
+        // Back to draft
+        historyIdxRef.current = -1;
+        aui.composer().setText(savedDraftRef.current);
+      }
+    }
+  };
+
+  // Track sends to build history
+  const composerText = useAuiState((s) => s.composer.text);
+  const prevTextRef = useRef("");
+  prevTextRef.current = composerText;
+
+  const handleSend = () => {
+    const text = prevTextRef.current.trim();
+    if (text) {
+      // Avoid duplicate consecutive entries
+      const history = historyRef.current;
+      if (history[history.length - 1] !== text) {
+        historyRef.current = [...history, text].slice(-50); // keep last 50
+      }
+    }
+    historyIdxRef.current = -1;
+    savedDraftRef.current = "";
+  };
+  // ───────────────────────────────────────────────────────────────────────────
 
   // Play sound + track dictation state for instant reset on send
   const isDictating = useAuiState((s) => s.composer.dictation != null);
@@ -384,9 +461,29 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
             aria-label="Message input"
             onPaste={handlePaste}
             onKeyDown={(e) => {
-              // On mobile, blur after Enter so the keyboard dismisses
-              if (e.key === "Enter" && !e.shiftKey && window.innerWidth < 768) {
-                setTimeout(() => (e.target as HTMLTextAreaElement).blur(), 50);
+              const ta = e.target as HTMLTextAreaElement;
+              // ↑ at start of empty or single-line input → history back
+              if (e.key === "ArrowUp" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                if (ta.selectionStart === 0 && ta.selectionEnd === 0) {
+                  e.preventDefault();
+                  navigateHistory("up");
+                  return;
+                }
+              }
+              // ↓ at end of input → history forward
+              if (e.key === "ArrowDown" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                if (ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length) {
+                  e.preventDefault();
+                  navigateHistory("down");
+                  return;
+                }
+              }
+              // Enter sends — record history
+              if (e.key === "Enter" && !e.shiftKey) {
+                handleSend();
+                if (window.innerWidth < 768) {
+                  setTimeout(() => ta.blur(), 50);
+                }
               }
             }}
           />
@@ -432,6 +529,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
                   variant="default"
                   size="icon"
                   className="size-8 rounded-full"
+                  onClick={handleSend}
                 >
                   <ArrowUpIcon className="size-4" />
                 </TooltipIconButton>

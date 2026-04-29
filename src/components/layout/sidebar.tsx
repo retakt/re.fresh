@@ -70,9 +70,9 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
               <CanvasText
                 text="Takt Akira"
                 backgroundClassName="bg-muted-foreground"
-                colors={["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ff8c42", "#dfe6e9"]}
+                colors={["#fb7185", "#f43f5e", "#e11d48", "#4ecdc4", "#2dd4bf", "#14b8a6"]}
                 lineGap={4}
-                animationDuration={3}
+                animationDuration={15}
               />
             </span>
           </p>
@@ -200,9 +200,9 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                     <CanvasText
                       text="Takt Akira"
                       backgroundClassName="bg-muted-foreground"
-                      colors={["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ff8c42", "#dfe6e9"]}
+                      colors={["#fb7185", "#f43f5e", "#e11d48", "#4ecdc4", "#2dd4bf", "#14b8a6"]}
                       lineGap={4}
-                      animationDuration={3}
+                      animationDuration={15}
                     />
                   </span>
                 </p>
