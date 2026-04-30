@@ -33,7 +33,7 @@ import {
   XIcon,
 } from "lucide-react";
 import type { FC } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AttachedFile } from "@/pages/chat/page";
 import { CanvasText } from "@/components/ui/canvas-text";
 
@@ -70,7 +70,7 @@ const WELCOME_SUBTITLE = (
   <>
     Whatever you chat here will always be{" "}
     <CanvasText
-      text="temporary"
+      text="temporary!"
       className="text-2xl sm:text-2xl font-bold align-middle"
       backgroundClassName="bg-[#D03D56]"
       colors={[
@@ -88,7 +88,7 @@ const WELCOME_SUBTITLE = (
       lineGap={1}
       animationDuration={15}
     />
-    !<br />
+    <br />
     Don't refresh before you're done.
   </>
 );
@@ -140,8 +140,38 @@ export const Thread: FC<ThreadProps> = ({
   onAttachFile,
   onRemoveFile,
 }) => {
+  // Shared file processor — used by DragOverlay and Composer
+  const processFile = (file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const isImage = ext in IMAGE_MIME || file.type.startsWith("image/");
+    const isAudio = ext in AUDIO_MIME || file.type.startsWith("audio/");
+    const reader = new FileReader();
+    if (isImage) {
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const base64 = dataUrl.split(",")[1] ?? "";
+        onAttachFile({ type: "image", name: file.name, base64, mimeType: IMAGE_MIME[ext] ?? file.type });
+      };
+      reader.readAsDataURL(file);
+    } else if (isAudio) {
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const base64 = dataUrl.split(",")[1] ?? "";
+        onAttachFile({ type: "audio", name: file.name, base64, mimeType: AUDIO_MIME[ext] ?? file.type });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      reader.onload = (ev) => {
+        onAttachFile({ type: "text", name: file.name, content: ev.target?.result as string });
+      };
+      reader.readAsText(file);
+    }
+  };
+
   return (
-    <ThreadPrimitive.Root
+    <>
+      <DragOverlay onFile={processFile} />
+      <ThreadPrimitive.Root
       className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
       style={{
         ["--thread-max-width" as string]: "44rem",
@@ -175,11 +205,69 @@ export const Thread: FC<ThreadProps> = ({
               attachedFile={attachedFile}
               onAttachFile={onAttachFile}
               onRemoveFile={onRemoveFile}
+              processFile={processFile}
             />
           </ThreadPrimitive.ViewportFooter>
         </div>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
+    </>
+  );
+};
+
+// ── Full-page drag-and-drop overlay ──────────────────────────────────────────
+// Triggers when a file is dragged anywhere over the browser window.
+const DragOverlay: FC<{ onFile: (file: File) => void }> = ({ onFile }) => {
+  const [visible, setVisible] = useState(false);
+  const counterRef = useRef(0); // track nested dragenter/dragleave pairs
+
+  useEffect(() => {
+    const onDragEnter = (e: DragEvent) => {
+      if (!e.dataTransfer?.types.includes("Files")) return;
+      counterRef.current += 1;
+      setVisible(true);
+    };
+    const onDragLeave = () => {
+      counterRef.current -= 1;
+      if (counterRef.current <= 0) {
+        counterRef.current = 0;
+        setVisible(false);
+      }
+    };
+    const onDrop = () => {
+      counterRef.current = 0;
+      setVisible(false);
+    };
+    document.addEventListener("dragenter", onDragEnter);
+    document.addEventListener("dragleave", onDragLeave);
+    document.addEventListener("drop", onDrop);
+    return () => {
+      document.removeEventListener("dragenter", onDragEnter);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("drop", onDrop);
+    };
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        counterRef.current = 0;
+        setVisible(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) onFile(file);
+      }}
+    >
+      <PaperclipIcon size={36} style={{ color: "#D03D56" }} className="mb-4" />
+      <p className="font-semibold text-2xl text-foreground">Drop anything</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Don't worry! Nothing is stored.   
+      </p>
+    </div>
   );
 };
 
@@ -200,7 +288,7 @@ const ThreadScrollToBottom: FC = () => (
     <TooltipIconButton
       tooltip="Scroll to bottom"
       variant="outline"
-      className="absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible"
+      className="absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible hover:text-primary hover:bg-primary/10 hover:border-primary/30"
     >
       <ArrowDownIcon />
     </TooltipIconButton>
@@ -229,10 +317,10 @@ const ThreadWelcome: FC<{ sessionId: string }> = ({ sessionId }) => (
       <p className="mt-4 font-mono text-[12px] text-muted-foreground/40">
         Uncensored session: {sessionId.slice(0, 8)}
       </p>
-      <div className="mt-16 space-y-1">
+      <div className="mt-12 space-y-1">
         {[
           { cmd: "/think", desc: "all parameters unlocked" },
-          { cmd: "/auto", desc: "auto decides when to think (current)" },
+          { cmd: "/auto", desc: "ai decides when to think (current)" },
           { cmd: "/nothink", desc: "rapid-fire responses" },
           { cmd: "/help", desc: "temp/top_k (extra tweaks)" },
         ].map(({ cmd, desc }) => (
@@ -253,11 +341,13 @@ interface ComposerProps {
   attachedFile: AttachedFile | null;
   onAttachFile: (file: AttachedFile) => void;
   onRemoveFile: () => void;
+  processFile: (file: File) => void;
 }
 
-const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile }) => {
+const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile, processFile }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aui = useAui();
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // ── Message history (↑/↓ navigation) ───────────────────────────────────────
   const historyRef = useRef<string[]>([]);
@@ -325,35 +415,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-    const isImage = ext in IMAGE_MIME;
-    const isAudio = ext in AUDIO_MIME;
-
-    const reader = new FileReader();
-
-    if (isImage) {
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        const base64 = dataUrl.split(",")[1] ?? "";
-        onAttachFile({ type: "image", name: file.name, base64, mimeType: IMAGE_MIME[ext] });
-      };
-      reader.readAsDataURL(file);
-    } else if (isAudio) {
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        const base64 = dataUrl.split(",")[1] ?? "";
-        onAttachFile({ type: "audio", name: file.name, base64, mimeType: AUDIO_MIME[ext] });
-      };
-      reader.readAsDataURL(file);
-    } else {
-      reader.onload = (ev) => {
-        const content = ev.target?.result as string;
-        onAttachFile({ type: "text", name: file.name, content });
-      };
-      reader.readAsText(file);
-    }
-
+    processFile(file);
     e.target.value = "";
   };
 
@@ -390,7 +452,20 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
       data-slot="aui_composer-root"
       className="relative flex w-full flex-col"
     >
-      <div className="flex w-full flex-col rounded-(--composer-radius) border bg-background transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20">
+      <div
+        className={cn(
+          "flex w-full flex-col rounded-(--composer-radius) border bg-background transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20",
+          isDragOver && "border-primary/60 ring-2 ring-primary/20",
+        )}
+        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) processFile(file);
+        }}
+      >
 
         {/* Attached file chip */}
         {attachedFile && (
@@ -441,7 +516,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 rounded-full text-muted-foreground hover:text-foreground"
+              className="size-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
               onClick={() => fileInputRef.current?.click()}
             >
               <PaperclipIcon className="size-4" />
@@ -450,7 +525,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile 
 
           {/* Textarea */}
           <ComposerPrimitive.Input
-            placeholder="Send a message…"
+            placeholder="Ask anything! (literally anything)"
             className={cn(
               "max-h-40 min-h-[2rem] flex-1 resize-none bg-transparent py-1.5 outline-none placeholder:text-muted-foreground/80",
               COMPOSER_INPUT_SIZE,
@@ -641,7 +716,7 @@ const AssistantActionBar: FC = () => (
     className="-ms-1 flex gap-1 text-muted-foreground"
   >
     <ActionBarPrimitive.Copy asChild>
-      <TooltipIconButton tooltip="Copy">
+      <TooltipIconButton tooltip="Copy" className="hover:text-primary hover:bg-primary/10">
         <AuiIf condition={(s) => s.message.isCopied}>
           <CheckIcon />
         </AuiIf>
@@ -651,7 +726,7 @@ const AssistantActionBar: FC = () => (
       </TooltipIconButton>
     </ActionBarPrimitive.Copy>
     <ActionBarPrimitive.Reload asChild>
-      <TooltipIconButton tooltip="Regenerate">
+      <TooltipIconButton tooltip="Regenerate" className="hover:text-primary hover:bg-primary/10">
         <RefreshCwIcon />
       </TooltipIconButton>
     </ActionBarPrimitive.Reload>
@@ -691,7 +766,7 @@ const UserActionBar: FC = () => (
     className="flex flex-col items-end"
   >
     <ActionBarPrimitive.Edit asChild>
-      <TooltipIconButton tooltip="Edit" className="p-4">
+      <TooltipIconButton tooltip="Edit" className="p-4 hover:text-primary hover:bg-primary/10">
         <PencilIcon />
       </TooltipIconButton>
     </ActionBarPrimitive.Edit>
@@ -715,7 +790,7 @@ const EditComposer: FC = () => (
           <Button variant="ghost" size="sm">Cancel</Button>
         </ComposerPrimitive.Cancel>
         <ComposerPrimitive.Send asChild>
-          <Button size="sm">Update</Button>
+          <Button size="sm">Send</Button>
         </ComposerPrimitive.Send>
       </div>
     </ComposerPrimitive.Root>
@@ -734,7 +809,7 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest
     {...rest}
   >
     <BranchPickerPrimitive.Previous asChild>
-      <TooltipIconButton tooltip="Previous">
+      <TooltipIconButton tooltip="Previous" className="hover:text-primary hover:bg-primary/10">
         <ChevronLeftIcon />
       </TooltipIconButton>
     </BranchPickerPrimitive.Previous>
@@ -742,7 +817,7 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest
       <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
     </span>
     <BranchPickerPrimitive.Next asChild>
-      <TooltipIconButton tooltip="Next">
+      <TooltipIconButton tooltip="Next" className="hover:text-primary hover:bg-primary/10">
         <ChevronRightIcon />
       </TooltipIconButton>
     </BranchPickerPrimitive.Next>

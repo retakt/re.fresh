@@ -5,6 +5,7 @@ import "katex/dist/katex.min.css";
 
 import {
   type CodeHeaderProps,
+  type SyntaxHighlighterProps,
   MarkdownTextPrimitive,
   unstable_memoizeMarkdownComponents as memoizeMarkdownComponents,
   useIsMarkdownCodeBlock,
@@ -12,10 +13,10 @@ import {
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { type FC, memo, useState } from "react";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { type FC, memo, type ComponentProps, type ComponentType, type ComponentPropsWithoutRef } from "react";
+import { ShikiHighlighter } from "react-shiki";
 
-import { TooltipIconButton } from "@/components/tooltip-icon-button";
+import ButtonCopy from "@/components/ui/smoothui/button-copy/index";
 import { cn } from "@/lib/utils";
 
 const MarkdownTextImpl = () => {
@@ -32,46 +33,48 @@ const MarkdownTextImpl = () => {
 export const MarkdownText = memo(MarkdownTextImpl);
 
 const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
-  const { isCopied, copyToClipboard } = useCopyToClipboard();
-  const onCopy = () => {
-    if (!code || isCopied) return;
-    copyToClipboard(code);
-  };
-
   return (
     <div className="aui-code-header-root mt-2.5 flex items-center justify-between rounded-t-lg border border-border/50 border-b-0 bg-muted/50 px-3 py-1.5 text-xs">
       <span className="aui-code-header-language font-medium text-muted-foreground lowercase">
-        {language}
+        {language || "code"}
       </span>
-      <TooltipIconButton tooltip="Copy" onClick={onCopy}>
-        {!isCopied && <CopyIcon />}
-        {isCopied && <CheckIcon />}
-      </TooltipIconButton>
+      <ButtonCopy
+        onCopy={() => { if (code) navigator.clipboard.writeText(code); }}
+        duration={2000}
+        loadingDuration={0}
+        className="!size-6 !min-h-0 !min-w-0 !p-1 !border-0 !bg-transparent !shadow-none text-muted-foreground hover:text-primary transition-colors"
+      />
     </div>
   );
 };
 
-const useCopyToClipboard = ({
-  copiedDuration = 3000,
-}: {
-  copiedDuration?: number;
-} = {}) => {
-  const [isCopied, setIsCopied] = useState<boolean>(false);
-
-  const copyToClipboard = (value: string) => {
-    if (!value) return;
-    navigator.clipboard.writeText(value).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), copiedDuration);
-    });
-  };
-
-  return { isCopied, copyToClipboard };
+// ── Syntax-highlighted code block via react-shiki ─────────────────────────────
+// assistant-ui calls this with { node, components: { Pre, Code }, language, code }
+const SyntaxHighlighter: FC<SyntaxHighlighterProps> = ({
+  components: { Pre, Code },
+  language,
+  code,
+}) => {
+  return (
+    <Pre className="aui-shiki-pre overflow-x-auto rounded-t-none rounded-b-lg border border-border/50 border-t-0 bg-muted/30 p-0 text-[13px] leading-relaxed font-mono">
+      <ShikiHighlighter
+        language={language || "plaintext"}
+        theme={{ light: "github-light", dark: "github-dark" }}
+        defaultColor="light-dark()"
+        delay={200}
+        addDefaultStyles={false}
+        showLanguage={false}
+        as={Code as ComponentType<ComponentPropsWithoutRef<"code">>}
+        className="block p-3"
+      >
+        {code}
+      </ShikiHighlighter>
+    </Pre>
+  );
 };
 
-// Inline code component — outside memoize so it can use hooks freely
-// Click copies the text content to clipboard
-function InlineCodeComponent({ className, children, ...props }: React.ComponentProps<"code">) {
+// Inline code — click to copy
+function InlineCodeComponent({ className, children, ...props }: ComponentProps<"code">) {
   const isCodeBlock = useIsMarkdownCodeBlock();
   if (isCodeBlock) {
     return <code className={cn(className)} {...props}>{children}</code>;
@@ -152,7 +155,7 @@ const defaultComponents = {
       <pre className={cn("aui-md-pre overflow-x-auto rounded-t-none rounded-b-lg border border-border/50 border-t-0 bg-muted/30 p-3 text-xs leading-relaxed", className)} {...props} />
     ),
     CodeHeader,
+    SyntaxHighlighter,
   }),
-  // code is outside memoize so it can use hooks
   code: InlineCodeComponent,
 };

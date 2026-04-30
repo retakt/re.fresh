@@ -683,3 +683,21 @@ img, a {
 [data-radix-context-menu-sub-content] {
   min-width: 9rem !important;
 }
+
+/* ── Strip Shiki's inline background from chat code blocks ── */
+/* Shiki injects background-color as an inline style. CSS !important beats inline styles. */
+.aui-shiki-pre [data-testid="shiki-container"],
+.aui-shiki-pre [data-testid="shiki-container"] pre {
+  background: transparent !important;
+  background-color: transparent !important;
+  margin: 0 !important;
+}
+/* The .rs-root wrapper adds position:relative which can cause layout shifts */
+.aui-shiki-pre .rs-root {
+  display: block;
+  margin: 0;
+}
+/* Kill the gap between CodeHeader and the code block */
+.aui-code-header-root + .aui-shiki-pre {
+  margin-top: 0 !important;
+}

@@ -165,9 +165,9 @@ export default function FloatingPlayer() {
                 <div className="space-y-1">
                   <div className="relative flex items-center h-5">
                     <div className="absolute inset-x-0 h-1 rounded-full bg-secondary/70" />
-                    <div className="absolute left-0 h-1 rounded-full bg-primary/90 pointer-events-none" style={{ width: pct }} />
+                    <div className="absolute left-0 h-1 rounded-full bg-primary/90 pointer-events-none transition-none" style={{ width: pct }} />
                     <div
-                      className="absolute top-1/2 z-10 h-2.5 w-2.5 -translate-y-1/2 rounded-full border border-background/80 bg-primary shadow-[0_0_0_2px_color-mix(in_oklch,var(--primary)_18%,transparent)] pointer-events-none"
+                      className="absolute top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full bg-primary shadow-md shadow-primary/30 pointer-events-none"
                       style={seekThumbStyle}
                     />
                     <input
@@ -175,8 +175,7 @@ export default function FloatingPlayer() {
                       value={progress}
                       onChange={(e) => seek(parseFloat(e.target.value))}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className="seek-slider absolute inset-x-0 w-full opacity-100"
-                      style={{ background: "transparent" }}
+                      className="seek-slider absolute inset-x-0 w-full opacity-0 cursor-grab active:cursor-grabbing"
                     />
                   </div>
                   <div className="flex justify-between">
@@ -192,9 +191,9 @@ export default function FloatingPlayer() {
                   </button>
                   <div className="relative flex-1 flex items-center h-5">
                     <div className="absolute inset-x-0 h-1 rounded-full bg-secondary/70" />
-                    <div className="absolute left-0 h-1 rounded-full bg-primary/60 pointer-events-none" style={{ width: volPct }} />
+                    <div className="absolute left-0 h-1 rounded-full bg-primary/60 pointer-events-none transition-none" style={{ width: volPct }} />
                     <div
-                      className="absolute top-1/2 z-10 h-2.5 w-2.5 -translate-y-1/2 rounded-full border border-background/80 bg-primary shadow-[0_0_0_2px_color-mix(in_oklch,var(--primary)_14%,transparent)] pointer-events-none"
+                      className="absolute top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full bg-primary/80 shadow-sm pointer-events-none"
                       style={volumeThumbStyle}
                     />
                     <input
@@ -202,8 +201,7 @@ export default function FloatingPlayer() {
                       value={muted ? 0 : volume}
                       onChange={(e) => { const v = parseFloat(e.target.value); setVolume(v); if (v > 0) setMuted(false); }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className="seek-slider absolute inset-x-0 w-full"
-                      style={{ background: "transparent" }}
+                      className="seek-slider absolute inset-x-0 w-full opacity-0 cursor-grab active:cursor-grabbing"
                     />
                   </div>
                   <span className="text-[10px] text-muted-foreground tabular-nums w-7 text-right">
