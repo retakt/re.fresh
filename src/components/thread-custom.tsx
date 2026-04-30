@@ -312,7 +312,7 @@ const ThreadWelcome: FC<{ sessionId: string }> = ({ sessionId }) => (
       <h1 className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both font-semibold text-2xl duration-200">
         {WELCOME_TITLE}
       </h1>
-      <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground sm:text-xl text-sm delay-75 duration-200">
+      <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground sm:text-xl text-sm delay-75 duration-100">
         {WELCOME_SUBTITLE}
       </p>
       <p className="mt-4 font-mono text-[12px] text-muted-foreground/40">
