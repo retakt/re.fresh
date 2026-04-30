@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
@@ -42,21 +42,6 @@ export default function AppLayout() {
 
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
-
-  // Lock body scroll when sidebar is open on mobile
-  useEffect(() => {
-    // Remove body scroll lock - backdrop prevents interaction
-    // if (sidebarOpen) {
-    //   document.body.style.overflow = 'hidden';
-    // } else {
-    //   document.body.style.overflow = '';
-    // }
-    
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [sidebarOpen]);
 
   return (
     <div className="flex min-h-[var(--app-height)] flex-col bg-background text-foreground">

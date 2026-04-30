@@ -19,9 +19,7 @@ const NAV_LINKS = [
 ];
 
 interface SidebarProps {
-  /** Mobile only — whether the drawer is open */
   open?: boolean;
-  /** Mobile only — called when the drawer should close */
   onClose?: () => void;
 }
 
@@ -30,7 +28,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* ── DESKTOP: exactly as it was before — no changes ── */}
+      {/* ── DESKTOP: unchanged ── */}
       <aside className="hidden md:flex flex-col w-44 shrink-0 py-8 sticky top-14 h-[calc(100vh-3.25rem)] overflow-y-auto scrollbar-none pr-2">
         <nav className="flex flex-col gap-0.5">
           {NAV_LINKS.map((link) => {
@@ -39,7 +37,6 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
               link.href === "/"
                 ? location.pathname === "/"
                 : location.pathname.startsWith(link.href);
-
             return (
               <Link
                 key={link.href}
@@ -55,15 +52,12 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                 )}
               >
                 <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
-                <span className={cn("font-medium", active ? "font-semibold" : "")}>
-                  {link.label}
-                </span>
+                <span className={cn("font-medium", active ? "font-semibold" : "")}>{link.label}</span>
               </Link>
             );
           })}
         </nav>
-
-        <div className="mt-auto pt-6 text-center">
+        <div className="mt-auto pt-6">
           <p className="text-xs flex flex-col gap-0.5">
             <span className="text-muted-foreground/50">made by</span>
             <span className="font-semibold">
@@ -79,19 +73,14 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
         </div>
       </aside>
 
-      {/* ── MOBILE ONLY: Enhanced slide-in drawer with smooth animations ── */}
-
-      {/* Backdrop — enhanced glass effect with smooth fade */}
+      {/* ── MOBILE: backdrop ── */}
       <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ 
-              duration: 0.5, 
-              ease: [0.25, 0.46, 0.45, 0.94] // Custom easing curve for smoothness
-            }}
+            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="md:hidden fixed inset-0 z-[40] bg-black/50 backdrop-blur-md"
             onClick={onClose}
             aria-hidden="true"
@@ -99,38 +88,26 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
         )}
       </AnimatePresence>
 
-      {/* Drawer panel — enhanced with spring physics and better sizing */}
+      {/* ── MOBILE: drawer ── */}
       <AnimatePresence>
         {open && (
           <motion.aside
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-              mass: 0.8,
-            }}
-            style={{ width: "min(280px, 85vw)" }} // Wider for better usability
-            className={cn(
-              "md:hidden fixed left-0 z-[45] flex flex-col", // Lower z-index than navbar (z-50)
-              "top-14", // Start below navbar so content isn't cut off
-              "bottom-0", // Extend to bottom
-              "bg-background/95 backdrop-blur-xl border-r border-border/60",
-              "shadow-[8px_0_32px_rgba(0,0,0,0.2)]", // Enhanced shadow
-            )}
+            transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.8 }}
+            style={{ width: "min(280px, 85vw)" }}
+            className="md:hidden fixed left-0 top-0 bottom-0 z-[45] flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/60 shadow-[8px_0_32px_rgba(0,0,0,0.2)]"
           >
-            {/* Remove the header with X button since navbar handles the menu toggle */}
-            
-            {/* Nav links — enhanced with staggered animations and better spacing */}
-            <motion.div 
-              className="flex-1 overflow-y-auto sidebar-scroll px-4 py-6 flex flex-col"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
+            {/* Spacer — sits behind navbar which is z-50, visually hides this area */}
+            <div className="h-14 shrink-0 border-b border-border/30" />
+
+            {/* Scrollable nav content */}
+            <div
+              className="sidebar-scroll px-4 py-6 flex flex-col"
+              style={{ overflowY: "scroll", flex: "1 1 0", minHeight: 0 }}
             >
-              <motion.nav 
+              <motion.nav
                 className="flex flex-col gap-1"
                 initial="hidden"
                 animate="visible"
@@ -138,20 +115,16 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                   hidden: { opacity: 0 },
                   visible: {
                     opacity: 1,
-                    transition: {
-                      staggerChildren: 0.05,
-                      delayChildren: 0.1,
-                    },
+                    transition: { staggerChildren: 0.05, delayChildren: 0.1 },
                   },
                 }}
               >
-                {NAV_LINKS.map((link, index) => {
+                {NAV_LINKS.map((link) => {
                   const Icon = link.icon;
                   const active =
                     link.href === "/"
                       ? location.pathname === "/"
                       : location.pathname.startsWith(link.href);
-
                   return (
                     <motion.div
                       key={link.href}
@@ -159,11 +132,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                         hidden: { opacity: 0, x: -20 },
                         visible: { opacity: 1, x: 0 },
                       }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 25,
-                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     >
                       <Link
                         to={link.href}
@@ -179,22 +148,15 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                         )}
                       >
                         <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
-                        <span className={cn(active ? "font-semibold" : "font-medium")}>
-                          {link.label}
-                        </span>
+                        <span className={cn(active ? "font-semibold" : "font-medium")}>{link.label}</span>
                       </Link>
                     </motion.div>
                   );
                 })}
               </motion.nav>
-              
-              <motion.div 
-                className="mt-auto pt-8 px-1"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.3 }}
-              >
-                <p className="text-xs flex flex-col gap-0.5 text-center">
+
+              <div className="mt-auto pt-8 px-1">
+                <p className="text-xs flex flex-col gap-0.5">
                   <span className="text-muted-foreground/50">made by</span>
                   <span className="font-semibold">
                     <CanvasText
@@ -206,8 +168,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                     />
                   </span>
                 </p>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </motion.aside>
         )}
       </AnimatePresence>
