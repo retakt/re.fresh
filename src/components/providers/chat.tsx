@@ -93,7 +93,20 @@ function shouldAutoThink(text: string): boolean {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SESSION_ID = crypto.randomUUID();
+// crypto.randomUUID() requires a secure context (HTTPS/localhost).
+// Fall back to a manual UUID v4 when running on a local IP over HTTP.
+function generateUUID(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // RFC 4122 v4 fallback using Math.random
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+const SESSION_ID = generateUUID();
 
 // ── Slash command parser ──────────────────────────────────────────────────────
 // Supported commands that get passed directly to Ollama API options:
