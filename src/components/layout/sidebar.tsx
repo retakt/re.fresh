@@ -96,8 +96,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.8 }}
-            style={{ width: "min(280px, 85vw)" }}
-            className="md:hidden fixed left-0 top-0 bottom-0 z-[45] flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/60 shadow-[8px_0_32px_rgba(0,0,0,0.2)]"
+            style={{ width: "min(240px, 72vw)" }}
+            className="md:hidden fixed left-0 top-0 bottom-0 z-[45] flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/60 shadow-[8px_0_32px_rgba(0,0,0,0.2)] dark:shadow-[8px_0_32px_rgba(0,0,0,0.6),1px_0_0_0_rgba(255,255,255,0.05)]"
           >
             {/* Spacer — sits behind navbar which is z-50, visually hides this area */}
             <div className="h-14 shrink-0 border-b border-border/30" />

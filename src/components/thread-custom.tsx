@@ -4,6 +4,7 @@ import { ToolFallback } from "@/components/tool-fallback";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { PulseLoader } from "@/components/ui/loader";
 import { Button } from "@/components/ui/button";
+import { EncryptedText } from "@/components/ui/encrypted-text";
 import { cn } from "@/lib/utils";
 import {
   ActionBarPrimitive,
@@ -454,7 +455,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
     >
       <div
         className={cn(
-          "flex w-full flex-col rounded-(--composer-radius) border bg-background transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20",
+          "flex w-full flex-col rounded-(--composer-radius) border border-primary/40 bg-background transition-all focus-within:border-primary/90 focus-within:ring-8 focus-within:ring-primary/20 focus-within:shadow-[0_0_60px_20px_hsl(var(--primary)/0.4)] dark:focus-within:shadow-[0_0_48px_16px_hsl(var(--primary)/0.25)]",
           isDragOver && "border-primary/60 ring-2 ring-primary/20",
         )}
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -524,44 +525,61 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
           </div>
 
           {/* Textarea */}
-          <ComposerPrimitive.Input
-            placeholder="Ask anything! (literally anything)"
-            className={cn(
-              "max-h-40 min-h-[2rem] flex-1 resize-none bg-transparent py-1.5 outline-none placeholder:text-muted-foreground/80",
-              COMPOSER_INPUT_SIZE,
-              COMPOSER_INPUT_LEADING,
+          <div className="relative flex-1">
+            <ComposerPrimitive.Input
+              placeholder=""
+              className={cn(
+                "max-h-40 min-h-[2rem] w-full resize-none bg-transparent py-1.5 outline-none",
+                COMPOSER_INPUT_SIZE,
+                COMPOSER_INPUT_LEADING,
+              )}
+              rows={1}
+              autoFocus
+              aria-label="Message input"
+              onPaste={handlePaste}
+              onKeyDown={(e) => {
+                const ta = e.target as HTMLTextAreaElement;
+                // ↑ at start of empty or single-line input → history back
+                if (e.key === "ArrowUp" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                  if (ta.selectionStart === 0 && ta.selectionEnd === 0) {
+                    e.preventDefault();
+                    navigateHistory("up");
+                    return;
+                  }
+                }
+                // ↓ at end of input → history forward
+                if (e.key === "ArrowDown" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                  if (ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length) {
+                    e.preventDefault();
+                    navigateHistory("down");
+                    return;
+                  }
+                }
+                // Enter sends — record history
+                if (e.key === "Enter" && !e.shiftKey) {
+                  handleSend();
+                  if (window.innerWidth < 768) {
+                    setTimeout(() => ta.blur(), 50);
+                  }
+                }
+              }}
+            />
+            {/* Custom placeholder with encrypted text */}
+            {!composerText && (
+              <div className="pointer-events-none absolute inset-0 flex items-center py-1.5">
+                <span className={cn("text-muted-foreground/80 text-[12px] sm:text-[14px]", COMPOSER_INPUT_LEADING)}>
+                  Go ahead!
+                  <EncryptedText
+                    text="[I'm Uncensored]"
+                    className="inline opacity-50"
+                    revealDelayMs={40}
+                    flipDelayMs={30}
+                  />
+                  
+                </span>
+              </div>
             )}
-            rows={1}
-            autoFocus
-            aria-label="Message input"
-            onPaste={handlePaste}
-            onKeyDown={(e) => {
-              const ta = e.target as HTMLTextAreaElement;
-              // ↑ at start of empty or single-line input → history back
-              if (e.key === "ArrowUp" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                if (ta.selectionStart === 0 && ta.selectionEnd === 0) {
-                  e.preventDefault();
-                  navigateHistory("up");
-                  return;
-                }
-              }
-              // ↓ at end of input → history forward
-              if (e.key === "ArrowDown" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                if (ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length) {
-                  e.preventDefault();
-                  navigateHistory("down");
-                  return;
-                }
-              }
-              // Enter sends — record history
-              if (e.key === "Enter" && !e.shiftKey) {
-                handleSend();
-                if (window.innerWidth < 768) {
-                  setTimeout(() => ta.blur(), 50);
-                }
-              }
-            }}
-          />
+          </div>
 
           {/* Mic — toggles dictation, right before send */}
           <div className="shrink-0 self-end pb-0.5">
