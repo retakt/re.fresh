@@ -47,15 +47,15 @@ export default function AppLayout() {
     <div className="flex min-h-[var(--app-height)] flex-col bg-background text-foreground">
       <Navbar onMenuToggle={toggleSidebar} isSidebarOpen={sidebarOpen} />
 
-      {/* Mobile drawer — fixed, outside flex row, only rendered on mobile */}
-      <div className="md:hidden">
+      {/* Mobile drawer — fixed, outside flex row, only rendered below lg */}
+      <div className="lg:hidden">
         <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       </div>
 
-      {/* ── DESKTOP layout — unchanged from before ── */}
+      {/* ── DESKTOP layout — lg and above ── */}
       <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6">
-        {/* Desktop sidebar — exactly as it was */}
-        <div className="hidden md:block w-44 shrink-0 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)]">
+        {/* Desktop sidebar — lg and above only */}
+        <div className="hidden lg:block w-44 shrink-0">
           <Sidebar />
         </div>
 

@@ -59,9 +59,9 @@ export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarPr
       >
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:px-4 lg:px-6">
 
-          {/* Left: hamburger — mobile only */}
+          {/* Left: hamburger — below lg only */}
           <motion.div
-            className="md:hidden"
+            className="lg:hidden"
             variants={itemVariants}
             whileTap={{ scale: 0.92 }}
           >
@@ -72,9 +72,9 @@ export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarPr
             />
           </motion.div>
 
-          {/* Desktop left slot — placeholder for logo animation */}
+          {/* Desktop left slot — lg and above */}
           <motion.div
-            className="hidden md:block w-9 shrink-0"
+            className="hidden lg:block w-9 shrink-0"
             variants={itemVariants}
           />
 

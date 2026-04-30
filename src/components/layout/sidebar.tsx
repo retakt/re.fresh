@@ -28,8 +28,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* ── DESKTOP: unchanged ── */}
-      <aside className="hidden md:flex flex-col w-44 shrink-0 py-8 sticky top-14 h-[calc(100vh-3.25rem)] overflow-y-auto scrollbar-none pr-2">
+      {/* ── DESKTOP: lg and above only ── */}
+      <aside className="hidden lg:flex flex-col w-44 shrink-0 py-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto scrollbar-none pr-2 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)]">
         <nav className="flex flex-col gap-0.5">
           {NAV_LINKS.map((link) => {
             const Icon = link.icon;
@@ -81,7 +81,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="md:hidden fixed inset-0 z-[40] bg-black/50 backdrop-blur-md"
+            className="lg:hidden fixed inset-0 z-[40] bg-black/50 backdrop-blur-md"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -97,14 +97,15 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.8 }}
             style={{ width: "min(240px, 72vw)" }}
-            className="md:hidden fixed left-0 top-0 bottom-0 z-[45] flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/60 shadow-[8px_0_32px_rgba(0,0,0,0.2)] dark:shadow-[8px_0_32px_rgba(0,0,0,0.6),1px_0_0_0_rgba(255,255,255,0.05)]"
+            className="lg:hidden fixed left-0 top-0 bottom-0 z-[45] flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/60 shadow-[8px_0_32px_rgba(0,0,0,0.2)] dark:shadow-[8px_0_32px_rgba(0,0,0,0.6),1px_0_0_0_rgba(255,255,255,0.05)]"
           >
             {/* Spacer — sits behind navbar which is z-50, visually hides this area */}
             <div className="h-14 shrink-0 border-b border-border/30" />
 
-            {/* Scrollable nav content */}
+            {/* Scrollable nav content — ref resets scroll to top on every open */}
             <div
-              className="sidebar-scroll px-4 py-6 flex flex-col"
+              ref={(el) => { if (el) el.scrollTop = 0; }}
+              className="scrollbar-none px-4 py-6 flex flex-col"
               style={{ overflowY: "scroll", flex: "1 1 0", minHeight: 0 }}
             >
               <motion.nav
