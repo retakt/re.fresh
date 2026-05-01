@@ -564,11 +564,14 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
                 }
               }}
             />
-            {/* Custom placeholder with encrypted text */}
+{/* Custom placeholder with encrypted text */}
             {!composerText && (
               <div className="pointer-events-none absolute inset-0 flex items-center py-1.5">
                 <span className={cn("text-muted-foreground/80 text-[12px] sm:text-[14px]", COMPOSER_INPUT_LEADING)}>
-                  Go ahead!
+                  {/* Change this line: */}
+                  <span className="mr-[2px]"> {/* Optional: add a small margin right */}
+                    Go ahead!
+                  </span>
                   <EncryptedText
                     text="[I'm Uncensored]"
                     className="inline opacity-50"

@@ -11,32 +11,27 @@ const SOCIAL_LINKS = [
   {
     icon: () => <FaGithub className="w-4 h-4" />,
     href: "https://github.com/retakt",
-    activeColor: "hover:text-white active:text-white hover:bg-zinc-800 active:bg-zinc-800",
-    glowColor: "active:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]",
+    activeColor: "hover:text-white hover:bg-white/10 [@media(hover:none)]:text-white [@media(hover:none)]:bg-white/10 [@media(hover:none)]:active:text-muted-foreground [@media(hover:none)]:active:bg-transparent",
   },
   {
     icon: () => <SiGmail className="w-4 h-4" />,
     href: "mailto:hello@retakt.com",
-    activeColor: "hover:text-red-400 active:text-red-400 hover:bg-red-500/10 active:bg-red-500/10",
-    glowColor: "active:drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]",
+    activeColor: "hover:text-red-400 hover:bg-red-400/10 [@media(hover:none)]:text-red-400 [@media(hover:none)]:bg-red-400/10 [@media(hover:none)]:active:text-muted-foreground [@media(hover:none)]:active:bg-transparent",
   },
   {
     icon: () => <FaSpotify className="w-4 h-4" />,
     href: "...",
-    activeColor: "hover:text-[#1DB954] active:text-[#1DB954] hover:bg-[#1DB954]/10 active:bg-[#1DB954]/10",
-    glowColor: "active:drop-shadow-[0_0_8px_rgba(29,185,84,0.4)]",
+    activeColor: "hover:text-[#1DB954] hover:bg-[#1DB954]/10 [@media(hover:none)]:text-[#1DB954] [@media(hover:none)]:bg-[#1DB954]/10 [@media(hover:none)]:active:text-muted-foreground [@media(hover:none)]:active:bg-transparent",
   },
   {
     icon: () => <Globe className="w-3.5 h-3.5" />,
     href: "...",
-    activeColor: "hover:text-blue-400 active:text-blue-400 hover:bg-blue-400/10 active:bg-blue-400/10",
-    glowColor: "active:drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]",
+    activeColor: "hover:text-blue-400 hover:bg-blue-400/10 [@media(hover:none)]:text-blue-400 [@media(hover:none)]:bg-blue-400/10 [@media(hover:none)]:active:text-muted-foreground [@media(hover:none)]:active:bg-transparent",
   },
   {
     icon: () => <FaTelegram className="w-4 h-4" />,
     href: "https://t.me/akiratakt7",
-    activeColor: "hover:text-[#26A5E4] active:text-[#26A5E4] hover:bg-[#26A5E4]/10 active:bg-[#26A5E4]/10",
-    glowColor: "active:drop-shadow-[0_0_8px_rgba(38,165,228,0.4)]",
+    activeColor: "hover:text-[#26A5E4] hover:bg-[#26A5E4]/10 [@media(hover:none)]:text-[#26A5E4] [@media(hover:none)]:bg-[#26A5E4]/10 [@media(hover:none)]:active:text-muted-foreground [@media(hover:none)]:active:bg-transparent",
   },
 ];
 
@@ -115,14 +110,14 @@ export default function AboutPage() {
         </h2>
 
         <div className="flex flex-wrap gap-2">
-          {SOCIAL_LINKS.map(({ icon: IconComp, href, activeColor, glowColor }, i) => (
+          {SOCIAL_LINKS.map(({ icon: IconComp, href, activeColor }, i) => (
             <a
               key={i}
               href={href}
               target="_blank"
               rel="noopener noreferrer"
               style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-              className={`group flex items-center justify-center p-2.5 rounded-xl border bg-card text-muted-foreground transition-all duration-150 ${activeColor} ${glowColor}`}
+              className={`group flex items-center justify-center p-2.5 rounded-xl border bg-card text-muted-foreground transition-all duration-150 ${activeColor}`}
             >
               <IconComp />
             </a>
