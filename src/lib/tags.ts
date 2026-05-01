@@ -85,11 +85,12 @@ export async function updateContentTags(
 
   if (tagNames.length === 0) return;
 
-  // Resolve/create all tags in parallel instead of sequentially
-  const resolved = await Promise.all(tagNames.map(createTag));
-  const tagIds = resolved.filter((t): t is Tag => t !== null).map((t) => t.id);
-
-  if (tagIds.length === 0) return;
+  // Ensure all tags exist, create if not
+  const tagIds: string[] = [];
+  for (const name of tagNames) {
+    const tag = await createTag(name);
+    if (tag) tagIds.push(tag.id);
+  }
 
   // Insert junction rows
   await supabase.from("content_tags").insert(
@@ -159,11 +160,12 @@ export async function updateContentCategories(
 
   if (categoryNames.length === 0) return;
 
-  // Resolve/create all categories in parallel instead of sequentially
-  const resolved = await Promise.all(categoryNames.map(createCategory));
-  const categoryIds = resolved.filter((c): c is Category => c !== null).map((c) => c.id);
-
-  if (categoryIds.length === 0) return;
+  // Ensure all categories exist, create if not
+  const categoryIds: string[] = [];
+  for (const name of categoryNames) {
+    const cat = await createCategory(name);
+    if (cat) categoryIds.push(cat.id);
+  }
 
   // Insert junction rows
   await supabase.from("content_categories").insert(

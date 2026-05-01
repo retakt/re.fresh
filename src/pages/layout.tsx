@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
@@ -43,19 +43,34 @@ export default function AppLayout() {
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
+  // Lock body scroll when sidebar is open on mobile
+  useEffect(() => {
+    // Remove body scroll lock - backdrop prevents interaction
+    // if (sidebarOpen) {
+    //   document.body.style.overflow = 'hidden';
+    // } else {
+    //   document.body.style.overflow = '';
+    // }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [sidebarOpen]);
+
   return (
     <div className="flex min-h-[var(--app-height)] flex-col bg-background text-foreground">
       <Navbar onMenuToggle={toggleSidebar} isSidebarOpen={sidebarOpen} />
 
-      {/* Mobile drawer — fixed, outside flex row, only rendered below lg */}
-      <div className="lg:hidden">
+      {/* Mobile drawer — fixed, outside flex row, only rendered on mobile */}
+      <div className="md:hidden">
         <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       </div>
 
-      {/* ── DESKTOP layout — lg and above ── */}
+      {/* ── DESKTOP layout — unchanged from before ── */}
       <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6">
-        {/* Desktop sidebar — lg and above only */}
-        <div className="hidden lg:block w-44 shrink-0">
+        {/* Desktop sidebar — exactly as it was */}
+        <div className="hidden md:block w-44 shrink-0 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)]">
           <Sidebar />
         </div>
 

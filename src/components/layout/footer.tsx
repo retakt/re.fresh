@@ -9,9 +9,9 @@ export default function Footer({
     // Sits at the bottom of the page after all content scrolls past.
     // Desktop keeps the fixed footer (sidebar layout needs it).
     <>
-      {/* ── MOBILE: in-flow, scrolls with page — below lg ── */}
+      {/* ── MOBILE: in-flow, scrolls with page ── */}
       <footer
-        className={`lg:hidden w-full border-t border-border/40 bg-background/95 ${className}`}
+        className={`md:hidden w-full border-t border-border/40 bg-background/95 ${className}`}
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center justify-between px-4 py-2 gap-2">
@@ -38,9 +38,9 @@ export default function Footer({
         </div>
       </footer>
 
-      {/* ── DESKTOP: fixed at bottom — lg and above ── */}
+      {/* ── DESKTOP: fixed at bottom ── */}
       <footer
-        className={`hidden lg:block fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 bg-background/95 backdrop-blur-sm ${className}`}
+        className={`hidden md:block fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 bg-background/95 backdrop-blur-sm ${className}`}
       >
         <div className="mx-auto w-full max-w-6xl px-4 lg:px-6 py-1.5 flex items-center justify-between gap-2">
           <p className="text-[10px] font-semibold truncate">

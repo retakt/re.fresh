@@ -59,10 +59,10 @@ export default function UserMenu() {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild className="outline-none">
         <button
-          className="rounded-full border border-[#11D8C2]/20 bg-card/70 p-1 text-foreground outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="rounded-full border border-border/70 bg-card/70 p-1 text-foreground outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label="Open account menu"
         >
-          <Avatar className="size-7 border border-[#11D8C2]/35">
+          <Avatar className="size-7 border border-border/70">
             {isAuthenticated && avatarUrl && (
               <AvatarImage
                 src={avatarUrl}

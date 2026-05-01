@@ -1,26 +1,19 @@
 import { usePlayer } from "@/lib/player";
 import {
   Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX, Music2, ChevronUp, ChevronRight,
+  Volume2, VolumeX, Music2, ChevronUp, ChevronLeft,
   X,
 } from "lucide-react";
 import { FaSpotify, FaSoundcloud, FaYoutube } from "react-icons/fa";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
-import ElasticSlider from "@/components/ui/elastic-slider/index";
 
+// ── View states ──────────────────────────────────────────────────────────────
+// "full"      → full bar visible at bottom
+// "pill"      → minimised pill on the right edge
+// "hidden"    → player stopped, nothing shown
 type ViewState = "full" | "pill";
-
-const PLAYER_W = 328;
-const PLAYER_H_COLLAPSED = 60;
-const PLAYER_H_EXPANDED = 240; // approx expanded height
-const PILL_W = 68;
-const PILL_H = 48;
-const EDGE_PAD = 8;
-const SAFE_TOP = 64;
-const MOBILE_BOTTOM_CLEARANCE = 180;
-const DESKTOP_BOTTOM_CLEARANCE = 260; // enough room for expanded panel above footer
 
 export default function FloatingPlayer() {
   const {
@@ -29,70 +22,29 @@ export default function FloatingPlayer() {
     togglePlay, next, prev, seek, setVolume, stop,
   } = usePlayer();
 
+  // "full" by default; user can collapse to "pill"
   const [view, setView] = useState<ViewState>("full");
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false); // seek/volume panel open
   const [muted, setMuted] = useState(false);
-  const [snappedSide, setSnappedSide] = useState<"left" | "right">("right");
   const prevVol = useRef(volume);
   const prevTrackId = useRef<string | null>(null);
 
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const getInitialPos = useCallback((v: ViewState) => {
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const mobile = W < 768;
-    const bottomClear = mobile ? MOBILE_BOTTOM_CLEARANCE : DESKTOP_BOTTOM_CLEARANCE;
-    if (v === "pill") {
-      return { x: W - PILL_W - EDGE_PAD, y: H - PILL_H - bottomClear };
+  // Track changes: new track → show full player (but don't disturb if same track)
+  useEffect(() => {
+    if (!currentTrack) {
+      prevTrackId.current = null;
+      return;
     }
-    const px = mobile ? EDGE_PAD : W - PLAYER_W - EDGE_PAD;
-    const py = H - PLAYER_H_COLLAPSED - bottomClear;
-    return { x: px, y: py };
-  }, []);
-
-  // Mount: set initial position
-  useEffect(() => {
-    const pos = getInitialPos("full");
-    x.set(pos.x);
-    y.set(pos.y);
-  }, []);
-
-  // New track → reset to default position
-  useEffect(() => {
-    if (!currentTrack) { prevTrackId.current = null; return; }
     if (currentTrack.id !== prevTrackId.current) {
+      // Genuinely new track — pop open the full player
       setView("full");
       setExpanded(false);
       prevTrackId.current = currentTrack.id;
-      const pos = getInitialPos("full");
-      animate(x, pos.x, { type: "spring", bounce: 0.2, duration: 0.4 });
-      animate(y, pos.y, { type: "spring", bounce: 0.2, duration: 0.4 });
-      setSnappedSide(window.innerWidth < 768 ? "left" : "right");
     }
+    // Same track (resume after pause) — leave view state alone
   }, [currentTrack?.id]);
 
-  // Prevent body scroll when player is dragged outside viewport
-  useEffect(() => {
-    document.body.style.overflowX = "hidden";
-    return () => { document.body.style.overflowX = ""; };
-  }, []);
-
-  const snapToEdge = useCallback((currentX: number, currentY: number, w: number) => {
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const center = currentX + w / 2;
-    const side = center > W / 2 ? "right" : "left";
-    setSnappedSide(side);
-    const targetX = side === "right" ? W - w - EDGE_PAD : EDGE_PAD;
-    // clamp Y within safe bounds
-    const maxY = H - PILL_H - 16;
-    const clampedY = Math.max(SAFE_TOP, Math.min(maxY, currentY));
-    animate(x, targetX, { type: "spring", bounce: 0.2, duration: 0.35 });
-    animate(y, clampedY, { type: "spring", bounce: 0.1, duration: 0.3 });
-  }, [x, y]);
-
+  // Nothing playing → render nothing
   if (!currentTrack) return null;
 
   const fmt = (s: number) => {
@@ -110,120 +62,94 @@ export default function FloatingPlayer() {
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < queue.length - 1;
   const pct = `${progress * 100}%`;
-
-  const collapseToPill = () => {
-    setView("pill");
-    setExpanded(false);
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const mobile = W < 768;
-    const targetX = snappedSide === "right" ? W - PILL_W - EDGE_PAD : EDGE_PAD;
-    const targetY = H - PILL_H - (mobile ? MOBILE_BOTTOM_CLEARANCE : DESKTOP_BOTTOM_CLEARANCE);
-    animate(x, targetX, { type: "spring", bounce: 0.2, duration: 0.35 });
-    animate(y, targetY, { type: "spring", bounce: 0.1, duration: 0.3 });
+  const volPct = `${(muted ? 0 : volume) * 100}%`;
+  const seekThumbStyle = {
+    left: `clamp(0.375rem, calc(${pct} - 0.375rem), calc(100% - 0.375rem))`,
+  };
+  const volumeThumbStyle = {
+    left: `clamp(0.375rem, calc(${volPct} - 0.375rem), calc(100% - 0.375rem))`,
   };
 
-  const expandToFull = () => {
-    setView("full");
-    const W = window.innerWidth;
-    const targetX = snappedSide === "right" ? W - PLAYER_W - EDGE_PAD : EDGE_PAD;
-    animate(x, targetX, { type: "spring", bounce: 0.2, duration: 0.35 });
-  };
-
-  // Collapse arrow points toward the nearest edge (away from center)
-  // Right side → arrow points right (→), left side → arrow points left (←)
-  const collapseArrowRotation = snappedSide === "right" ? 0 : 180;
-
-  // ── PILL ──────────────────────────────────────────────────────────────────
+  // ── PILL (minimised) ─────────────────────────────────────────────────────
   if (view === "pill") {
-    // Pill: tab on the inward side, cover on the outward side
-    const tabOnLeft = snappedSide === "right"; // tab faces inward
     return (
       <AnimatePresence>
-        <motion.div
+        <motion.button
           key="pill"
-          style={{ x, y, width: PILL_W, height: PILL_H, position: "fixed", zIndex: 50, touchAction: "none" }}
-          drag
-          dragMomentum={false}
-          dragElastic={0.05}
-          onDragEnd={() => snapToEdge(x.get(), y.get(), PILL_W)}
-          className="flex items-stretch cursor-grab active:cursor-grabbing"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
+          type="button"
+          initial={{ x: 80, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: 80, opacity: 0 }}
           transition={{ type: "spring", bounce: 0.25, duration: 0.35 }}
+          onClick={() => setView("full")}
+          aria-label="Expand player"
+          className="fixed z-50 right-0 bottom-24 md:bottom-16 flex items-stretch cursor-pointer group"
         >
-          {tabOnLeft && (
-            <div
-              className="flex items-center justify-center w-5 rounded-l-xl bg-card/80 backdrop-blur-2xl border border-r-0 border-border/40 shadow-lg cursor-pointer"
-              onClick={expandToFull}
-            >
-              {/* Arrow points left (inward toward center) */}
-              <ChevronRight size={11} className="text-muted-foreground hover:text-primary transition-colors" style={{ transform: "rotate(180deg)" }} />
-            </div>
-          )}
+          {/* Arrow tab */}
+          <div className="flex items-center justify-center w-5 rounded-l-xl bg-card/80 backdrop-blur-2xl border border-r-0 border-border/40 shadow-lg">
+            <ChevronLeft size={11} className="text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
 
-          <div
-            className={`relative flex-1 bg-card/80 backdrop-blur-2xl border border-border/40 shadow-lg overflow-hidden flex items-center justify-center cursor-pointer
-              ${tabOnLeft ? "rounded-r-xl border-l-0" : "rounded-l-xl border-r-0"}`}
-            onClick={expandToFull}
-          >
+          {/* Cover */}
+          <div className="relative w-12 h-12 rounded-r-xl bg-card/80 backdrop-blur-2xl border border-l-0 border-border/40 shadow-lg overflow-hidden flex items-center justify-center">
             {currentTrack.cover_image ? (
               <img src={currentTrack.cover_image} alt={currentTrack.title} className="w-full h-full object-cover" />
             ) : (
               <Music2 size={16} className="text-primary/60" />
             )}
+
+            {/* Progress bar at bottom */}
             <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-secondary/40">
               <div className="h-full bg-primary transition-none" style={{ width: pct }} />
             </div>
+
+            {/* Playing pulse */}
             {playing && (
               <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
             )}
           </div>
-
-          {!tabOnLeft && (
-            <div
-              className="flex items-center justify-center w-5 rounded-r-xl bg-card/80 backdrop-blur-2xl border border-l-0 border-border/40 shadow-lg cursor-pointer"
-              onClick={expandToFull}
-            >
-              {/* Arrow points right (inward toward center) */}
-              <ChevronRight size={11} className="text-muted-foreground hover:text-primary transition-colors" />
-            </div>
-          )}
-        </motion.div>
+        </motion.button>
       </AnimatePresence>
     );
   }
 
-  // ── FULL PLAYER ───────────────────────────────────────────────────────────
+  // ── FULL PLAYER ──────────────────────────────────────────────────────────
   return (
     <AnimatePresence>
       <motion.div
         key="full-player"
-        style={{ x, y, width: PLAYER_W, position: "fixed", zIndex: 50, touchAction: "none", cursor: "grab" }}
-        drag
-        dragMomentum={false}
-        dragElastic={0.05}
-        // Hard constraint: never go outside viewport
-        dragConstraints={{
-          left: EDGE_PAD,
-          right: window.innerWidth - PLAYER_W - EDGE_PAD,
-          top: SAFE_TOP,
-          bottom: window.innerHeight - (expanded ? PLAYER_H_EXPANDED : PLAYER_H_COLLAPSED) - 8,
-        }}
-        onDragEnd={() => snapToEdge(x.get(), y.get(), PLAYER_W)}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 80, opacity: 0 }}
         transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-        className="rounded-2xl border border-white/10 bg-card/65 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden supports-[backdrop-filter]:bg-card/50 select-none"
+        className="fixed z-50 bottom-[4.5rem] left-2 right-2 md:bottom-6 md:left-auto md:right-6 md:w-[20.5rem] rounded-2xl border border-white/10 bg-card/65 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden supports-[backdrop-filter]:bg-card/50"
       >
-        {/* ── Drag handle — only this initiates drag ── */}
-        <div className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing">
+        {/* ── Drag handle — swipe down to collapse to pill ── */}
+        <div
+          className="flex justify-center pt-2 pb-1 cursor-pointer touch-none select-none"
+          onPointerDown={(e) => {
+            const startY = e.clientY;
+            const onMove = (ev: PointerEvent) => {
+              if (ev.clientY - startY > 60) {
+                window.removeEventListener("pointermove", onMove);
+                window.removeEventListener("pointerup", onUp);
+                setView("pill");
+                setExpanded(false);
+              }
+            };
+            const onUp = () => {
+              window.removeEventListener("pointermove", onMove);
+              window.removeEventListener("pointerup", onUp);
+            };
+            window.addEventListener("pointermove", onMove);
+            window.addEventListener("pointerup", onUp);
+          }}
+          title="Drag down to minimise"
+        >
           <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
-        {/* ── EXPANDED PANEL ── */}
+        {/* ── EXPANDED PANEL (seek + volume) ── */}
         <AnimatePresence>
           {expanded && (
             <motion.div
@@ -233,39 +159,58 @@ export default function FloatingPlayer() {
               transition={{ duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden border-b border-border/40"
             >
-              <div
-                className="px-4 pt-3 pb-3 space-y-3"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <div className="space-y-0.5">
-                  <ElasticSlider
-                    startingValue={0}
-                    maxValue={1000}
-                    value={Math.round(progress * 1000)}
-                    onChange={(v) => seek(v / 1000)}
-                    hideValue
-                    leftIcon={<span className="text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)", minWidth: "2.2rem" }}>{fmt(progress * duration)}</span>}
-                    rightIcon={<span className="text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)", minWidth: "2.2rem", textAlign: "right" }}>{fmt(duration)}</span>}
-                  />
+              <div className="px-4 pt-3 pb-3 space-y-3">
+
+                {/* Seek */}
+                <div className="space-y-1">
+                  <div className="relative flex items-center h-5">
+                    <div className="absolute inset-x-0 h-1 rounded-full bg-secondary/70" />
+                    <div className="absolute left-0 h-1 rounded-full bg-primary/90 pointer-events-none transition-none" style={{ width: pct }} />
+                    <div
+                      className="absolute top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full bg-primary shadow-md shadow-primary/30 pointer-events-none"
+                      style={seekThumbStyle}
+                    />
+                    <input
+                      type="range" min={0} max={1} step={0.001}
+                      value={progress}
+                      onChange={(e) => seek(parseFloat(e.target.value))}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="seek-slider absolute inset-x-0 w-full opacity-0 cursor-grab active:cursor-grabbing"
+                    />
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{fmt(progress * duration)}</span>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{fmt(duration)}</span>
+                  </div>
                 </div>
 
-                <div className="hidden md:block">
-                  <ElasticSlider
-                    startingValue={0}
-                    maxValue={100}
-                    value={Math.round((muted ? 0 : volume) * 100)}
-                    onChange={(v) => { const val = v / 100; setVolume(val); if (val > 0) setMuted(false); }}
-                    hideValue
-                    leftIcon={
-                      <button onClick={toggleMute} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors" onPointerDown={(e) => e.stopPropagation()}>
-                        {muted || volume === 0 ? <VolumeX size={12} /> : <Volume2 size={12} />}
-                      </button>
-                    }
-                    rightIcon={<span className="text-[9px] tabular-nums w-6 text-right" style={{ color: "var(--muted-foreground)" }}>{Math.round((muted ? 0 : volume) * 100)}%</span>}
-                  />
+                {/* Volume — desktop only */}
+                <div className="hidden md:flex items-center gap-2">
+                  <button onClick={toggleMute} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+                    {muted || volume === 0 ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                  </button>
+                  <div className="relative flex-1 flex items-center h-5">
+                    <div className="absolute inset-x-0 h-1 rounded-full bg-secondary/70" />
+                    <div className="absolute left-0 h-1 rounded-full bg-primary/60 pointer-events-none transition-none" style={{ width: volPct }} />
+                    <div
+                      className="absolute top-1/2 z-10 h-3 w-3 -translate-y-1/2 rounded-full bg-primary/80 shadow-sm pointer-events-none"
+                      style={volumeThumbStyle}
+                    />
+                    <input
+                      type="range" min={0} max={1} step={0.01}
+                      value={muted ? 0 : volume}
+                      onChange={(e) => { const v = parseFloat(e.target.value); setVolume(v); if (v > 0) setMuted(false); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="seek-slider absolute inset-x-0 w-full opacity-0 cursor-grab active:cursor-grabbing"
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums w-7 text-right">
+                    {Math.round((muted ? 0 : volume) * 100)}%
+                  </span>
                 </div>
                 <p className="md:hidden text-[10px] text-muted-foreground text-center">Use device volume buttons</p>
 
+                {/* Queue info */}
                 {queue.length > 1 && (
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] text-muted-foreground">{currentIndex + 1} / {queue.length} in queue</p>
@@ -277,6 +222,7 @@ export default function FloatingPlayer() {
                   </div>
                 )}
 
+                {/* Platform links */}
                 {(currentTrack.spotify_url || currentTrack.soundcloud_url || currentTrack.youtube_url) && (
                   <div className="flex items-center gap-1 justify-center">
                     {currentTrack.spotify_url && (
@@ -304,8 +250,10 @@ export default function FloatingPlayer() {
           )}
         </AnimatePresence>
 
-        {/* ── MAIN ROW — buttons stop propagation individually ── */}
+        {/* ── MAIN ROW ── */}
         <div className="flex items-center px-2.5 py-2 gap-2">
+
+          {/* Cover */}
           <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 overflow-hidden flex items-center justify-center">
             {currentTrack.cover_image ? (
               <img src={currentTrack.cover_image} alt={currentTrack.title} className="w-full h-full object-cover" />
@@ -314,14 +262,15 @@ export default function FloatingPlayer() {
             )}
           </div>
 
+          {/* Title + artist */}
           <div className="flex-1 min-w-0 overflow-hidden">
             <p className="text-[11px] font-semibold truncate text-foreground leading-tight">{currentTrack.title}</p>
             <p className="text-[9px] text-muted-foreground truncate leading-tight mt-0.5">{currentTrack.artist ?? "re.Takt"}</p>
           </div>
 
+          {/* Controls */}
           <div className="shrink-0 flex items-center gap-1">
             <button
-              onPointerDown={(e) => e.stopPropagation()}
               onClick={prev} disabled={!hasPrev}
               className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 border touch-manipulation
                 ${hasPrev ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary border-primary/20 hover:border-primary/40"
@@ -331,7 +280,6 @@ export default function FloatingPlayer() {
             </button>
 
             <button
-              onPointerDown={(e) => e.stopPropagation()}
               onClick={togglePlay}
               className="w-10 h-10 rounded-full bg-primary/95 text-primary-foreground hover:bg-primary/90 active:scale-90 transition-all flex items-center justify-center shadow-md shadow-primary/20 border border-primary/30 touch-manipulation"
             >
@@ -345,7 +293,6 @@ export default function FloatingPlayer() {
             </button>
 
             <button
-              onPointerDown={(e) => e.stopPropagation()}
               onClick={next} disabled={!hasNext}
               className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 border touch-manipulation
                 ${hasNext ? "bg-secondary/70 text-foreground hover:bg-primary/20 hover:text-primary border-primary/20 hover:border-primary/40"
@@ -355,57 +302,54 @@ export default function FloatingPlayer() {
             </button>
           </div>
 
+          {/* Right actions: expand toggle + close */}
           <div className="shrink-0 flex items-center gap-0.5">
-            {/* Expand/collapse details — ChevronUp rotates to point down when open */}
             <button
-              onPointerDown={(e) => e.stopPropagation()}
               onClick={() => setExpanded((e) => !e)}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              title={expanded ? "Hide details" : "Show details"}
             >
-              <motion.div animate={{ rotate: expanded ? 0 : 180 }} transition={{ duration: 0.2 }}>
+              <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
                 <ChevronUp size={14} />
               </motion.div>
             </button>
 
-            {/* Collapse to pill — arrow points toward nearest edge */}
+            {/* Collapse to pill */}
             <button
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={collapseToPill}
+              onClick={() => { setView("pill"); setExpanded(false); }}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              title="Minimise"
             >
-              <ChevronRight
-                size={14}
-                style={{ transform: `rotate(${collapseArrowRotation}deg)` }}
-              />
+              <ChevronLeft size={14} />
             </button>
 
+            {/* Stop / close */}
             <button
-              onPointerDown={(e) => e.stopPropagation()}
               onClick={stop}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Stop"
             >
               <X size={13} />
             </button>
           </div>
         </div>
 
-        {/* ── Bottom mini progress bar ── */}
+        {/* ── Bottom progress bar (when details panel is closed) ── */}
         {!expanded && (
           <div
-            className="relative h-3 w-full"
+            className="relative h-3 w-full cursor-pointer"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               seek(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
             }}
-            style={{ cursor: "pointer" }}
           >
             <div className="absolute inset-x-2 top-1/2 -translate-y-1/2">
               <div className="relative h-px w-full rounded-full bg-secondary/55">
                 <div className="absolute left-0 top-0 h-px rounded-full bg-primary transition-none" style={{ width: pct }} />
                 <div
                   className="absolute top-1/2 z-10 h-2.5 w-2.5 -translate-y-1/2 rounded-full border border-background/80 bg-primary shadow-md shadow-primary/25"
-                  style={{ left: `clamp(0.375rem, calc(${pct} - 0.375rem), calc(100% - 0.375rem))` }}
+                  style={seekThumbStyle}
                 />
               </div>
             </div>
