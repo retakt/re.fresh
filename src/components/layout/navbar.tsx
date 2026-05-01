@@ -50,8 +50,8 @@ export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarPr
       <motion.header
         className={`sticky top-0 z-50 w-full transition-all duration-500 ${
           isScrolled
-            ? "border-b border-border/60 bg-background/95 backdrop-blur-md shadow-sm"
-            : "border-b border-transparent md:border-border/60 md:shadow-sm bg-background/95 backdrop-blur-md"
+            ? "border-b border-border/60 dark:border-white/[0.08] bg-background/95 backdrop-blur-md shadow-sm dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06),0_4px_12px_-2px_rgba(200,210,255,0.06)]"
+            : "border-b border-transparent md:border-border/60 md:dark:border-white/[0.08] md:shadow-sm md:dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06),0_4px_12px_-2px_rgba(200,210,255,0.06)] bg-background/95 backdrop-blur-md"
         }`}
         variants={containerVariants}
         initial="hidden"

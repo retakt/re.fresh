@@ -170,127 +170,106 @@ function toolGetTime(timezone: string): string {
 }
 
 // ── SearXNG web search ────────────────────────────────────────────────────────
-// Engine priority: google → startpage → brave → duckduckgo
-// - google: best results, rate limits aggressively on self-hosted
-// - startpage: private Google proxy, Google-quality without direct rate limits
-// - brave: independent index, reliable, rarely blocks
-// - duckduckgo: always available, never blocks, final fallback
-//
-// Fact-check mode: google → startpage only (2 results, fastest path)
-// Search mode: full priority chain (5 results)
-//
-// Blocked engines are tracked per-session in a ref — once an engine returns
-// 0 results it's skipped for the rest of the session, no wasted retries.
+// SearXNG aggregates google + duckduckgo + wikipedia (confirmed active engines).
+// Engine forcing via &engines= param is unreliable — SearXNG decides dynamically.
+// Instead we shape the query per mode to influence what gets returned,
+// then filter by score to keep only high-signal results.
 
-const SEARXNG_URL = "http://localhost:8080";
+const SEARXNG_URL = import.meta.env.VITE_SEARXNG_URL ?? "http://localhost:8080";
 
-// Engine chains per search type
-// Only engines confirmed working on this instance
-const ENGINE_CHAINS: Record<string, string[]> = {
-  general:   ["google", "startpage", "brave", "duckduckgo"],
-  factcheck: ["google", "startpage"],
-  news:      ["google news", "bing news"],
-  reddit:    ["reddit"],
-  wiki:      ["wikipedia"],
-  code:      ["stackoverflow", "github"],
-};
+// Score threshold — results below this are noise. From real response data:
+// score 4.0 = top result, 2.0+ = strong, 0.5+ = relevant, below = noise
+const SCORE_THRESHOLD = 0.4;
 
 const RESULT_LIMITS: Record<string, number> = {
   general:   5,
-  factcheck: 2,
+  factcheck: 3,
   news:      3,
   reddit:    3,
   wiki:      2,
   code:      3,
 };
 
+// Query shaping — appended to the raw query to influence SearXNG results
+// without relying on engine forcing (which doesn't work reliably)
+const QUERY_SUFFIXES: Record<string, string> = {
+  general:   "",
+  factcheck: "site:wikipedia.org OR site:reuters.com OR site:bbc.com OR site:apnews.com",
+  news:      "news",
+  reddit:    "site:reddit.com",
+  wiki:      "wikipedia",
+  code:      "site:stackoverflow.com OR site:github.com",
+};
+
 interface SearXNGResult {
   title: string;
   url: string;
   content: string;
+  score: number;
+  engine: string;
 }
 
-async function querySearXNG(
-  query: string,
-  engine: string,
-  maxResults: number
-): Promise<SearXNGResult[]> {
+async function toolSearchWeb(query: string, mode: string): Promise<string> {
+  if (!query.trim()) return "No search query provided.";
+
+  const modeKey = RESULT_LIMITS[mode] ? mode : "general";
+  const maxResults = RESULT_LIMITS[modeKey];
+  const suffix = QUERY_SUFFIXES[modeKey];
+  const shapedQuery = suffix ? `${query.trim()} ${suffix}` : query.trim();
+
   try {
     const params = new URLSearchParams({
-      q: query,
+      q: shapedQuery,
       format: "json",
-      engines: engine,
       pageno: "1",
       language: "en",
     });
+
     const res = await fetch(`${SEARXNG_URL}/search?${params.toString()}`, {
-      headers: {
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0 (compatible; Re-AI/1.0)",
-      },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return [];
+
+    if (!res.ok) return "Search unavailable. Answering from training data.";
+
     const data = await res.json();
-    const results: SearXNGResult[] = (data.results ?? [])
-      .filter((r: any) => r.title && r.url && r.content)
-      .slice(0, maxResults)
+    const raw: SearXNGResult[] = (data.results ?? [])
+      .filter((r: any) => r.title && r.url && r.content && (r.score ?? 0) >= SCORE_THRESHOLD)
       .map((r: any) => ({
         title: String(r.title).trim(),
         url: String(r.url).trim(),
-        content: String(r.content).trim().slice(0, 350),
+        content: String(r.content).trim().slice(0, 400),
+        score: r.score ?? 0,
+        engine: r.engine ?? "unknown",
       }));
-    return results;
+
+    // Deduplicate by domain — keep highest-scoring result per domain
+    const seenDomains = new Set<string>();
+    const deduped = raw.filter((r) => {
+      try {
+        const domain = new URL(r.url).hostname.replace(/^www\./, "");
+        if (seenDomains.has(domain)) return false;
+        seenDomains.add(domain);
+        return true;
+      } catch { return true; }
+    });
+
+    const top = deduped.slice(0, maxResults);
+
+    if (top.length === 0) return "Search returned no relevant results. Answering from training data.";
+
+    const label = modeKey === "factcheck" ? "Fact-check" : `Search (${modeKey})`;
+    const lines = top.map((r, i) => `[${i + 1}] ${r.title} — ${r.content} (${r.url})`);
+    return `${label}:\n${lines.join("\n")}`;
+
   } catch {
-    return [];
+    return "Search failed. Answering from training data.";
   }
-}
-
-function formatSearchResults(results: SearXNGResult[], engine: string, type: string): string {
-  if (results.length === 0) return "";
-  const label = type === "factcheck" ? "Quick fact-check" : `Search (${type})`;
-  const lines = results.map((r, i) =>
-    `[${i + 1}] ${r.title} — ${r.content} (${r.url})`
-  );
-  return `${label} via ${engine}:\n${lines.join("\n")}`;
-}
-
-async function toolSearchWeb(
-  query: string,
-  mode: string,
-  blockedEngines: Set<string>
-): Promise<string> {
-  if (!query.trim()) return "No search query provided.";
-
-  // Normalize mode to a known chain key
-  const chainKey = ENGINE_CHAINS[mode] ? mode : "general";
-  const engines = ENGINE_CHAINS[chainKey];
-  const maxResults = RESULT_LIMITS[chainKey] ?? 5;
-
-  // Filter out engines blocked this session
-  const available = engines.filter((e) => !blockedEngines.has(e));
-
-  if (available.length === 0) {
-    return "All search engines are currently unavailable. Answering from training data.";
-  }
-
-  for (const engine of available) {
-    const results = await querySearXNG(query, engine, maxResults);
-    if (results.length > 0) {
-      return formatSearchResults(results, engine, chainKey);
-    }
-    // 0 results = rate limited or blocked — skip for rest of session
-    blockedEngines.add(engine);
-  }
-
-  return "Search returned no results from any available engine. Answering from training data.";
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function executeTool(
   name: string,
   args: Record<string, string>,
-  blockedEngines: Set<string>
 ): Promise<string> {
   switch (name) {
     case "get_weather":
@@ -300,7 +279,7 @@ async function executeTool(
     case "get_time":
       return toolGetTime(args.timezone ?? "Asia/Kuala_Lumpur");
     case "search_web":
-      return toolSearchWeb(args.query ?? "", args.mode ?? "general", blockedEngines);
+      return toolSearchWeb(args.query ?? "", args.mode ?? "general");
     default:
       return `Unknown tool: ${name}`;
   }
@@ -402,7 +381,65 @@ function shouldAutoThink(text: string): boolean {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Client-side factcheck triggers ───────────────────────────────────────────
+// ── Client-side tool pre-detection ───────────────────────────────────────────
+// For obvious tool calls, skip the model tool-check pass entirely and call
+// the tool directly. This saves a full Ollama inference round-trip.
+
+interface PreDetectedTool {
+  name: string;
+  args: Record<string, string>;
+}
+
+function preDetectTool(text: string): PreDetectedTool | null {
+  const lower = text.toLowerCase().trim();
+
+  // Weather — "weather in X", "what's the weather in X", "temperature in X"
+  const weatherMatch = lower.match(/(?:weather|temperature|forecast|rain|humid|hot|cold)\s+(?:in|at|for)\s+([a-z\s]+?)(?:\?|$|,|\.|today|now|right)/);
+  if (weatherMatch) {
+    const city = weatherMatch[1].trim();
+    if (city.length > 1 && city.length < 40) return { name: "get_weather", args: { city } };
+  }
+
+  // Time — "what time is it in X", "time in X"
+  const timeMatch = lower.match(/(?:what(?:'s| is) the )?time\s+(?:in|at)\s+([a-z\s/]+?)(?:\?|$|,|\.)/);
+  if (timeMatch) {
+    const place = timeMatch[1].trim();
+    // Map common city names to IANA timezones
+    const tzMap: Record<string, string> = {
+      "tokyo": "Asia/Tokyo", "japan": "Asia/Tokyo",
+      "london": "Europe/London", "uk": "Europe/London",
+      "new york": "America/New_York", "nyc": "America/New_York",
+      "los angeles": "America/Los_Angeles", "la": "America/Los_Angeles",
+      "paris": "Europe/Paris", "france": "Europe/Paris",
+      "sydney": "Australia/Sydney", "australia": "Australia/Sydney",
+      "dubai": "Asia/Dubai", "uae": "Asia/Dubai",
+      "singapore": "Asia/Singapore",
+      "kuala lumpur": "Asia/Kuala_Lumpur", "kl": "Asia/Kuala_Lumpur", "malaysia": "Asia/Kuala_Lumpur",
+      "jakarta": "Asia/Jakarta", "indonesia": "Asia/Jakarta",
+      "beijing": "Asia/Shanghai", "shanghai": "Asia/Shanghai", "china": "Asia/Shanghai",
+      "seoul": "Asia/Seoul", "korea": "Asia/Seoul",
+      "mumbai": "Asia/Kolkata", "india": "Asia/Kolkata",
+      "moscow": "Europe/Moscow", "russia": "Europe/Moscow",
+      "berlin": "Europe/Berlin", "germany": "Europe/Berlin",
+    };
+    const tz = tzMap[place] ?? `Asia/Kuala_Lumpur`;
+    return { name: "get_time", args: { timezone: tz } };
+  }
+
+  // Exchange rate — "X to Y", "convert X to Y", "how much is X in Y"
+  const fxMatch = lower.match(/(?:convert\s+)?(\d+\s+)?([a-z]{3})\s+(?:to|in)\s+([a-z]{3})(?:\?|$|\s)/);
+  if (fxMatch) {
+    const from = fxMatch[2].toUpperCase();
+    const to = fxMatch[3].toUpperCase();
+    const currencies = ["USD","EUR","GBP","JPY","MYR","SGD","AUD","CNY","KRW","THB","IDR","INR","CAD","CHF","HKD","TWD","BTC","ETH"];
+    if (currencies.includes(from) && currencies.includes(to)) {
+      return { name: "get_exchange_rate", args: { from, to } };
+    }
+  }
+
+  return null;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 // When these appear in the user's message, we hint the model to use factcheck
 // by injecting a note into the last user message before the tool-check pass.
 // This supplements the model's own judgment for cases where it might be overconfident.
@@ -587,9 +624,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const thinkOverrideRef = useRef<boolean | null>(null); // null = auto
   // Track assistant turn count for hint injection and escalation
   const assistantTurnCountRef = useRef(0);
-  // Session-level engine blacklist — engines that returned 0 results are skipped
-  // for the rest of the session. Resets on page reload (fresh session).
-  const blockedEnginesRef = useRef<Set<string>>(new Set());
 
   const adapter = useMemo((): ChatModelAdapter => ({
     async *run({ messages, abortSignal }: ChatModelRunOptions) {
@@ -685,40 +719,49 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         ? " [Note: this query may involve current or time-sensitive information — consider using search_web to verify]"
         : "";
 
-      const baseMessagesForTools: Array<Record<string, unknown>> = [
-        systemMessage,
-        ...apiMessages.slice(0, -1),
-        {
-          ...apiMessages[apiMessages.length - 1],
-          content: (apiMessages[apiMessages.length - 1]?.content ?? "") + factcheckHint,
-        },
-      ];
-
-      // Base messages without the hint for the final streaming response
       const baseMessages: Array<Record<string, unknown>> = [systemMessage, ...apiMessages];
 
-      // ── Tool call pass (non-streaming) ────────────────────────────────────
-      // First ask the model if it needs any tools. If it does, execute them
-      // and inject results before the final streaming response.
-      const toolCheckRes = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: MODEL_ID,
-          messages: baseMessagesForTools,
-          stream: false,
-          think: false, // tool detection pass — no thinking needed, keep it fast
-          tools: TOOLS,
-          options: { ...inferenceOptions, num_ctx: 4096 },
-        }),
-        signal: abortSignal,
-      });
+      // ── Tool call pass ────────────────────────────────────────────────────
+      // 1. Try client-side pre-detection first (no model inference needed)
+      // 2. Fall back to model tool-check pass for ambiguous queries
+      // 3. Execute tools in parallel, inject results into final messages
 
-      if (!toolCheckRes.ok) throw new Error(`Ollama tool check error ${toolCheckRes.status}`);
-      const toolCheckData = await toolCheckRes.json();
-      const toolCalls = toolCheckData?.message?.tool_calls as Array<{
-        function: { name: string; arguments: Record<string, string> }
-      }> | undefined;
+      const preDetected = preDetectTool(lastText);
+      let toolCalls: Array<{ function: { name: string; arguments: Record<string, string> } }> | undefined;
+
+      if (preDetected) {
+        // Skip model tool-check entirely — we know what tool to call
+        toolCalls = [{ function: { name: preDetected.name, arguments: preDetected.args } }];
+      } else {
+        // Truncate history for tool check — only last 3 messages needed to decide
+        const recentMessages = apiMessages.slice(-3);
+        const toolCheckMessages: Array<Record<string, unknown>> = [
+          systemMessage,
+          ...recentMessages.slice(0, -1),
+          {
+            ...recentMessages[recentMessages.length - 1],
+            content: (recentMessages[recentMessages.length - 1]?.content ?? "") + factcheckHint,
+          },
+        ];
+
+        const toolCheckRes = await fetch(`${OLLAMA_URL}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: MODEL_ID,
+            messages: toolCheckMessages,
+            stream: false,
+            think: false,
+            tools: TOOLS,
+            options: { ...inferenceOptions, num_ctx: 2048 }, // smaller ctx — tool detection only
+          }),
+          signal: abortSignal,
+        });
+
+        if (!toolCheckRes.ok) throw new Error(`Ollama tool check error ${toolCheckRes.status}`);
+        const toolCheckData = await toolCheckRes.json();
+        toolCalls = toolCheckData?.message?.tool_calls;
+      }
 
       // Build the final message list — inject tool results if any were called
       let finalMessages: Array<Record<string, unknown>> = baseMessages;
@@ -726,7 +769,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         // Execute all tools in parallel
         const toolResults = await Promise.all(
           toolCalls.map(async (tc) => {
-            const result = await executeTool(tc.function.name, tc.function.arguments, blockedEnginesRef.current);
+            const result = await executeTool(tc.function.name, tc.function.arguments);
             return { name: tc.function.name, result };
           })
         );
