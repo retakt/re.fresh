@@ -69,8 +69,8 @@ export default function AppLayout() {
 
       {/* ── DESKTOP layout — unchanged from before ── */}
       <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6">
-        {/* Desktop sidebar — exactly as it was */}
-        <div className="hidden md:block w-44 shrink-0 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)]">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block w-44 shrink-0">
           <Sidebar />
         </div>
 
