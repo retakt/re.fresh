@@ -64,7 +64,7 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
-          // Core React - MUST be first, everything depends on it
+          // Core React - MUST load first
           if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
             return "react";
           }
@@ -79,10 +79,8 @@ export default defineConfig({
             return "motion";
           }
           
-          // Radix UI - depends on React, used in many components
-          if (id.includes("node_modules/@radix-ui/")) {
-            return "radix";
-          }
+          // DON'T split @radix-ui - causes "forwardRef undefined" error
+          // It needs React from the same chunk, so let it stay in vendor
           
           // Heavy libraries that can load independently
           if (id.includes("node_modules/@supabase/")) return "supabase";
@@ -122,7 +120,7 @@ export default defineConfig({
           }
           
           // Everything else from node_modules goes to vendor
-          // This prevents circular dependencies
+          // This includes @radix-ui which needs to be bundled with its React dependency
           if (id.includes("node_modules/")) {
             return "vendor";
           }
