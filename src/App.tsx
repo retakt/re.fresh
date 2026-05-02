@@ -5,6 +5,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import AppLayout from "./pages/layout.tsx";
 import { ChatProvider } from "./components/providers/chat.tsx";
+import { CommandPalette } from "./components/ui/command-palette.tsx";
+import { CommandPaletteProvider, useCommandPalette } from "./components/providers/command-palette.tsx";
 
 // ── All page routes lazy-loaded — nothing eagerly parsed on first paint ───────
 const Index            = lazy(() => import("./pages/Index.tsx"));
@@ -51,9 +53,12 @@ function ScrollToTop() {
 }
 
 function AppContent() {
+  const { isOpen, close } = useCommandPalette();
+
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <CommandPalette isOpen={isOpen} onClose={close} />
       {/* No fallback - let the index.html shell handle initial loading */}
       <Suspense>
         <Routes>
@@ -209,9 +214,11 @@ export default function App() {
   return (
     <DefaultProviders>
       <ErrorBoundary>
-        <ChatProvider>
-          <AppContent />
-        </ChatProvider>
+        <CommandPaletteProvider>
+          <ChatProvider>
+            <AppContent />
+          </ChatProvider>
+        </CommandPaletteProvider>
       </ErrorBoundary>
     </DefaultProviders>
   );
