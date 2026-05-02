@@ -71,7 +71,7 @@ export default function UserMenu() {
             align="end"
             sideOffset={8}
             collisionPadding={12}
-            positionMethod="fixed"
+            positionMethod="absolute"
             className="outline-none z-[9999]"
           >
             <Menu.Popup
