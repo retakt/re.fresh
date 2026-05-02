@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Moon, Sun, Search } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/providers/theme.tsx";
 import UserMenu from "@/components/account/user-menu.tsx";
 import AnimatedMenuIcon from "@/components/ui/animated-menu-icon.tsx";
-import { useCommandPalette } from "@/components/providers/command-palette.tsx";
+import { CommandPalette } from "@/components/ui/command-palette.tsx";
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -29,7 +29,6 @@ const itemVariants = {
 
 export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
-  const { open: openCommandPalette } = useCommandPalette();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -97,17 +96,7 @@ export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarPr
 
           {/* Right actions */}
           <motion.div className="flex items-center gap-1" variants={itemVariants}>
-            <motion.button
-              type="button"
-              onClick={openCommandPalette}
-              className="rounded-lg p-2.5 text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              aria-label="Search (⌘K)"
-              title="Search (⌘K)"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Search size={17} strokeWidth={2} />
-            </motion.button>
+            <CommandPalette />
 
             <motion.button
               type="button"

@@ -5,6 +5,7 @@ import { Search, BookOpen, GraduationCap, Music2, Home, User, FolderOpen, Messag
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useDebounce } from "@/hooks/use-debounce";
+import { Menu } from "@base-ui/react/menu";
 import { motion, AnimatePresence } from "motion/react";
 
 type SearchResult = {
@@ -52,12 +53,8 @@ const NAV_PAGES = [
   { href: "/chat", icon: MessageSquare, label: "Chat", description: "Ai Chat" },
 ];
 
-interface CommandPaletteProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
+export function CommandPalette() {
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,16 +64,33 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   // Reset state when opening
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       setQuery("");
       setResults([]);
       setSelectedIndex(0);
-      // Focus input after animation
-      setTimeout(() => inputRef.current?.focus(), 100);
+      // Focus input after animation - important for mobile keyboard
+      setTimeout(() => {
+        inputRef.current?.focus();
+        // Ensure keyboard opens on mobile
+        inputRef.current?.click();
+      }, 150);
     }
-  }, [isOpen]);
+  }, [open]);
 
-  // Search logic - reusing your existing search + adding navigation pages
+  // Global keyboard shortcut (Cmd+K or Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Search logic
   useEffect(() => {
     const searchPages = () => {
       if (!query.trim()) return [];
@@ -138,12 +152,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           href: (m.release_type === "album" || m.release_type === "ep") && m.album
             ? `/music/album/${encodeURIComponent(m.album)}`
             : `/music/song/${m.id}`,
-          excerpt: m.genre || "Track", // Add consistent excerpt
+          excerpt: m.genre || "Track",
           tags: m.tags,
         })),
       ];
 
-      // Combine pages and content, pages first
       setResults([...pageResults, ...contentResults]);
       setSelectedIndex(0);
       setLoading(false);
@@ -154,17 +167,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   // Keyboard navigation
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
+    if (!open) return;
 
+    const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case "Escape":
           e.preventDefault();
-          onClose();
+          setOpen(false);
           break;
         case "ArrowDown":
           e.preventDefault();
-          // Calculate total items (parents + children)
           const grouped = results.reduce((acc, result) => {
             if (!acc[result.type]) acc[result.type] = [];
             acc[result.type].push(result);
@@ -174,7 +186,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           const typeOrder = ['page', 'post', 'tutorial', 'music'];
           const totalItems = typeOrder.reduce((total, type) => {
             if (grouped[type] && grouped[type].length > 0) {
-              return total + 1 + grouped[type].length; // 1 parent + children
+              return total + 1 + grouped[type].length;
             }
             return total;
           }, 0);
@@ -187,7 +199,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           break;
         case "Enter":
           e.preventDefault();
-          // Find the selected item (parent or child)
           const groupedForEnter = results.reduce((acc, result) => {
             if (!acc[result.type]) acc[result.type] = [];
             acc[result.type].push(result);
@@ -207,14 +218,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           
           for (const type of typeOrderForEnter) {
             if (groupedForEnter[type] && groupedForEnter[type].length > 0) {
-              // Check if parent is selected
               if (currentIdx === selectedIndex) {
                 targetHref = typeHrefs[type as keyof typeof typeHrefs];
                 break;
               }
               currentIdx++;
               
-              // Check children
               for (const result of groupedForEnter[type]) {
                 if (currentIdx === selectedIndex) {
                   targetHref = result.href;
@@ -236,179 +245,217 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, results, selectedIndex]);
+  }, [open, results, selectedIndex]);
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.1 }}
-        className="absolute inset-x-0 bottom-0 top-14 z-[9998] flex items-start justify-center pt-[15vh] px-4"
-        onClick={onClose}
-      >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-        
-        {/* Command Palette */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: -20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -20 }}
-          transition={{ duration: 0.1, ease: "easeOut" }}
-          className="relative w-full max-w-2xl bg-background/95 backdrop-blur-xl rounded-2xl border border-border/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)] overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b">
-            <Search size={16} className="text-muted-foreground shrink-0" />
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search everything..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+  return (
+    <>
+      {/* Backdrop — portalled to body so it escapes navbar's stacking context */}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-x-0 bottom-0 top-14 z-[9998] backdrop-blur-[2px] bg-black/10"
+              onPointerDown={() => setOpen(false)}
+              aria-hidden="true"
             />
-            <kbd className="px-2 py-1 text-base font-bold uppercase bg-transparent text-muted-foreground/40">ESC</kbd>
-          </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
-          {/* Content */}
-          <div className="max-h-96 overflow-y-auto">
-            {/* Loading */}
-            {loading && (
-              <div className="p-3 space-y-1.5">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-8 rounded-md bg-muted/30 animate-pulse" />
-                ))}
+      <Menu.Root modal={false} open={open} onOpenChange={setOpen}>
+        <Menu.Trigger
+          className="rounded-lg p-2.5 text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
+          aria-label="Search (⌘K)"
+        >
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: [0, -3, 3, -2, 2, 0] }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Search size={17} strokeWidth={2} />
+          </motion.div>
+        </Menu.Trigger>
+
+        <Menu.Portal>
+          <Menu.Positioner
+            side="bottom"
+            align="end"
+            sideOffset={8}
+            collisionPadding={12}
+            positionMethod="absolute"
+            className="outline-none z-[9999]"
+          >
+            <Menu.Popup
+              render={
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.88, y: -8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 700,
+                    damping: 12,
+                    mass: 0.5,
+                  }}
+                />
+              }
+              className="w-[600px] max-w-[90vw] bg-background/95 backdrop-blur-xl rounded-2xl border border-border/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)] overflow-hidden origin-top-right"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 px-4 py-3 border-b">
+                <Search size={16} className="text-muted-foreground shrink-0" />
+                <input
+                  ref={inputRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search everything..."
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  inputMode="search"
+                />
+                <kbd className="px-2 py-1 text-base font-bold uppercase bg-transparent text-muted-foreground/40">ESC</kbd>
               </div>
-            )}
 
-            {/* No results */}
-            {!loading && debouncedQuery && results.length === 0 && (
-              <div className="p-6 text-center">
-                <p className="text-xs text-muted-foreground">
-                  No results for "{debouncedQuery}"
-                </p>
-              </div>
-            )}
+              {/* Content */}
+              <div className="max-h-96 overflow-y-auto">
+                {/* Loading */}
+                {loading && (
+                  <div className="p-3 space-y-1.5">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-8 rounded-md bg-muted/30 animate-pulse" />
+                    ))}
+                  </div>
+                )}
 
-            {/* Results - Tree Structure */}
-            {!loading && results.length > 0 && (
-              <div className="p-1">
-                {(() => {
-                  // Group results by type
-                  const grouped = results.reduce((acc, result) => {
-                    if (!acc[result.type]) acc[result.type] = [];
-                    acc[result.type].push(result);
-                    return acc;
-                  }, {} as Record<string, SearchResult[]>);
+                {/* No results */}
+                {!loading && debouncedQuery && results.length === 0 && (
+                  <div className="p-6 text-center">
+                    <p className="text-xs text-muted-foreground">
+                      No results for "{debouncedQuery}"
+                    </p>
+                  </div>
+                )}
 
-                  // Define order: pages first, then content
-                  const typeOrder = ['page', 'post', 'tutorial', 'music'];
-                  const typeLabels = {
-                    page: 'Navigation',
-                    post: 'Blog', 
-                    tutorial: 'Tutorials',
-                    music: 'Music'
-                  };
+                {/* Results - Tree Structure */}
+                {!loading && results.length > 0 && (
+                  <div className="p-1">
+                    {(() => {
+                      const grouped = results.reduce((acc, result) => {
+                        if (!acc[result.type]) acc[result.type] = [];
+                        acc[result.type].push(result);
+                        return acc;
+                      }, {} as Record<string, SearchResult[]>);
 
-                  const typeHrefs = {
-                    page: '/',
-                    post: '/blog', 
-                    tutorial: '/tutorials',
-                    music: '/music'
-                  };
+                      const typeOrder = ['page', 'post', 'tutorial', 'music'];
+                      const typeLabels = {
+                        page: 'Navigation',
+                        post: 'Blog', 
+                        tutorial: 'Tutorials',
+                        music: 'Music'
+                      };
 
-                  let currentIndex = 0;
+                      const typeHrefs = {
+                        page: '/',
+                        post: '/blog', 
+                        tutorial: '/tutorials',
+                        music: '/music'
+                      };
 
-                  return typeOrder.map(type => {
-                    if (!grouped[type] || grouped[type].length === 0) return null;
-                    
-                    const parentIndex = currentIndex;
-                    currentIndex++;
-                    const isParentSelected = parentIndex === selectedIndex;
-                    
-                    return (
-                      <div key={type} className="mb-1 last:mb-0">
-                        {/* Parent Category - Clickable */}
-                        <Link
-                          to={typeHrefs[type as keyof typeof typeHrefs]}
-                          onClick={onClose}
-                          className={`flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors text-sm ${
-                            isParentSelected ? "bg-accent" : "hover:bg-accent/50"
-                          }`}
-                          onMouseEnter={() => setSelectedIndex(parentIndex)}
-                        >
-                          <div className={`shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${TYPE_BG[type as keyof typeof TYPE_BG]}`}>
-                            {(() => {
-                              const ParentIcon = type === 'page' ? Home : TYPE_ICON[type as keyof typeof TYPE_ICON] as any;
-                              return <ParentIcon size={11} className={TYPE_COLOR[type as keyof typeof TYPE_COLOR]} />;
-                            })()}
-                          </div>
-                          <span className="font-medium text-sm">{typeLabels[type as keyof typeof typeLabels]}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">({grouped[type].length})</span>
-                        </Link>
+                      let currentIndex = 0;
+
+                      return typeOrder.map(type => {
+                        if (!grouped[type] || grouped[type].length === 0) return null;
                         
-                        {/* Children with Tree Lines */}
-                        <div className="ml-2 border-l border-border/30 pl-3 space-y-0.5 mt-0.5">
-                          {grouped[type].map((result, groupIndex) => {
-                            const childIndex = currentIndex;
-                            currentIndex++;
-                            const isChildSelected = childIndex === selectedIndex;
-                            
-                            const IconComponent = result.type === 'page' 
-                              ? (TYPE_ICON[result.type] as (href: string) => any)(result.href)
-                              : TYPE_ICON[result.type] as any;
-                            
-                            return (
-                              <div key={result.id} className="relative">
-                                {/* Tree branch line */}
-                                <div className="absolute -left-3 top-2 w-2 h-px bg-border/30" />
-                                
-                                <Link
-                                  to={result.href}
-                                  onClick={onClose}
-                                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors text-sm ${
-                                    isChildSelected ? "bg-accent" : "hover:bg-accent/50"
-                                  }`}
-                                  onMouseEnter={() => setSelectedIndex(childIndex)}
-                                >
-                                  <div className={`shrink-0 w-4 h-4 rounded-sm flex items-center justify-center ${TYPE_BG[result.type]}`}>
-                                    <IconComponent size={10} className={TYPE_COLOR[result.type]} />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-xs truncate leading-tight">{result.title}</p>
-                                  </div>
-                                  {/* Consistent right-side metadata for all types */}
-                                  <div className="shrink-0 flex items-center gap-1">
-                                    {result.tags && result.tags.length > 0 ? (
-                                      <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4">
-                                        #{result.tags[0]}
-                                      </Badge>
-                                    ) : (
-                                      <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 capitalize">
-                                        {result.type}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </Link>
+                        const parentIndex = currentIndex;
+                        currentIndex++;
+                        const isParentSelected = parentIndex === selectedIndex;
+                        
+                        return (
+                          <div key={type} className="mb-1 last:mb-0">
+                            {/* Parent Category - Clickable */}
+                            <Link
+                              to={typeHrefs[type as keyof typeof typeHrefs]}
+                              onClick={() => setOpen(false)}
+                              className={`flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors text-sm ${
+                                isParentSelected ? "bg-accent" : "hover:bg-accent/50"
+                              }`}
+                              onMouseEnter={() => setSelectedIndex(parentIndex)}
+                            >
+                              <div className={`shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${TYPE_BG[type as keyof typeof TYPE_BG]}`}>
+                                {(() => {
+                                  const ParentIcon = type === 'page' ? Home : TYPE_ICON[type as keyof typeof TYPE_ICON] as any;
+                                  return <ParentIcon size={11} className={TYPE_COLOR[type as keyof typeof TYPE_COLOR]} />;
+                                })()}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  }).filter(Boolean);
-                })()}
+                              <span className="font-medium text-sm">{typeLabels[type as keyof typeof typeLabels]}</span>
+                              <span className="text-xs text-muted-foreground ml-auto">({grouped[type].length})</span>
+                            </Link>
+                            
+                            {/* Children with Tree Lines */}
+                            <div className="ml-2 border-l border-border/30 pl-3 space-y-0.5 mt-0.5">
+                              {grouped[type].map((result) => {
+                                const childIndex = currentIndex;
+                                currentIndex++;
+                                const isChildSelected = childIndex === selectedIndex;
+                                
+                                const IconComponent = result.type === 'page' 
+                                  ? (TYPE_ICON[result.type] as (href: string) => any)(result.href)
+                                  : TYPE_ICON[result.type] as any;
+                                
+                                return (
+                                  <div key={result.id} className="relative">
+                                    {/* Tree branch line */}
+                                    <div className="absolute -left-3 top-2 w-2 h-px bg-border/30" />
+                                    
+                                    <Link
+                                      to={result.href}
+                                      onClick={() => setOpen(false)}
+                                      className={`flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors text-sm ${
+                                        isChildSelected ? "bg-accent" : "hover:bg-accent/50"
+                                      }`}
+                                      onMouseEnter={() => setSelectedIndex(childIndex)}
+                                    >
+                                      <div className={`shrink-0 w-4 h-4 rounded-sm flex items-center justify-center ${TYPE_BG[result.type]}`}>
+                                        <IconComponent size={10} className={TYPE_COLOR[result.type]} />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-xs truncate leading-tight">{result.title}</p>
+                                      </div>
+                                      <div className="shrink-0 flex items-center gap-1">
+                                        {result.tags && result.tags.length > 0 ? (
+                                          <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4">
+                                            #{result.tags[0]}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 capitalize">
+                                            {result.type}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </Link>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      }).filter(Boolean);
+                    })()}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>,
-    document.body
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+    </>
   );
 }
