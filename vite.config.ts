@@ -64,23 +64,18 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
-          // Core React - MUST load first
-          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
-            return "react";
-          }
+          // DON'T split React - it must be in the same chunk as libraries that use it
+          // Splitting React causes "createContext undefined" and "forwardRef undefined" errors
           
-          // React Router - depends on React
+          // React Router - can be separate since it's only used in routing
           if (id.includes("node_modules/react-router-dom") || id.includes("node_modules/react-router/")) {
             return "router";
           }
           
-          // Motion library - depends on React, used everywhere
+          // Motion library - used everywhere, keep separate
           if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion")) {
             return "motion";
           }
-          
-          // DON'T split @radix-ui - causes "forwardRef undefined" error
-          // It needs React from the same chunk, so let it stay in vendor
           
           // Heavy libraries that can load independently
           if (id.includes("node_modules/@supabase/")) return "supabase";
@@ -120,7 +115,7 @@ export default defineConfig({
           }
           
           // Everything else from node_modules goes to vendor
-          // This includes @radix-ui which needs to be bundled with its React dependency
+          // This includes React, ReactDOM, and @radix-ui which all need to be together
           if (id.includes("node_modules/")) {
             return "vendor";
           }
