@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import SmoothUIContextMenu, { type ContextMenuItemConfig } from '@/components/ui/smoothui/context-menu';
 import { Copy, RotateCcw, ArrowLeft, ArrowRight, Share, MoreHorizontal, FileText, Download } from 'lucide-react';
 import { toast } from '@/lib/toast';
@@ -103,14 +102,11 @@ const globalContextMenuItems: ContextMenuItemConfig[] = [
 
 // Global context menu provider that covers the whole page
 export function ContextMenuProvider({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-  const isChat = location.pathname === '/chat';
-
   useEffect(() => {
-    if (isChat) return; // Let browser handle context menu on chat page
-
-    // Disable the default browser context menu
     const handleContextMenu = (e: MouseEvent) => {
+      // Allow native context menu on chat page so users can copy text
+      if (window.location.pathname === '/chat') return;
+
       // Allow default context menu on form inputs and text areas
       const target = e.target as HTMLElement;
       if (
@@ -121,7 +117,7 @@ export function ContextMenuProvider({ children }: { children: React.ReactNode })
         target.closest('input') ||
         target.closest('textarea')
       ) {
-        return; // Let browser handle these
+        return;
       }
       
       e.preventDefault();
@@ -132,12 +128,7 @@ export function ContextMenuProvider({ children }: { children: React.ReactNode })
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
     };
-  }, [isChat]);
-
-  // On chat page — render children without the custom context menu wrapper
-  if (isChat) {
-    return <div className="min-h-screen w-full">{children}</div>;
-  }
+  }, []);
 
   return (
     <SmoothUIContextMenu items={globalContextMenuItems}>

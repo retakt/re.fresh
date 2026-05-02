@@ -16,7 +16,7 @@ export const PulseLoader: FC<LoaderProps> = ({ className }) => (
     className={cn("inline-flex items-center", className)}
   >
     <span
-      className="block size-5 rounded-full border-2 border-primary bg-transparent"
+      className="block size-7 rounded-full border-2 border-primary bg-transparent"
       style={{ animation: "pulse-ring 1.4s ease-in-out infinite" }}
     />
     <style>{`

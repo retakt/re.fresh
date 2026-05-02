@@ -245,13 +245,13 @@ const ReasoningGroupImpl: ReasoningGroupComponent = ({
   const prevStreaming = useRef(false);
   useEffect(() => {
     if (prevStreaming.current && !isReasoningStreaming && userOpen === null) {
-      const t = setTimeout(() => setUserOpen(false), 300);
+      const t = setTimeout(() => setUserOpen(false), 0);
       return () => clearTimeout(t);
     }
     prevStreaming.current = isReasoningStreaming;
   }, [isReasoningStreaming, userOpen]);
 
-  // While streaming: open automatically. Once done: respect user toggle, default closed.
+  // While streaming: open automatically. Once done: default closed, user can expand.
   const isOpen = isReasoningStreaming ? true : (userOpen ?? false);
 
   return (

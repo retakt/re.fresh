@@ -80,9 +80,10 @@ export function CanvasText({
     const updateDimensions = () => {
       const rect = textEl.getBoundingClientRect();
       const computed = window.getComputedStyle(textEl);
+      const fontSize = parseFloat(computed.fontSize) || 16;
       setDimensions({
         width: Math.ceil(rect.width) || 400,
-        height: Math.ceil(rect.height) || 200,
+        height: Math.ceil(rect.height + fontSize * 0.3) || 200, // extra for descenders
       });
       setFont(
         `${computed.fontWeight} ${computed.fontSize} ${computed.fontFamily}`,
@@ -203,7 +204,7 @@ export function CanvasText({
         )}
         aria-hidden="true"
       />
-      <span ref={textRef} className="invisible inline-block" aria-hidden="true">
+      <span ref={textRef} className="invisible inline-block pb-[0.3em]" aria-hidden="true">
         {text}
       </span>
       <canvas

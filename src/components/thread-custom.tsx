@@ -4,6 +4,7 @@ import { ToolFallback } from "@/components/tool-fallback";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { PulseLoader } from "@/components/ui/loader";
 import { Button } from "@/components/ui/button";
+import { EncryptedText } from "@/components/ui/encrypted-text";
 import { cn } from "@/lib/utils";
 import {
   ActionBarPrimitive,
@@ -26,9 +27,9 @@ import {
   MicIcon,
   MicOffIcon,
   PaperclipIcon,
+  BrainIcon,
   PencilIcon,
   RefreshCwIcon,
-  SparklesIcon,
   SquareIcon,
   XIcon,
 } from "lucide-react";
@@ -119,11 +120,11 @@ const AUDIO_MIME: Record<string, string> = {
 // ── Typography tokens — change here, applies everywhere ──────────────────────
 // Desktop: 14px / 1.55 line-height  |  Mobile: 14px / 1.55
 // Composer input: 16px on mobile (prevents iOS zoom), 14px on desktop
-const PROSE_SIZE = "text-[14px]";
+const PROSE_SIZE = "text-[14px] sm:text-[14px]";
 const PROSE_LEADING = "leading-[1.55]";
 const COMPOSER_INPUT_SIZE = "text-[16px] sm:text-[14px]";
 const COMPOSER_INPUT_LEADING = "leading-[1.3]";
-const USER_BUBBLE_SIZE = "text-[14px]";
+const USER_BUBBLE_SIZE = "text-[15px] sm:text-[14px]";
 const USER_BUBBLE_LEADING = "leading-[1.4]";
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -184,7 +185,7 @@ export const Thread: FC<ThreadProps> = ({
         data-slot="aui_thread-viewport"
         className="chat-scrollbar relative flex flex-1 flex-col overflow-x-hidden overflow-y-auto scroll-smooth"
       >
-        <div className="mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4">
+        <div className="mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-2 sm:pt-4">
           <AuiIf condition={(s) => s.thread.isEmpty}>
             <ThreadWelcome sessionId={sessionId} />
           </AuiIf>
@@ -300,29 +301,31 @@ const ThreadScrollToBottom: FC = () => (
 const ThreadWelcome: FC<{ sessionId: string }> = ({ sessionId }) => (
   <div
     data-slot="aui_thread-welcome"
-    className="my-auto flex grow flex-col items-center justify-center"
+    className="my-auto flex grow flex-col items-center justify-center pt-4"
   >
     <div className="w-full px-4">
       <div className="mb-4">
         <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-          <SparklesIcon size={20} className="text-primary" />
+          <BrainIcon size={20} className="text-primary" />
         </div>
       </div>
       <h1 className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both font-semibold text-2xl duration-200">
         {WELCOME_TITLE}
       </h1>
-      <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground sm:text-xl text-sm delay-75 duration-200">
+      <p className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground sm:text-xl text-sm delay-75 duration-100">
         {WELCOME_SUBTITLE}
       </p>
       <p className="mt-4 font-mono text-[12px] text-muted-foreground/40">
         Uncensored session: {sessionId.slice(0, 8)}
       </p>
-      <div className="mt-12 space-y-1">
+      <div className="mt-2 space-y-1">
         {[
-          { cmd: "/think", desc: "all parameters unlocked" },
+          { cmd: "/dweb", desc: "disable web search" },
+          { cmd: "/eweb", desc: "enable web search (default)" },
           { cmd: "/auto", desc: "ai decides when to think (current)" },
+          { cmd: "/think", desc: "all parameters unlocked" },
           { cmd: "/nothink", desc: "rapid-fire responses" },
-          { cmd: "/help", desc: "temp/top_k (extra tweaks)" },
+          { cmd: "/help", desc: "details (extra tweaks)" },
         ].map(({ cmd, desc }) => (
           <p key={cmd} className="font-mono text-[11px] font-medium text-muted-foreground/55 flex items-baseline gap-1.5">
             <span className="text-primary">•</span>
@@ -454,7 +457,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
     >
       <div
         className={cn(
-          "flex w-full flex-col rounded-(--composer-radius) border bg-background transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20",
+          "flex w-full flex-col rounded-(--composer-radius) border border-primary/40 bg-background transition-all focus-within:border-primary/90 focus-within:ring-8 focus-within:ring-primary/20 focus-within:shadow-[0_0_60px_20px_hsl(var(--primary)/0.4)] dark:focus-within:shadow-[0_0_48px_16px_hsl(var(--primary)/0.25)]",
           isDragOver && "border-primary/60 ring-2 ring-primary/20",
         )}
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -524,44 +527,64 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
           </div>
 
           {/* Textarea */}
-          <ComposerPrimitive.Input
-            placeholder="Ask anything! (literally anything)"
-            className={cn(
-              "max-h-40 min-h-[2rem] flex-1 resize-none bg-transparent py-1.5 outline-none placeholder:text-muted-foreground/80",
-              COMPOSER_INPUT_SIZE,
-              COMPOSER_INPUT_LEADING,
+          <div className="relative flex-1">
+            <ComposerPrimitive.Input
+              placeholder=""
+              className={cn(
+                "max-h-40 min-h-[2rem] w-full resize-none bg-transparent py-1.5 outline-none caret-primary",
+                COMPOSER_INPUT_SIZE,
+                COMPOSER_INPUT_LEADING,
+              )}
+              rows={1}
+              autoFocus
+              aria-label="Message input"
+              onPaste={handlePaste}
+              onKeyDown={(e) => {
+                const ta = e.target as HTMLTextAreaElement;
+                // ↑ at start of empty or single-line input → history back
+                if (e.key === "ArrowUp" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                  if (ta.selectionStart === 0 && ta.selectionEnd === 0) {
+                    e.preventDefault();
+                    navigateHistory("up");
+                    return;
+                  }
+                }
+                // ↓ at end of input → history forward
+                if (e.key === "ArrowDown" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                  if (ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length) {
+                    e.preventDefault();
+                    navigateHistory("down");
+                    return;
+                  }
+                }
+                // Enter sends — record history
+                if (e.key === "Enter" && !e.shiftKey) {
+                  handleSend();
+                  if (window.innerWidth < 768) {
+                    setTimeout(() => ta.blur(), 50);
+                  }
+                }
+              }}
+            />
+{/* Custom placeholder with encrypted text */}
+            {!composerText && (
+              <div className="pointer-events-none absolute inset-0 flex items-center py-1.5">
+                <span className={cn("text-muted-foreground/80 text-[12px] sm:text-[14px]", COMPOSER_INPUT_LEADING)}>
+                  {/* Change this line: */}
+                  <span className="mr-[2px]"> {/* Optional: add a small margin right */}
+                    Go ahead!
+                  </span>
+                  <EncryptedText
+                    text="[I'm Uncensored]"
+                    className="inline opacity-50"
+                    revealDelayMs={40}
+                    flipDelayMs={30}
+                  />
+                  
+                </span>
+              </div>
             )}
-            rows={1}
-            autoFocus
-            aria-label="Message input"
-            onPaste={handlePaste}
-            onKeyDown={(e) => {
-              const ta = e.target as HTMLTextAreaElement;
-              // ↑ at start of empty or single-line input → history back
-              if (e.key === "ArrowUp" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                if (ta.selectionStart === 0 && ta.selectionEnd === 0) {
-                  e.preventDefault();
-                  navigateHistory("up");
-                  return;
-                }
-              }
-              // ↓ at end of input → history forward
-              if (e.key === "ArrowDown" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                if (ta.selectionStart === ta.value.length && ta.selectionEnd === ta.value.length) {
-                  e.preventDefault();
-                  navigateHistory("down");
-                  return;
-                }
-              }
-              // Enter sends — record history
-              if (e.key === "Enter" && !e.shiftKey) {
-                handleSend();
-                if (window.innerWidth < 768) {
-                  setTimeout(() => ta.blur(), 50);
-                }
-              }
-            }}
-          />
+          </div>
 
           {/* Mic — toggles dictation, right before send */}
           <div className="shrink-0 self-end pb-0.5">
@@ -645,24 +668,9 @@ const MessageError: FC = () => (
  * Shows a pulse loader while the AI is running but hasn't emitted any text yet
  * (the "blank thinking" moment before the first token arrives).
  */
-const AssistantThinkingLoader: FC = () => {
-  const show = useAuiState((s) => {
-    if (s.message.status?.type !== "running") return false;
-    // Hide once there's any text content
-    const hasText = s.message.parts.some((p) => p.type === "text" && (p as { text?: string }).text);
-    return !hasText;
-  });
-  if (!show) return null;
-  return (
-    <div className="px-2 py-1 text-muted-foreground">
-      <PulseLoader />
-    </div>
-  );
-};
-
 const AssistantMessage: FC = () => {
-  // ACTION_BAR_PT drives the footer padding; -mb compensates so message spacing stays consistent
   const ACTION_BAR_HEIGHT = "-mb-7.5 min-h-7.5 pt-1.5";
+  const isRunning = useAuiState((s) => s.message.status?.type === "running");
 
   return (
     <MessagePrimitive.Root
@@ -674,16 +682,16 @@ const AssistantMessage: FC = () => {
         data-slot="aui_assistant-message-content"
         className="wrap-break-word px-2 text-foreground"
       >
-        <AssistantThinkingLoader />
+        {isRunning && <div className="py-1"><PulseLoader /></div>}
         <div
           className={cn(
             "prose max-w-none",
             PROSE_SIZE,
             PROSE_LEADING,
-            // Prose element overrides to respect our token sizes
             "[&_p]:my-2 [&_p]:leading-[1.55]",
             "[&_li]:leading-[1.55]",
             "[&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm",
+            "[&>*:empty]:hidden [&_ul:empty]:hidden [&_li:empty]:hidden",
           )}
         >
           <MessagePrimitive.Parts
