@@ -247,7 +247,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.1 }}
-        className="absolute inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
+        className="absolute inset-x-0 bottom-0 top-14 z-[9998] flex items-start justify-center pt-[15vh] px-4"
         onClick={onClose}
       >
         {/* Backdrop */}
