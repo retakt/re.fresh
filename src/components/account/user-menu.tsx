@@ -27,8 +27,8 @@ export default function UserMenu() {
     if (!error) window.location.href = "/";
   };
 
-  const itemCls = "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] text-left outline-none cursor-pointer transition-colors hover:bg-secondary data-[highlighted]:bg-secondary";
-  const destructiveCls = "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] text-left outline-none cursor-pointer transition-colors text-destructive hover:bg-destructive/10 data-[highlighted]:bg-destructive/10";
+  const itemCls = "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-left outline-none cursor-pointer transition-colors hover:bg-secondary data-[highlighted]:bg-secondary";
+  const destructiveCls = "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-left outline-none cursor-pointer transition-colors text-destructive hover:bg-destructive/10 data-[highlighted]:bg-destructive/10";
 
   return (
     <>
@@ -92,10 +92,10 @@ export default function UserMenu() {
             >
               {/* Header */}
               <div className="px-2.5 py-2 border-b border-border/50">
-                <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+                <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
                   {isAuthenticated ? displayName : "Member access"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 truncate" style={{ fontSize: "clamp(9px, 2.2vw, 11px)" }}>
+                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
                   {isAuthenticated ? email : "Not signed in"}
                 </p>
               </div>
@@ -128,13 +128,13 @@ export default function UserMenu() {
                   <div className="border-t border-border/50" />
 
                   <div className="px-2.5 py-2">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">
                       Preferences
                     </p>
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Bell size={11} className="text-muted-foreground shrink-0" />
-                        <span className="text-[11px] font-medium text-foreground truncate">Notifications</span>
+                        <span className="text-[13px] font-medium text-foreground truncate">Notifications</span>
                       </div>
                       <Switch
                         checked={notificationsEnabled}

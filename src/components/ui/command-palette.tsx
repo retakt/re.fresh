@@ -5,8 +5,8 @@ import { Search, BookOpen, GraduationCap, Music2, Home, User, FolderOpen, Messag
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Menu } from "@base-ui/react/menu";
 import { motion, AnimatePresence } from "motion/react";
+import AnimatedCloseIcon from "@/components/ui/animated-close-icon";
 
 type SearchResult = {
   id: string;
@@ -184,9 +184,10 @@ export function CommandPalette() {
           }, {} as Record<string, SearchResult[]>);
           
           const typeOrder = ['page', 'post', 'tutorial', 'music'];
+          // Count only child items (no parent headers)
           const totalItems = typeOrder.reduce((total, type) => {
             if (grouped[type] && grouped[type].length > 0) {
-              return total + 1 + grouped[type].length;
+              return total + grouped[type].length;
             }
             return total;
           }, 0);
@@ -206,24 +207,13 @@ export function CommandPalette() {
           }, {} as Record<string, SearchResult[]>);
           
           const typeOrderForEnter = ['page', 'post', 'tutorial', 'music'];
-          const typeHrefs = {
-            page: '/',
-            post: '/blog', 
-            tutorial: '/tutorials',
-            music: '/music'
-          };
           
           let currentIdx = 0;
           let targetHref = '';
           
+          // Only iterate through child items (skip parent headers)
           for (const type of typeOrderForEnter) {
             if (groupedForEnter[type] && groupedForEnter[type].length > 0) {
-              if (currentIdx === selectedIndex) {
-                targetHref = typeHrefs[type as keyof typeof typeHrefs];
-                break;
-              }
-              currentIdx++;
-              
               for (const result of groupedForEnter[type]) {
                 if (currentIdx === selectedIndex) {
                   targetHref = result.href;
@@ -249,63 +239,51 @@ export function CommandPalette() {
 
   return (
     <>
-      {/* Backdrop — portalled to body so it escapes navbar's stacking context */}
+      {/* Trigger Button */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="rounded-lg p-2.5 text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
+        aria-label="Search (⌘K)"
+      >
+        <motion.div
+          whileHover={{ scale: 1.05, rotate: [0, -3, 3, -2, 2, 0] }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Search size={17} strokeWidth={2} />
+        </motion.div>
+      </button>
+
+      {/* Command Palette - Portalled to body */}
       {createPortal(
         <AnimatePresence>
           {open && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-x-0 bottom-0 top-14 z-[9998] backdrop-blur-[2px] bg-black/10"
-              onPointerDown={() => setOpen(false)}
-              aria-hidden="true"
-            />
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-[9998] backdrop-blur-[2px] bg-black/10"
+                onClick={() => setOpen(false)}
+                aria-hidden="true"
+              />
 
-      <Menu.Root modal={false} open={open} onOpenChange={setOpen}>
-        <Menu.Trigger
-          className="rounded-lg p-2.5 text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
-          aria-label="Search (⌘K)"
-        >
-          <motion.div
-            whileHover={{ scale: 1.05, rotate: [0, -3, 3, -2, 2, 0] }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.4 }}
-          >
-            <Search size={17} strokeWidth={2} />
-          </motion.div>
-        </Menu.Trigger>
-
-        <Menu.Portal>
-          <Menu.Positioner
-            side="bottom"
-            align="end"
-            sideOffset={8}
-            collisionPadding={12}
-            positionMethod="absolute"
-            className="outline-none z-[9999]"
-          >
-            <Menu.Popup
-              render={
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.88, y: -8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 700,
-                    damping: 12,
-                    mass: 0.5,
-                  }}
-                />
-              }
-              className="w-[600px] max-w-[90vw] bg-background/95 backdrop-blur-xl rounded-2xl border border-border/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)] overflow-hidden origin-top-right"
-            >
+              {/* Command Palette */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.88, y: -8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 700,
+                  damping: 12,
+                  mass: 0.5,
+                }}
+                className="fixed left-1/2 -translate-x-1/2 z-[9999] w-[600px] max-w-[90vw] bg-background/95 backdrop-blur-xl rounded-2xl border border-border/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)] overflow-hidden"
+                style={{ top: '30vh' }}
+              >
               {/* Header */}
               <div className="flex items-center gap-3 px-4 py-3 border-b">
                 <Search size={16} className="text-muted-foreground shrink-0" />
@@ -313,15 +291,22 @@ export function CommandPalette() {
                   ref={inputRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Prevent Menu from handling these keys so input can work
+                    if (e.key !== 'Escape' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') {
+                      e.stopPropagation();
+                    }
+                  }}
                   placeholder="Search everything..."
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground placeholder:text-sm"
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
                   inputMode="search"
                 />
-                <kbd className="px-2 py-1 text-base font-bold uppercase bg-transparent text-muted-foreground/40">ESC</kbd>
+                {/* Animated X close icon for all devices */}
+                <AnimatedCloseIcon onClick={() => setOpen(false)} size={28} />
               </div>
 
               {/* Content */}
@@ -356,17 +341,10 @@ export function CommandPalette() {
 
                       const typeOrder = ['page', 'post', 'tutorial', 'music'];
                       const typeLabels = {
-                        page: 'Navigation',
+                        page: 'Main',
                         post: 'Blog', 
                         tutorial: 'Tutorials',
                         music: 'Music'
-                      };
-
-                      const typeHrefs = {
-                        page: '/',
-                        post: '/blog', 
-                        tutorial: '/tutorials',
-                        music: '/music'
                       };
 
                       let currentIndex = 0;
@@ -374,20 +352,11 @@ export function CommandPalette() {
                       return typeOrder.map(type => {
                         if (!grouped[type] || grouped[type].length === 0) return null;
                         
-                        const parentIndex = currentIndex;
-                        currentIndex++;
-                        const isParentSelected = parentIndex === selectedIndex;
-                        
                         return (
                           <div key={type} className="mb-1 last:mb-0">
-                            {/* Parent Category - Clickable */}
-                            <Link
-                              to={typeHrefs[type as keyof typeof typeHrefs]}
-                              onClick={() => setOpen(false)}
-                              className={`flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors text-sm ${
-                                isParentSelected ? "bg-accent" : "hover:bg-accent/50"
-                              }`}
-                              onMouseEnter={() => setSelectedIndex(parentIndex)}
+                            {/* Parent Category - Non-clickable header */}
+                            <div
+                              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm opacity-60 cursor-default"
                             >
                               <div className={`shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${TYPE_BG[type as keyof typeof TYPE_BG]}`}>
                                 {(() => {
@@ -397,7 +366,7 @@ export function CommandPalette() {
                               </div>
                               <span className="font-medium text-sm">{typeLabels[type as keyof typeof typeLabels]}</span>
                               <span className="text-xs text-muted-foreground ml-auto">({grouped[type].length})</span>
-                            </Link>
+                            </div>
                             
                             {/* Children with Tree Lines */}
                             <div className="ml-2 border-l border-border/30 pl-3 space-y-0.5 mt-0.5">
@@ -452,10 +421,12 @@ export function CommandPalette() {
                   </div>
                 )}
               </div>
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>,
+      document.body
+    )}
     </>
   );
 }

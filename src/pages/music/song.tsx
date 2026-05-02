@@ -138,6 +138,7 @@ export default function SongPage() {
             <div className="relative w-full aspect-square">
               <motion.div
                 layoutId={`album-cover-${track.album ?? track.id}`}
+                initial={false}
                 className={`w-full h-full rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}
               >
                 {track.cover_image
@@ -222,6 +223,7 @@ export default function SongPage() {
           <div className="relative shrink-0 w-24 h-24">
             <motion.div
               layoutId={`album-cover-${track.album ?? track.id}`}
+              initial={false}
               className={`w-full h-full rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}
             >
               {track.cover_image
