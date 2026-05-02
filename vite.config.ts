@@ -64,25 +64,31 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
-          // Core React - load once, cache forever
+          // Core React - MUST be first, everything depends on it
           if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
             return "react";
           }
+          
+          // React Router - depends on React
           if (id.includes("node_modules/react-router-dom") || id.includes("node_modules/react-router/")) {
             return "router";
           }
           
-          // Heavy libraries - separate chunks
-          if (id.includes("node_modules/@supabase/")) return "supabase";
-          if (id.includes("node_modules/@tiptap/") || id.includes("node_modules/prosemirror")) return "editor";
-          if (id.includes("node_modules/@radix-ui/")) return "radix";
-          if (id.includes("node_modules/date-fns")) return "date-fns";
-          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) return "charts";
-          
-          // Motion library - used everywhere, separate chunk
+          // Motion library - depends on React, used everywhere
           if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion")) {
             return "motion";
           }
+          
+          // Radix UI - depends on React, used in many components
+          if (id.includes("node_modules/@radix-ui/")) {
+            return "radix";
+          }
+          
+          // Heavy libraries that can load independently
+          if (id.includes("node_modules/@supabase/")) return "supabase";
+          if (id.includes("node_modules/@tiptap/") || id.includes("node_modules/prosemirror")) return "editor";
+          if (id.includes("node_modules/date-fns")) return "date-fns";
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) return "charts";
           
           // Markdown rendering - only needed on post pages
           if (
@@ -115,8 +121,8 @@ export default defineConfig({
             return "shiki";
           }
           
-          // Group remaining node_modules into vendor chunk
-          // This will still be large but better than mixing with app code
+          // Everything else from node_modules goes to vendor
+          // This prevents circular dependencies
           if (id.includes("node_modules/")) {
             return "vendor";
           }
