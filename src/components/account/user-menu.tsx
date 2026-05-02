@@ -82,9 +82,9 @@ export default function UserMenu() {
                   exit={{ opacity: 0, scale: 0.92, y: -4 }}
                   transition={{
                     type: "spring",
-                    stiffness: 500,
-                    damping: 18,
-                    mass: 0.6,
+                    stiffness: 700,
+                    damping: 12,
+                    mass: 0.5,
                   }}
                 />
               }

@@ -1,7 +1,6 @@
 import { CanvasText } from "@/components/ui/canvas-text";
-import { cn } from "@/lib/utils";
 
-// ΓöÇΓöÇ Per-version title color palettes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Per-version title color palettes ─────────────────────────────────────────
 const VERSION_COLORS: Record<string, { bg: string; lines: string[] }> = {
   "v1.5.5": { bg: "bg-[#0ecfba]", lines: ["#11D8C2","#0a9e8f","#07c4b0","#059080","#0bbfab","#07a08e","#11D8C2","#059080"] },
   "v1.5":   { bg: "bg-[#38bdf8]", lines: ["#0ea5e9","#0284c7","#38bdf8","#0369a1","#0ea5e9","#0284c7","#38bdf8","#0369a1"] },
@@ -20,7 +19,7 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
     title: "Chat Pro (II)",
     items: [
       "chat - Gemma 4 e4b (multimodel for tool calling)",
-      "Web search ΓÇö news, factcheck, reddit, wiki, code (SearXNG)",
+      "Web search -- news, factcheck, reddit, wiki, code (SearXNG)",
       "weather, exchange rate, and world clock (tools)",
       "cloudflare tunnel for SearXNG at search-api.retakt.cc (privacy)",
     ],
@@ -31,9 +30,9 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
     title: "Chat Pro",
     items: [
       "model update - trying google multimodal",
-      "voice input ΓÇö speak to type, text drops in on pause",
-      "audio file attachment ΓÇö model analyzes .mp3/.wav",
-      "Γåæ/Γåô arrow keys cycle",
+      "voice input - speak to type, text drops in on pause",
+      "audio file attachment - model analyzes .mp3/.wav",
+      "↑/↓ arrow keys cycle",
     ],
   },
   {
@@ -41,7 +40,7 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
     date: "1st May, 2026",
     title: "Chat",
     items: [
-      "chat open sourced ΓÇö llm (qwen3.5)",
+      "chat open sourced - llm (qwen3.5)",
       "--auto-mode (fine-tuned to perform without assistance)",
       "slash (/) commands, thinking modes, streaming responses",
       "image + text file attachments, syntax highlighting",
@@ -53,9 +52,9 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
     date: "30th April, 2026",
     title: "Enhancements",
     items: [
-      "Rich text editor ΓÇö Tiptap with code blocks, media upload, text effects",
-      "blog post live ΓÇö Hello, World!",
-      "Music updated ΓÇö it begins by Kensuke Ushio",
+      "Rich text editor - Tiptap with code blocks, media upload, text effects",
+      "blog post live - Hello, World!",
+      "Music updated - it begins by Kensuke Ushio",
       "canvas text, magnetic buttons, animated menu icon",
     ],
   },
@@ -65,7 +64,7 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
     title: "comments & Chat Frontend",
     items: [
       "threaded comments (reddit style), attachments, markdown",
-      "Chat frontend built ΓÇö connected to OpenRouter (temporary)",
+      "Chat frontend built - connected to OpenRouter (temporary)",
       "pull-to-refresh, skeleton loaders, empty states across all pages",
     ],
   },
@@ -74,7 +73,7 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
     date: "28th April, 2026",
     title: "music_Player",
     items: [
-      "draggable player ΓÇö pill + full mode, snap-to-edge",
+      "draggable player - pill + full mode, snap-to-edge",
       "scrubber, volume, socials (spotify, youtube)",
       "cross page navigation",
     ],
@@ -87,7 +86,7 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
       "music, blog, tutorials, files pages deployed",
       "#tag filtering, view_counts, prefetch and more",
       "search - added",
-      "music_test ΓÇö Runway (Kanye West ├ù Biggie)",
+      "music_test — Runway (Kanye West × Biggie)",
     ],
   },
   {
@@ -108,12 +107,6 @@ const UPCOMING: string[] = [
   "Notification system",
   "Tools (Major Update)",
 ];
-
-// Dot is at left-[5.5rem] + gap-4 (1rem) = ~6.5rem from left edge of the flex container
-// The flex container starts after the w-20 (5rem) left column + gap-4 (1rem) = dot center at ~5.5rem + 0.3125rem (half of 0.625rem dot)
-// Timeline line must pass through dot center: left = w-20 + gap-4 + half-dot-width
-// w-20 = 5rem, gap-4 = 1rem, half of size-2.5 (0.625rem) = 0.3125rem ΓåÆ total = 6.3125rem
-const TIMELINE_LEFT = "left-[calc(3rem+0.25rem+0.3125rem)]";
 
 export default function WhatsNewPage() {
   return (
@@ -140,7 +133,7 @@ export default function WhatsNewPage() {
         </h2>
 
         <div className="relative pl-6">
-          {/* Timeline line ΓÇö 0.75rem from left (center of dot) */}
+          {/* Timeline line — 0.75rem from left (center of dot) */}
           <div className="absolute left-[0.6875rem] top-2 bottom-2 w-px bg-primary/40" />
 
           <div className="space-y-2">
@@ -149,7 +142,7 @@ export default function WhatsNewPage() {
               return (
                 <div key={entry.version} className="relative">
 
-                  {/* Dot ΓÇö on the line */}
+                  {/* Dot — on the line */}
                   <div className="absolute -left-6 top-1 z-10 flex items-center justify-center w-[1.375rem]">
                     <div
                       className="size-2.5 rounded-full border-2"
@@ -157,7 +150,7 @@ export default function WhatsNewPage() {
                     />
                   </div>
 
-                  {/* Version + date ΓÇö above title, left aligned */}
+                  {/* Version + date — above title, left aligned */}
                   <div className="flex items-baseline gap-2 mb-1">
                     <span className="border-b border-red-500">
                       <CanvasText
@@ -215,7 +208,7 @@ export default function WhatsNewPage() {
         <ul className="space-y-1.5">
           {UPCOMING.map((item, i) => (
             <li key={i} className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70">
-              <span className="shrink-0 mt-0.5 text-[10px] font-bold" style={{ color: "#11D8C2", opacity: 0.6 }}>Γùï</span>
+              <span className="shrink-0 mt-0.5 text-[10px] font-bold" style={{ color: "#11D8C2", opacity: 0.6 }}>○</span>
               {item}
             </li>
           ))}
