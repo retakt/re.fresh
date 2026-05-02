@@ -408,28 +408,36 @@ export default function AccountPage() {
       <div className="rounded-xl border border-border/70 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center gap-4 px-4 py-4 border-b border-border/50">
           <div className="relative shrink-0">
-            {/* Avatar — just displays, no press handler */}
-            <Avatar className="size-14 border-2 border-border/70 shadow-sm">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} className="object-cover" />}
-              <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-
-            {/* Camera icon — tap to change, long press to open history */}
-            <button
-              type="button"
-              disabled={avatarSaving}
-              aria-label="Change avatar (hold for history)"
-              className="absolute -bottom-1.5 -right-1.5 size-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:opacity-90 active:scale-90 transition-all touch-manipulation select-none"
-              style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+            {/* Avatar — tap anywhere on it: short tap = change photo, long press = history */}
+            <div
               {...cameraLongPress}
+              onContextMenu={(e) => e.preventDefault()}
+              aria-label="Change avatar (hold for history)"
+              style={{
+                WebkitTouchCallout: "none",
+                WebkitUserSelect: "none",
+                userSelect: "none",
+                cursor: "pointer",
+              }}
+              className="touch-manipulation select-none"
             >
-              {avatarSaving
-                ? <Loader2 size={13} className="animate-spin" />
-                : <Camera size={13} />
-              }
-            </button>
+              <Avatar className="size-14 border-2 border-border/70 shadow-sm">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} className="object-cover pointer-events-none" draggable={false} />}
+                <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+
+              {/* Camera badge — visual only, interaction handled by parent */}
+              <div
+                className="absolute -bottom-1.5 -right-1.5 size-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md pointer-events-none"
+              >
+                {avatarSaving
+                  ? <Loader2 size={13} className="animate-spin" />
+                  : <Camera size={13} />
+                }
+              </div>
+            </div>
 
             <input
               ref={fileInputRef}

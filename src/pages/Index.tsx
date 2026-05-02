@@ -63,8 +63,7 @@ export default function Index() {
     setQuoteIndex((i) => (i + 1) % ALL_QUOTES.length);
   }, []);
 
-  useEffect(() => {
-    const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
       // 10-second timeout — if Supabase is slow, show empty state instead of infinite skeleton
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("timeout")), 10_000)
@@ -95,6 +94,26 @@ export default function Index() {
           timeout,
         ]);
 
+        // Fetch first tag for each post
+        const postIds = (postsRes.data || []).map((p) => p.id);
+        const { data: tagData } = postIds.length > 0
+          ? await supabase
+              .from("content_tags")
+              .select("content_id, tags(name)")
+              .eq("content_type", "post")
+              .in("content_id", postIds)
+          : { data: [] };
+
+        // Map post id → first tag name
+        const postTagMap: Record<string, string> = {};
+        for (const row of tagData ?? []) {
+          if (!postTagMap[row.content_id]) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const tagName = (row.tags as any)?.name;
+            if (tagName) postTagMap[row.content_id] = `#${tagName}`;
+          }
+        }
+
         const mapped: ContentItem[] = [
           ...(postsRes.data || []).map((p) => ({
             id: p.id,
@@ -102,7 +121,7 @@ export default function Index() {
             type: "blog" as const,
             href: `/blog/${p.slug}`,
             date: p.created_at,
-            meta: "Blog",
+            meta: postTagMap[p.id] ?? "Blog",
             viewCount: p.view_count ?? 0,
           })),
           ...(tutorialsRes.data || []).map((t) => ({
@@ -137,10 +156,16 @@ export default function Index() {
       } finally {
         setLoading(false);
       }
-    };
-
-    void fetchAll();
   }, []);
+
+  useEffect(() => { void fetchAll(); }, [fetchAll]);
+
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchAll(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchAll]);
 
   const filtered = useMemo(() => {
     const base =

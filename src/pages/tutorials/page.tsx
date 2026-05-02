@@ -53,19 +53,25 @@ export default function TutorialsPage() {
     }
     if (!data) { setLoading(false); return; }
 
-    // Fetch all content_tags and content_categories for tutorials in one query
+    // Fetch tags + categories — 8s timeout so loading never hangs forever
     const ids = data.map((t) => t.id);
-    const [{ data: ctData }, { data: ccData }] = await Promise.all([
-      supabase
-        .from("content_tags")
-        .select("content_id, tags(name)")
-        .eq("content_type", "tutorial")
-        .in("content_id", ids),
-      supabase
-        .from("content_categories")
-        .select("content_id, categories(name)")
-        .eq("content_type", "tutorial")
-        .in("content_id", ids),
+    const tagTimeout = new Promise<[{ data: null }, { data: null }]>((resolve) =>
+      setTimeout(() => resolve([{ data: null }, { data: null }]), 8_000)
+    );
+    const [{ data: ctData }, { data: ccData }] = await Promise.race([
+      Promise.all([
+        supabase
+          .from("content_tags")
+          .select("content_id, tags(name)")
+          .eq("content_type", "tutorial")
+          .in("content_id", ids),
+        supabase
+          .from("content_categories")
+          .select("content_id, categories(name)")
+          .eq("content_type", "tutorial")
+          .in("content_id", ids),
+      ]),
+      tagTimeout,
     ]);
 
     // Build lookup maps
@@ -86,9 +92,16 @@ export default function TutorialsPage() {
 
   useEffect(() => { void fetchTutorials(); }, [fetchTutorials]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchTutorials(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchTutorials]);
+
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
     onRefresh: fetchTutorials,
-    disabled: loading,
+    disabled: false,
   });
 
   // Toggle a tag in/out of the active filter set

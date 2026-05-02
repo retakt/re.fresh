@@ -2,8 +2,6 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect, lazy, Suspense } from "react";
 import { DefaultProviders } from "./components/providers/default.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
-import { PageLoadingFallback } from "./components/ui/page-loading-fallback.tsx";
-import { AdminTableSkeleton, PostDetailSkeleton } from "./components/ui/skeleton.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import AppLayout from "./pages/layout.tsx";
 import { ChatProvider } from "./components/providers/chat.tsx";
@@ -25,6 +23,7 @@ const SignupPage       = lazy(() => import("./pages/signup.tsx"));
 const NotFound         = lazy(() => import("./pages/NotFound.tsx"));
 const SearchPage       = lazy(() => import("./pages/search/page.tsx"));
 const ChatPage         = lazy(() => import("./pages/chat/page.tsx"));
+const WhatsNewPage     = lazy(() => import("./pages/whats-new/page.tsx"));
 
 // ── Admin / editor (already lazy) ────────────────────────────────────────────
 const AdminPage          = lazy(() => import("./pages/admin/page.tsx"));
@@ -37,8 +36,9 @@ const AdminTutorialsPage = lazy(() => import("./pages/admin/tutorials.tsx"));
 const TutorialEditorPage = lazy(() => import("./pages/admin/tutorial-editor.tsx"));
 const AdminFilesPage     = lazy(() => import("./pages/admin/files.tsx"));
 const FileEditorPage     = lazy(() => import("./pages/admin/file-editor.tsx"));
-const AdminMembersPage   = lazy(() => import("./pages/admin/members.tsx"));
-const AdminQuotesPage    = lazy(() => import("./pages/admin/quotes.tsx"));
+const AdminMembersPage        = lazy(() => import("./pages/admin/members.tsx"));
+const AdminQuotesPage         = lazy(() => import("./pages/admin/quotes.tsx"));
+const AdminAccessRequestsPage = lazy(() => import("./pages/admin/access-requests.tsx"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -73,6 +73,7 @@ function AppContent() {
             <Route path="/files"             element={<FilesPage />} />
             <Route path="/search"            element={<SearchPage />} />
             <Route path="/chat"              element={<ChatPage />} />
+            <Route path="/whats-new"         element={<WhatsNewPage />} />
 
             {/* Admin routes */}
             <Route path="/admin" element={
@@ -184,6 +185,13 @@ function AppContent() {
               <ProtectedRoute allowedRoles={["admin"]}>
                 <Suspense>
                   <AdminQuotesPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/access-requests" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <AdminAccessRequestsPage />
                 </Suspense>
               </ProtectedRoute>
             } />

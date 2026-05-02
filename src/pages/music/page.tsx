@@ -277,9 +277,16 @@ export default function MusicPage() {
 
   useEffect(() => { fetchTracks(); }, [fetchTracks]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchTracks(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchTracks]);
+
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
     onRefresh: fetchTracks,
-    disabled: loading,
+    disabled: false,
   });
 
   const handleTagClick = (tag: string) => {

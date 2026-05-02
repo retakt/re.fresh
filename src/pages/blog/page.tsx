@@ -42,13 +42,19 @@ export default function BlogPage() {
     if (error) { setError("Failed to load posts. Please try again."); setLoading(false); return; }
     if (!data) { setLoading(false); return; }
 
-    // Fetch all tags from junction table in one query
+    // Fetch all tags from junction table — 8s timeout so loading never hangs forever
     const ids = data.map((p) => p.id);
-    const { data: ctData } = await supabase
-      .from("content_tags")
-      .select("content_id, tags(name)")
-      .eq("content_type", "post")
-      .in("content_id", ids);
+    const tagTimeout = new Promise<{ data: null }>((resolve) =>
+      setTimeout(() => resolve({ data: null }), 8_000)
+    );
+    const { data: ctData } = await Promise.race([
+      supabase
+        .from("content_tags")
+        .select("content_id, tags(name)")
+        .eq("content_type", "post")
+        .in("content_id", ids),
+      tagTimeout,
+    ]);
 
     const tagMap: Record<string, string[]> = {};
     (ctData ?? []).forEach((row: any) => {
@@ -62,10 +68,17 @@ export default function BlogPage() {
 
   useEffect(() => { void fetchPosts(); }, [fetchPosts]);
 
-  // Pull-to-refresh on mobile
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchPosts(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchPosts]);
+
+  // Pull-to-refresh on mobile — always enabled so users can escape a stuck skeleton
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
     onRefresh: fetchPosts,
-    disabled: loading,
+    disabled: false,
   });
 
   // Memoize tags to avoid recomputing on every render

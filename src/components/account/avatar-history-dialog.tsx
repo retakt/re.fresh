@@ -1,11 +1,10 @@
-import { Check, Clock3, X } from "lucide-react";
+import { Check, Clock3 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx";
-import { Button } from "@/components/ui/button.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.tsx";
 
 export type AvatarHistoryItem = {
@@ -41,18 +40,10 @@ export function AvatarHistoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm border border-border/60 bg-background p-0">
         {/* Header */}
-        <div className="border-b border-border/50 px-4 py-3 flex items-center justify-between">
-          <DialogHeader className="text-left flex-1">
+        <div className="border-b border-border/50 px-4 py-3">
+          <DialogHeader className="text-left">
             <DialogTitle className="text-sm font-semibold">Profile photos</DialogTitle>
           </DialogHeader>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="ml-3 shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            aria-label="Close"
-          >
-            <X size={15} />
-          </button>
         </div>
 
         <div className="space-y-4 p-4">
@@ -132,11 +123,6 @@ export function AvatarHistoryDialog({
             </div>
           )}
 
-          <div className="flex justify-end border-t border-border/50 pt-3">
-            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Close
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

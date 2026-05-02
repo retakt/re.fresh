@@ -85,6 +85,13 @@ export default function FilesPage() {
 
   useEffect(() => { fetchFiles(); }, [fetchFiles]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchFiles(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchFiles]);
+
   return (
     <div className="space-y-6">
       <PageHeader

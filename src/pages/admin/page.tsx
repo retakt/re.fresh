@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Users, Music2, GraduationCap, FolderOpen, Quote } from "lucide-react";
+import { FileText, Users, Music2, GraduationCap, FolderOpen, Quote, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const MEMBER_TILES = [
@@ -65,6 +65,16 @@ const ADMIN_ONLY_TILES = [
     iconBg: "bg-rose-100 dark:bg-rose-900/40",
     gradient: "from-rose-50/80 to-rose-50/20 dark:from-rose-950/30 dark:to-transparent",
     border: "border-rose-200/60 dark:border-rose-800/30",
+  },
+  {
+    href: "/admin/access-requests",
+    icon: UserCheck,
+    label: "Requests",
+    desc: "Review member access requests",
+    iconColor: "text-sky-500 dark:text-sky-400",
+    iconBg: "bg-sky-100 dark:bg-sky-900/40",
+    gradient: "from-sky-50/80 to-sky-50/20 dark:from-sky-950/30 dark:to-transparent",
+    border: "border-sky-200/60 dark:border-sky-800/30",
   },
 ];
 
