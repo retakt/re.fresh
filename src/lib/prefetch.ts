@@ -12,12 +12,15 @@ export function prefetchRoute(path: string) {
 
   // Map route paths to their lazy-loaded modules
   const routeMap: Record<string, () => Promise<unknown>> = {
+    '/': () => import('../pages/Index.tsx'),
     '/blog': () => import('../pages/blog/page.tsx'),
     '/tutorials': () => import('../pages/tutorials/page.tsx'),
     '/music': () => import('../pages/music/page.tsx'),
     '/files': () => import('../pages/files/page.tsx'),
     '/about': () => import('../pages/about/page.tsx'),
     '/search': () => import('../pages/search/page.tsx'),
+    '/chat': () => import('../pages/chat/page.tsx'),
+    '/whats-new': () => import('../pages/whats-new/page.tsx'),
     '/admin': () => import('../pages/admin/page.tsx'),
     '/editor': () => import('../pages/editor/page.tsx'),
     '/admin/posts': () => import('../pages/admin/posts.tsx'),

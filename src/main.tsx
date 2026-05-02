@@ -97,6 +97,25 @@ requestAnimationFrame(() => {
   });
 });
 
+// ── Eager preload critical routes ─────────────────────────────────────────────
+// Preload the most visited pages after initial render to make navigation instant
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => {
+    // Preload in order of importance
+    import('./pages/blog/page.tsx').catch(() => {});
+    import('./pages/music/page.tsx').catch(() => {});
+    import('./pages/tutorials/page.tsx').catch(() => {});
+    import('./pages/whats-new/page.tsx').catch(() => {});
+  }, { timeout: 3000 });
+} else {
+  setTimeout(() => {
+    import('./pages/blog/page.tsx').catch(() => {});
+    import('./pages/music/page.tsx').catch(() => {});
+    import('./pages/tutorials/page.tsx').catch(() => {});
+    import('./pages/whats-new/page.tsx').catch(() => {});
+  }, 2000);
+}
+
 // ── Service Worker — disabled ─────────────────────────────────────────────────
 // PWA/SW removed — was causing stale chunk crashes on every deploy.
 // Unregister any previously installed SW so users get clean state.

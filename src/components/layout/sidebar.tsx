@@ -83,7 +83,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="lg:hidden fixed inset-0 z-[40] bg-black/50 backdrop-blur-md"
             onClick={onClose}
             aria-hidden="true"
@@ -98,7 +98,13 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.8 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 400, 
+              damping: 40, 
+              mass: 1.2,
+              velocity: 2
+            }}
             style={{ width: "min(240px, 72vw)" }}
             className="lg:hidden fixed left-0 top-0 bottom-0 z-[45] flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/60 shadow-[8px_0_32px_rgba(0,0,0,0.2)] dark:shadow-[8px_0_32px_rgba(0,0,0,0.6),1px_0_0_0_rgba(255,255,255,0.05)]"
           >

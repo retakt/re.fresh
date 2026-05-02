@@ -150,6 +150,7 @@
   summary,
   [role="button"] {
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* Prevents 300ms click delay on mobile */
   }
 
   :focus:not(:focus-visible) {
@@ -213,7 +214,10 @@ body,
 
 /* Smooth theme transitions AFTER initial load only */
 html.theme-loaded * {
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: 
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html.resume-paint-fix body {

@@ -136,15 +136,11 @@ export default function SongPage() {
 
             {/* Cover — clean */}
             <div className="relative w-full aspect-square">
-              <motion.div
-                layoutId={`album-cover-${track.album ?? track.id}`}
-                initial={false}
-                className={`w-full h-full rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}
-              >
+              <div className={`w-full h-full rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}>
                 {track.cover_image
                   ? <img src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
                   : <Music2 size={32} className={palette.iconColor} strokeWidth={1.2} />}
-              </motion.div>
+              </div>
             </div>
 
             {/* Release type + view count on same line */}
@@ -221,15 +217,11 @@ export default function SongPage() {
 
           {/* Cover — clean, no overlapping button */}
           <div className="relative shrink-0 w-24 h-24">
-            <motion.div
-              layoutId={`album-cover-${track.album ?? track.id}`}
-              initial={false}
-              className={`w-full h-full rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}
-            >
+            <div className={`w-full h-full rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg} shadow-lg`}>
               {track.cover_image
                 ? <img src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
                 : <Music2 size={24} className={palette.iconColor} strokeWidth={1.2} />}
-            </motion.div>
+            </div>
           </div>
 
           {/* Meta */}

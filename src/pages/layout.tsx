@@ -78,20 +78,21 @@ export default function AppLayout() {
           id="main-content"
           className="flex-1 min-w-0 overflow-x-hidden py-5 sm:py-8 md:pb-14 md:pl-6 lg:pl-8"
         >
-          <AnimatePresence mode="sync" initial={false}>
-            <LayoutGroup>
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: "easeInOut" }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ 
+                duration: 0.25, 
+                ease: [0.22, 1, 0.36, 1] // easeOutExpo for snappier feel
+              }}
             >
               <ErrorBoundary key={location.pathname} fallback={<PageFallback />}>
                 <Outlet />
               </ErrorBoundary>
             </motion.div>
-            </LayoutGroup>
           </AnimatePresence>
         </main>
       </div>
