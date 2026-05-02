@@ -3,104 +3,119 @@ import { cn } from "@/lib/utils";
 
 /**
  * MarqueeText — scrolls right-to-left only when text overflows its container.
- * Static when text fits. Two-copy seamless loop when overflowing.
+ * Static when text fits. Bidirectional seamless loop when overflowing.
  *
- * Key fix: the invisible spacer must have real height (not h-0) so the
- * container has a measured height for the absolutely-positioned copies.
- * We use `aria-hidden` + `select-none` + `pointer-events-none` to hide it
- * from users while keeping it in layout flow.
+ * How the math works:
+ *   - The container is `overflow-hidden` with a known pixel width (W).
+ *   - Copy A starts at translateX(0) and scrolls to translateX(-W - gap).
+ *   - Copy B starts at translateX(W + gap) and scrolls to translateX(0).
+ *   - Both use the same duration so they move in perfect lockstep.
+ *   - We measure the text width (T) and gap (G = 40px) so the total travel
+ *     distance is T + G pixels, giving a constant visual speed regardless of
+ *     text length.
  */
 export function MarqueeText({
   text,
   className,
+  style,
 }: {
   text: string;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const measureRef = useRef<HTMLSpanElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
   const [overflows, setOverflows] = useState(false);
+  const [travel, setTravel] = useState(0); // pixels to travel per cycle
 
-  // Duration scales with text length — longer text scrolls at same visual speed
-  const duration = `${Math.max(4, text.length * 0.22)}s`;
+  const GAP = 40; // px gap between the two copies
+  // ~60px/s visual speed
+  const duration = travel > 0 ? `${Math.max(3, travel / 60)}s` : "4s";
 
   useEffect(() => {
-    const check = () => {
-      if (!containerRef.current || !measureRef.current) return;
-      setOverflows(measureRef.current.scrollWidth > containerRef.current.clientWidth + 1);
+    const measure = () => {
+      const container = containerRef.current;
+      const textEl = textRef.current;
+      if (!container || !textEl) return;
+
+      const containerW = container.clientWidth;
+      const textW = textEl.scrollWidth;
+      const does = textW > containerW + 1;
+      setOverflows(does);
+      if (does) setTravel(textW + GAP);
     };
 
-    check();
-
-    const ro = new ResizeObserver(check);
+    measure();
+    const ro = new ResizeObserver(measure);
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
   }, [text]);
 
   if (!overflows) {
-    // Static — just render normally, no animation overhead
     return (
-      <div ref={containerRef} className={cn("overflow-hidden", className)}>
-        <span ref={measureRef} className="whitespace-nowrap font-[inherit] text-[inherit]">
+      <div ref={containerRef} className={cn("overflow-hidden", className)} style={style}>
+        <span
+          ref={textRef}
+          className="whitespace-nowrap font-[inherit] text-[inherit]"
+        >
           {text}
         </span>
       </div>
     );
   }
 
+  const travelPx = `${travel}px`;
+
   return (
     <div
       ref={containerRef}
       className={cn("overflow-hidden relative", className)}
       style={{
-        // Fade edges so the scroll looks clean
-        maskImage: "linear-gradient(to right, transparent 0%, black 5%, black 90%, transparent 100%)",
-        WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 5%, black 90%, transparent 100%)",
+        ...style,
+        maskImage:
+          "linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent 0%, black 6%, black 88%, transparent 100%)",
       }}
     >
       {/*
-       * Invisible spacer — MUST stay in normal flow with real height.
-       * This is what gives the container its height so the absolute
-       * copies have something to anchor their inset-y-0 to.
-       * opacity-0 hides it visually while keeping layout dimensions.
+       * Invisible spacer — stays in normal flow to give the container its height.
+       * opacity-0 hides it visually while keeping layout dimensions intact.
        */}
       <span
-        ref={measureRef}
+        ref={textRef}
         className="whitespace-nowrap font-[inherit] text-[inherit] opacity-0 pointer-events-none select-none block"
         aria-hidden
       >
         {text}
       </span>
 
-      {/* Copy A: starts at 0, scrolls to -100% */}
+      {/* Copy A: starts at 0, scrolls left by (textWidth + gap) px */}
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 flex items-center whitespace-nowrap pointer-events-none select-none"
         style={{
-          animation: `marquee-a ${duration} linear infinite`,
+          animation: `marquee-px-a ${duration} linear infinite`,
+          "--marquee-travel": travelPx,
           willChange: "transform",
-          WebkitBackfaceVisibility: "hidden",
-          backfaceVisibility: "hidden",
-        }}
+        } as React.CSSProperties}
       >
         {text}
-        {/* Gap so copies don't visually merge */}
-        <span className="inline-block w-10" aria-hidden />
+        <span className="inline-block" style={{ width: GAP }} aria-hidden />
       </span>
 
-      {/* Copy B: starts at +100%, arrives at 0 as A exits */}
+      {/* Copy B: starts offset by (textWidth + gap) px to the right, arrives at 0 as A exits */}
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 flex items-center whitespace-nowrap pointer-events-none select-none"
         style={{
-          animation: `marquee-b ${duration} linear infinite`,
+          animation: `marquee-px-b ${duration} linear infinite`,
+          "--marquee-travel": travelPx,
           willChange: "transform",
-          WebkitBackfaceVisibility: "hidden",
-          backfaceVisibility: "hidden",
-        }}
+        } as React.CSSProperties}
       >
         {text}
-        <span className="inline-block w-10" aria-hidden />
+        <span className="inline-block" style={{ width: GAP }} aria-hidden />
       </span>
     </div>
   );

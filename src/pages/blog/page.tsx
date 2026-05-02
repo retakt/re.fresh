@@ -17,6 +17,7 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { prefetchPostData } from "@/lib/prefetch";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
+import { MarqueeText } from "@/components/ui/marquee-text";
 
 type EnrichedPost = Post & { _tags: string[] };
 
@@ -188,12 +189,11 @@ export default function BlogPage() {
                     {!post.published && (
                       <Badge variant="secondary" className="py-0 px-1.5 shrink-0" style={{ fontSize: "clamp(8px, 2vw, 10px)" }}>Draft</Badge>
                     )}
-                    <p
-                      className="font-semibold truncate text-foreground group-hover:text-primary transition-colors leading-tight"
+                    <MarqueeText
+                      text={post.title}
+                      className="font-semibold text-foreground group-hover:text-primary transition-colors leading-tight"
                       style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
-                    >
-                      {post.title}
-                    </p>
+                    />
                   </div>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     {dateStr && (

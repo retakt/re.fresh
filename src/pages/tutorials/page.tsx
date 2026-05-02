@@ -201,12 +201,11 @@ export default function TutorialsPage() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <p
-                    className="font-semibold truncate text-foreground group-hover:text-primary transition-colors leading-tight"
+                  <MarqueeText
+                    text={item.title}
+                    className="font-semibold text-foreground group-hover:text-primary transition-colors leading-tight"
                     style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
-                  >
-                    {item.title}
-                  </p>
+                  />
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     {item.difficulty && (
                       <button

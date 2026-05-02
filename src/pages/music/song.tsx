@@ -296,13 +296,12 @@ export default function SongPage() {
           {track.description && (
             <div className="mt-3">
               <div
-                className={`prose max-w-none overflow-hidden transition-all duration-300 ${descExpanded ? "" : "max-h-16"}`}
+                className={`prose max-w-none transition-all duration-300 ${
+                  descExpanded ? "" : "line-clamp-3"
+                }`}
                 style={{ fontSize: "12px", lineHeight: "1.3" }}
                 dangerouslySetInnerHTML={{ __html: track.description }}
               />
-              {!descExpanded && (
-                <div className="h-8 -mt-8 bg-gradient-to-t from-[var(--card)] to-transparent pointer-events-none" />
-              )}
               <button
                 onClick={() => setDescExpanded(!descExpanded)}
                 className="mt-1 text-[10px] text-primary font-medium hover:underline"

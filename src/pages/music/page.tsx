@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import {
@@ -21,6 +21,7 @@ import { usePlayer, type PlayerTrack } from "@/lib/player";
 import { getCardPalette } from "@/lib/cardColors";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
+import { MarqueeText } from "@/components/ui/marquee-text";
 
 type FilterType = "all" | "album" | "single" | "ep";
 
@@ -59,6 +60,8 @@ function TrackRow({
   const navigate = useNavigate();
   const { play, pause, isTrackPlaying, currentTrack } = usePlayer();
   const palette = getCardPalette(track.id);
+  const pointerStartX = useRef(0);
+  const pointerStartY = useRef(0);
 
   const isLoaded = currentTrack?.id === track.id;
   const isPlaying = isTrackPlaying(track.id);
@@ -98,8 +101,17 @@ function TrackRow({
 
   return (
     <div
-      onClick={handleNavigate}
-      className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all select-none cursor-pointer
+      onPointerDown={(e) => {
+        pointerStartX.current = e.clientX;
+        pointerStartY.current = e.clientY;
+      }}
+      onPointerUp={(e) => {
+        const dx = Math.abs(e.clientX - pointerStartX.current);
+        const dy = Math.abs(e.clientY - pointerStartY.current);
+        // Only navigate if it was a tap (not a swipe)
+        if (dx < 8 && dy < 8) handleNavigate();
+      }}
+      className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all select-none cursor-pointer
         bg-gradient-to-r ${palette.gradient} ${palette.border}
         ${isLoaded
           ? `shadow-lg ${palette.hoverShadow} -translate-y-0.5`
@@ -107,27 +119,6 @@ function TrackRow({
         }
       `}
     >
-      {/* Play/pause button — click plays, stopPropagation prevents card navigation */}
-      <div className="shrink-0 w-8 flex items-center justify-center">
-        {hasAudio ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); handlePlayPause(); }}
-            className={`flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 active:scale-95
-              ${isPlaying ? "text-primary" : "text-foreground hover:text-primary"}
-            `}
-          >
-            {isPlaying
-              ? <Pause size={14} fill="currentColor" />
-              : <Play size={14} fill="currentColor" className="translate-x-px" />
-            }
-          </button>
-        ) : (
-          <div className="w-7 h-7 rounded-full bg-muted/50 flex items-center justify-center pointer-events-none">
-            <Music2 size={12} className="text-muted-foreground/50" />
-          </div>
-        )}
-      </div>
-
       {/* Cover art — part of card, navigates */}
       <div className={`shrink-0 w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center ${palette.iconBg}`}>
         {track.cover_image ? (
@@ -139,26 +130,25 @@ function TrackRow({
 
       {/* Title + artist + tags */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
 
-          {/* Title + artist — part of card, navigates */}
+          {/* Title + artist */}
           <div className="flex-1 min-w-0 text-left">
-            <p
-              className={`font-semibold truncate transition-colors leading-tight
-                ${isLoaded ? "text-primary" : "text-foreground group-hover:text-primary"}
-              `}
+            <MarqueeText
+              text={track.title}
+              className={`font-semibold transition-colors leading-tight ${isLoaded ? "text-primary" : "text-foreground group-hover:text-primary"}`}
               style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
-            >
-              {track.title}
-            </p>
+            />
             {track.artist && (
-              <p className="text-muted-foreground truncate mt-0.5 leading-tight" style={{ fontSize: "clamp(10px, 2.5vw, 12px)" }}>
-                {track.artist}
-              </p>
+              <MarqueeText
+                text={track.artist}
+                className="text-muted-foreground mt-0.5 leading-tight"
+                style={{ fontSize: "clamp(10px, 2.5vw, 12px)" }}
+              />
             )}
           </div>
 
-          {/* View count — centered vertically, before social icons */}
+          {/* View count */}
           {(track.view_count ?? 0) > 0 && (
             <span
               className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-secondary/60 text-muted-foreground/70 font-medium shrink-0"
@@ -180,6 +170,7 @@ function TrackRow({
                     target="_blank"
                     rel="noopener noreferrer"
                     title={link.label}
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                     className={`p-1.5 rounded-md hover:bg-secondary/80 transition-all hover:scale-110 ${link.color}`}
                   >
@@ -194,8 +185,9 @@ function TrackRow({
           {isAdmin && (
             <Link
               to={`/admin/music?edit=${track.id}`}
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all hover:scale-110"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all hover:scale-110 shrink-0"
               title="Edit track"
             >
               <PenLine size={12} />
@@ -203,12 +195,22 @@ function TrackRow({
           )}
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 mt-1.5">
+        {/* Tags — single touch-scrollable row, no wrapping, fades right to hint overflow */}
+        <div
+          className="flex gap-1 mt-1.5 overflow-x-auto scrollbar-none"
+          style={{
+            maskImage: "linear-gradient(to right, black 75%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, black 75%, transparent 100%)",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-x",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {track.genre && (
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onTagClick(track.genre!); }}
-              className={`px-2 py-0.5 rounded-full font-medium transition-all hover:opacity-80 ${palette.badge}`}
+              className={`px-2 py-0.5 rounded-full font-medium transition-all hover:opacity-80 shrink-0 ${palette.badge}`}
               style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
             >
               {track.genre}
@@ -216,7 +218,7 @@ function TrackRow({
           )}
           {track.year && (
             <span
-              className="px-2 py-0.5 rounded-full bg-secondary/60 text-muted-foreground font-medium pointer-events-none"
+              className="px-2 py-0.5 rounded-full bg-secondary/60 text-muted-foreground font-medium pointer-events-none shrink-0"
               style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
             >
               {track.year}
@@ -224,24 +226,51 @@ function TrackRow({
           )}
           {track.album && (
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); navigate(`/music/album/${encodeURIComponent(track.album!)}`); }}
-              className="px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
+              className="px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium shrink-0"
               style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
             >
               {track.album}
             </button>
           )}
-          {track.tags?.slice(0, 2).map((tag) => (
+          {track.tags?.map((tag) => (
             <button
               key={tag}
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onTagClick(tag); }}
-              className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors shrink-0"
               style={{ fontSize: "clamp(8px, 2vw, 10px)" }}
             >
               #{tag}
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Play/pause button — right side, vertically centered */}
+      <div className="shrink-0 flex items-center justify-center">
+        {hasAudio ? (
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => { e.stopPropagation(); handlePlayPause(); }}
+            className={`flex items-center justify-center w-8 h-8 rounded-full transition-all hover:scale-110 active:scale-95
+              ${isPlaying
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                : "bg-secondary/80 text-foreground hover:bg-primary hover:text-primary-foreground"
+              }
+            `}
+          >
+            {isPlaying
+              ? <Pause size={13} fill="currentColor" />
+              : <Play size={13} fill="currentColor" className="translate-x-px" />
+            }
+          </button>
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center pointer-events-none">
+            <Music2 size={12} className="text-muted-foreground/50" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -328,15 +357,20 @@ export default function MusicPage() {
         ) : undefined}
       />
 
-      {/* Filter tabs */}
-      <div className="flex gap-1.5 flex-wrap">
+      {/* Filter tabs — single scrollable row on mobile */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5"
+        style={{
+          maskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+        }}
+      >
         {FILTERS.map((f) => {
           const Icon = f.icon;
           return (
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors shrink-0 ${
                 filter === f.value
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -351,7 +385,7 @@ export default function MusicPage() {
           <button
             key={f}
             onClick={() => handleTagClick(f)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors shrink-0"
           >
             #{f} ✕
           </button>

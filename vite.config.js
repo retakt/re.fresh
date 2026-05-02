@@ -54,7 +54,9 @@ export default defineConfig({
     },
     build: {
         chunkSizeWarningLimit: 600,
-        sourcemap: true,
+        // Only generate sourcemaps when SENTRY env vars are present (CI/release builds)
+        // Avoids shipping large .map files to production on every local deploy
+        sourcemap: !!(sentryOrg && sentryProject && sentryAuthToken),
         rollupOptions: {
             input: {
                 main: path.resolve(__dirname, "index.html"),

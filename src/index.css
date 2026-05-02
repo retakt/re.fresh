@@ -482,16 +482,17 @@ input[type="range"]::-moz-range-thumb {
   to   { transform: scaleY(1); }
 }
 
-/* ── Marquee scroll animation — two-copy seamless loop ── */
-/* Copy A: 0% → -100% (scrolls out to the left) */
-@keyframes marquee-a {
-  0%   { transform: translateX(0%); }
-  100% { transform: translateX(-100%); }
+/* ── Marquee scroll animation — pixel-based two-copy seamless loop ── */
+/* --marquee-travel is set inline on each span (textWidth + gap in px)  */
+/* Copy A: starts at 0, scrolls left by travel distance */
+@keyframes marquee-px-a {
+  0%   { transform: translateX(0px); }
+  100% { transform: translateX(calc(-1 * var(--marquee-travel, 200px))); }
 }
-/* Copy B: starts 100% to the right, arrives at 0 exactly as A exits */
-@keyframes marquee-b {
-  0%   { transform: translateX(100%); }
-  100% { transform: translateX(0%); }
+/* Copy B: starts travel-distance to the right, arrives at 0 as A exits */
+@keyframes marquee-px-b {
+  0%   { transform: translateX(var(--marquee-travel, 200px)); }
+  100% { transform: translateX(0px); }
 }
 
 /* ── Custom Context Menu Styles ─────────────────────────────────────────── */

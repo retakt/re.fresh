@@ -22,7 +22,7 @@ interface ElasticSliderProps {
   rightIcon?: React.ReactNode;
   /** Called whenever the value changes */
   onChange?: (value: number) => void;
-  /** Controlled value (0–1 normalized, or raw if you pass startingValue/maxValue) */
+  /** Controlled value (0ΓÇô1 normalized, or raw if you pass startingValue/maxValue) */
   value?: number;
   /** Hide the numeric value indicator */
   hideValue?: boolean;
@@ -35,8 +35,8 @@ export default function ElasticSlider({
   className = "",
   isStepped = false,
   stepSize = 1,
-  leftIcon = <span className="elastic-icon">−</span>,
-  rightIcon = <span className="elastic-icon">+</span>,
+  leftIcon,
+  rightIcon,
   onChange,
   value: controlledValue,
   hideValue = false,
@@ -116,6 +116,7 @@ function Slider({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (e.buttons > 0 && sliderRef.current) {
+      e.stopPropagation(); // Prevent dragging the parent player
       const { left, width } = sliderRef.current.getBoundingClientRect();
       let newValue =
         startingValue + ((e.clientX - left) / width) * (maxValue - startingValue);
@@ -128,6 +129,7 @@ function Slider({
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation(); // Prevent dragging the parent player
     handlePointerMove(e);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -145,30 +147,32 @@ function Slider({
   return (
     <>
       <motion.div
-        onHoverStart={() => animate(scale, 1.2)}
+        onHoverStart={() => animate(scale, 1.1)}
         onHoverEnd={() => animate(scale, 1)}
-        onTouchStart={() => animate(scale, 1.2)}
+        onTouchStart={() => animate(scale, 1.1)}
         onTouchEnd={() => animate(scale, 1)}
         style={{
           scale,
-          opacity: useTransform(scale, [1, 1.2], [0.7, 1]),
+          opacity: useTransform(scale, [1, 1.1], [0.7, 1]),
         }}
         className="elastic-slider-wrapper"
       >
         {/* Left icon */}
-        <motion.div
-          animate={{
-            scale: region === "left" ? [1, 1.4, 1] : 1,
-            transition: { duration: 0.25 },
-          }}
-          style={{
-            x: useTransform(() =>
-              region === "left" ? -overflow.get() / scale.get() : 0
-            ),
-          }}
-        >
-          {leftIcon}
-        </motion.div>
+        {leftIcon && (
+          <motion.div
+            animate={{
+              scale: region === "left" ? [1, 1.4, 1] : 1,
+              transition: { duration: 0.25 },
+            }}
+            style={{
+              x: useTransform(() =>
+                region === "left" ? -overflow.get() / scale.get() : 0
+              ),
+            }}
+          >
+            {leftIcon}
+          </motion.div>
+        )}
 
         {/* Track */}
         <div
@@ -197,9 +201,9 @@ function Slider({
                 }
                 return "center";
               }),
-              height: useTransform(scale, [1, 1.2], [6, 12]),
-              marginTop: useTransform(scale, [1, 1.2], [0, -3]),
-              marginBottom: useTransform(scale, [1, 1.2], [0, -3]),
+              height: useTransform(scale, [1, 1.1], [6, 10]),
+              marginTop: useTransform(scale, [1, 1.1], [0, -2]),
+              marginBottom: useTransform(scale, [1, 1.1], [0, -2]),
             }}
             className="elastic-slider-track-wrapper"
           >
@@ -208,24 +212,30 @@ function Slider({
                 className="elastic-slider-range"
                 style={{ width: `${getRangePercentage()}%` }}
               />
+              <div
+                className="elastic-slider-thumb"
+                style={{ left: `${getRangePercentage()}%` }}
+              />
             </div>
           </motion.div>
         </div>
 
         {/* Right icon */}
-        <motion.div
-          animate={{
-            scale: region === "right" ? [1, 1.4, 1] : 1,
-            transition: { duration: 0.25 },
-          }}
-          style={{
-            x: useTransform(() =>
-              region === "right" ? overflow.get() / scale.get() : 0
-            ),
-          }}
-        >
-          {rightIcon}
-        </motion.div>
+        {rightIcon && (
+          <motion.div
+            animate={{
+              scale: region === "right" ? [1, 1.4, 1] : 1,
+              transition: { duration: 0.25 },
+            }}
+            style={{
+              x: useTransform(() =>
+                region === "right" ? overflow.get() / scale.get() : 0
+              ),
+            }}
+          >
+            {rightIcon}
+          </motion.div>
+        )}
       </motion.div>
 
       {!hideValue && (
