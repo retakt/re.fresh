@@ -275,14 +275,15 @@ export function CommandPalette() {
 
               {/* Command Palette */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.88, y: -8 }}
+                initial={{ opacity: 0, scale: 0.85, y: -12 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                exit={{ opacity: 0, scale: 0.9, y: -8 }}
                 transition={{
                   type: "spring",
-                  stiffness: 700,
-                  damping: 12,
-                  mass: 0.5,
+                  stiffness: 500,
+                  damping: 18,
+                  mass: 0.8,
+                  bounce: 0.5,
                 }}
                 className="fixed left-1/2 -translate-x-1/2 z-[9999] w-[600px] max-w-[90vw] bg-background/95 backdrop-blur-xl rounded-2xl border border-border/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)] overflow-hidden"
                 style={{ top: '30vh' }}
