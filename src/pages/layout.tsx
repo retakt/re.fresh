@@ -7,7 +7,6 @@ import Sidebar from "@/components/layout/sidebar.tsx";
 import Footer from "@/components/layout/footer.tsx";
 import FloatingPlayer from "@/components/player/FloatingPlayer.tsx";
 import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
-import { ScrollToTopButton } from "@/components/ui/scroll-to-top-button.tsx";
 
 function PageFallback() {
   const navigate = useNavigate();
@@ -100,7 +99,6 @@ export default function AppLayout() {
 
       <Footer />
       <FloatingPlayer />
-      <ScrollToTopButton />
     </div>
   );
 }

@@ -94,6 +94,13 @@ createRoot(root, {
 requestAnimationFrame(() => {
   requestAnimationFrame(() => {
     document.documentElement.classList.add("theme-loaded");
+    
+    // Detect iOS for iOS-specific fixes
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      document.documentElement.classList.add("ios");
+    }
   });
 });
 

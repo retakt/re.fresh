@@ -68,26 +68,12 @@ export function CommandPalette() {
       setQuery("");
       setResults([]);
       setSelectedIndex(0);
-      
-      // Lock body scroll on iOS
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      
       // Focus input after animation - important for mobile keyboard
       setTimeout(() => {
         inputRef.current?.focus();
         // Ensure keyboard opens on mobile
         inputRef.current?.click();
       }, 150);
-    } else {
-      // Restore scroll position
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      window.scrollTo(0, parseInt(scrollY || '0') * -1);
     }
   }, [open]);
 
@@ -273,25 +259,14 @@ export function CommandPalette() {
         <AnimatePresence>
           {open && (
             <>
-              {/* Backdrop - iOS-safe version */}
+              {/* Backdrop - iOS gets solid, others get blur */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-[9998] bg-black/40 dark:bg-black/60"
-                style={{
-                  WebkitBackdropFilter: 'blur(8px)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitTransform: 'translate3d(0,0,0)', // Force GPU acceleration on iOS
-                }}
+                className="fixed inset-0 z-[9998] bg-black/10 [.ios_&]:bg-black/50 [.ios_&]:backdrop-blur-none backdrop-blur-[2px]"
                 onClick={() => setOpen(false)}
-                onTouchStart={(e) => {
-                  // Prevent iOS from scrolling the page behind
-                  if (e.target === e.currentTarget) {
-                    e.preventDefault();
-                  }
-                }}
                 aria-hidden="true"
               />
 
