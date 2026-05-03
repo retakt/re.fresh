@@ -65,6 +65,9 @@ export function CommandPalette() {
   // Reset state when opening
   useEffect(() => {
     if (open) {
+      // Scroll to top so search palette is visible (iOS fix)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
       setQuery("");
       setResults([]);
       setSelectedIndex(0);
