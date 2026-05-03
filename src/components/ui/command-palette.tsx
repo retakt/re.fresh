@@ -65,8 +65,8 @@ export function CommandPalette() {
   // Reset state when opening
   useEffect(() => {
     if (open) {
-      // Scroll to top so search palette is visible (iOS fix)
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Instant scroll to top so search palette is visible (iOS fix)
+      window.scrollTo(0, 0);
       
       setQuery("");
       setResults([]);
@@ -262,13 +262,13 @@ export function CommandPalette() {
         <AnimatePresence>
           {open && (
             <>
-              {/* Backdrop - iOS gets solid, others get blur */}
+              {/* Backdrop with blur */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-[9998] bg-black/10 [.ios_&]:bg-black/50 [.ios_&]:backdrop-blur-none backdrop-blur-[2px]"
+                className="fixed inset-0 z-[9998] backdrop-blur-[2px] bg-black/10"
                 onClick={() => setOpen(false)}
                 aria-hidden="true"
               />
