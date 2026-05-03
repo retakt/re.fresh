@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Users, Music2, GraduationCap, FolderOpen, Quote, UserCheck } from "lucide-react";
+import { FileText, Users, Music2, GraduationCap, FolderOpen, Quote, UserCheck, Video } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const MEMBER_TILES = [
@@ -26,6 +26,16 @@ const MEMBER_TILES = [
 ];
 
 const ADMIN_ONLY_TILES = [
+  {
+    href: "/admin/api-config",
+    icon: Video,
+    label: "API & Configs",
+    desc: "YouTube downloader settings",
+    iconColor: "text-red-500 dark:text-red-400",
+    iconBg: "bg-red-100 dark:bg-red-900/40",
+    gradient: "from-red-50/80 to-red-50/20 dark:from-red-950/30 dark:to-transparent",
+    border: "border-red-200/60 dark:border-red-800/30",
+  },
   {
     href: "/admin/music",
     icon: Music2,

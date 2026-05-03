@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # Redis for BullMQ
+  redis:
+    image: redis:7-alpine
+    container_name: yt-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - yt-network
+
+  # Gluetun - Cloudflare WARP tunnel
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: yt-gluetun
+    restart: unless-stopped
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    networks:
+      - yt-network
+    environment:
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=wireguard
+      - WIREGUARD_ENDPOINT_IP=162.159.192.1
+      - WIREGUARD_ENDPOINT_PORT=2408
+      - WIREGUARD_PUBLIC_KEY=bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=
+      - WIREGUARD_PRIVATE_KEY=MCDbEEszP03GUM20lpHOGFjZ0QIm6BNyDNwdREaVTkw=
+      - WIREGUARD_ALLOWED_IPS=0.0.0.0/0,::/0
+      - WIREGUARD_ADDRESSES=172.16.0.2/32,2606:4700:110:8d2e:c5:250a:3319:825e/128
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://1.1.1.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API Server
+  api:
+    build: .
+    container_name: yt-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=3000
+    volumes:
+      - ./downloads:/app/downloads
+      - ./logs:/app/logs
+      - ./youtube_cookies.txt:/app/youtube_cookies.txt
+    mem_limit: 512m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - yt-network
+
+  # BullMQ Worker (uses gluetun network for YouTube downloads)
+  worker:
+    build: .
+    container_name: yt-worker
+    restart: unless-stopped
+    network_mode: service:gluetun
+    depends_on:
+      redis:
+        condition: service_healthy
+      gluetun:
+        condition: service_healthy
+    command: node src/queue/worker.js
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./downloads:/app/downloads
+      - ./logs:/app/logs
+      - ./youtube_cookies.txt:/app/youtube_cookies.txt
+    mem_limit: 512m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  yt-network:
+    driver: bridge

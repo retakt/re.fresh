@@ -39,6 +39,7 @@ const FileEditorPage     = lazy(() => import("./pages/admin/file-editor.tsx"));
 const AdminMembersPage        = lazy(() => import("./pages/admin/members.tsx"));
 const AdminQuotesPage         = lazy(() => import("./pages/admin/quotes.tsx"));
 const AdminAccessRequestsPage = lazy(() => import("./pages/admin/access-requests.tsx"));
+const YouTubeDownloaderPage   = lazy(() => import("./pages/admin/api-config.tsx"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -192,6 +193,13 @@ function AppContent() {
               <ProtectedRoute allowedRoles={["admin"]}>
                 <Suspense>
                   <AdminAccessRequestsPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/api-config" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Suspense>
+                  <YouTubeDownloaderPage />
                 </Suspense>
               </ProtectedRoute>
             } />

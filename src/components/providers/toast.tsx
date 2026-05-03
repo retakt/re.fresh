@@ -84,8 +84,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      {/* Render all active toasts */}
-      <div className="fixed top-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none">
+      {/* Render all active toasts - top center with glass effect */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none w-full max-w-md px-4">
         {toasts.map((toast, index) => (
           <div
             key={toast.id}
@@ -99,7 +99,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               type={toast.type}
               duration={0} // Disable auto-close since we handle it in the manager
               onClose={() => removeToast(toast.id)}
-              className="!static !top-auto !right-auto !transform-none" // Override the fixed positioning
+              className="!static !top-auto !right-auto !transform-none backdrop-blur-xl dark:bg-[#191919]/80 bg-[#e8e4d9]/80 border dark:border-white/10 border-black/10" // Glass effect
             />
           </div>
         ))}

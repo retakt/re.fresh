@@ -1,0 +1,27 @@
+beta-v1.6 - Admin Panel Enhancements & Cookie Validation
+
+## Features
+- ✨ Added real-time cookie validation (format + content check)
+- ✨ Implemented pulsing animations for status cards (green/red/blue)
+- ✨ Added WARP IP detection and display in admin panel
+- ✨ Cookie rotation warning when > 7 days or invalid format
+- ✨ Auto-refresh every 30 seconds for live monitoring
+
+## Improvements
+- 🎨 Redesigned admin panel with compact, minimal UI
+- 🎨 Smooth pulse animations for active/error states
+- 🔧 Backend validates cookie format (Netscape + .youtube.com)
+- 🔧 Worker IP detection via Cloudflare trace endpoint
+- 📊 Queue statistics with animated number transitions
+
+## Technical
+- 🔌 WARP properly wired through gluetun container
+- 🍪 Cookies properly passed to yt-dlp with --cookies flag
+- 🌐 Worker uses WARP IP for downloads (bypasses rate limits)
+- 🔄 API container on separate network for serving requests
+- ✅ All animations working with proper z-index and stacking
+
+## Cleanup
+- 🗑️ Removed 34 obsolete documentation files
+- 📝 Created master deployment scripts (deploy-all.sh & deploy-all.ps1)
+- 🚀 Streamlined deployment process with single command

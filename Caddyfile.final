@@ -1,0 +1,64 @@
+
+# =============================================================================
+# retakt.cc
+# =============================================================================
+
+retakt.cc {
+    root * /var/www/retakt
+    encode gzip
+    try_files {path} /index.html
+    file_server
+}
+
+# =============================================================================
+# chat.retakt.cc → retakt.cc/chat
+# =============================================================================
+
+chat.retakt.cc {
+    redir https://retakt.cc/chat{uri} 301
+}
+
+# =============================================================================
+# yt.retakt.cc - YouTube Downloader
+# =============================================================================
+yt.retakt.cc {
+    encode gzip
+    root * /var/www/yt-downloader/dist
+
+    # Handle API requests FIRST
+    handle /api/* {
+        reverse_proxy yt-api:3000
+    }
+
+    # Handle WebSocket
+    handle @websocket {
+        reverse_proxy yt-api:3000
+    }
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+
+    # Serve static assets directly (no fallback)
+    handle /assets/* {
+        file_server
+    }
+
+    handle /favicon/* {
+        file_server
+    }
+
+    # SPA fallback for everything else
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        -Server
+    }
+}
