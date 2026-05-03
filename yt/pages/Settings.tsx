@@ -57,8 +57,8 @@ function SettingButton({
         "rounded-[9px] px-3 py-2 text-[13px] font-medium transition-all border",
         small && "px-2.5 py-1.5 text-[12px]",
         active
-          ? "dark:bg-[#e1e1e1] dark:text-black dark:border-[#e1e1e1] bg-black text-white border-black"
-          : "dark:bg-[#191919] dark:text-[#818181] dark:border-white/5 dark:hover:text-[#e1e1e1] dark:hover:border-white/10 bg-[#e8e4d9] text-[#75757e] border-black/5 hover:text-black hover:border-black/10"
+          ? "bg-[#18181b] text-white border-[#18181b] dark:bg-[#e1e1e1] dark:text-black dark:border-[#e1e1e1]"
+          : "bg-transparent text-[#a1a1aa] border-transparent hover:bg-[#f4f4f5] hover:text-[#71717a] hover:border-[#e4e4e7] dark:bg-[#191919] dark:text-[#818181] dark:border-white/5 dark:hover:text-[#e1e1e1] dark:hover:border-white/10"
       )}
     >
       {label}
@@ -133,14 +133,14 @@ export default function Settings({
       {/* Main */}
       <main className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[20px] font-bold dark:text-[#e1e1e1] text-black">settings</h1>
+          <h1 className="text-[20px] font-bold dark:text-[#e1e1e1] text-[#18181b]">settings</h1>
           
           <button
             onClick={resetSettings}
             className={cn(
               "text-[11px] font-medium px-3 py-1.5 rounded-[9px] transition-all",
               "dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
-              "text-[#75757e] hover:text-black hover:bg-[#e8e4d9]"
+              "text-[#71717a] hover:text-[#3f3f46] hover:bg-[#f4f4f5]"
             )}
           >
             reset to defaults
@@ -148,21 +148,21 @@ export default function Settings({
         </div>
 
         <div className="space-y-8">
-          {/* Theme */}
-          <div className="space-y-3">
+          {/* Theme - DISABLED */}
+          <div className="space-y-3 opacity-50 pointer-events-none">
             <div>
               <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e] mb-1">
-                appearance
+                appearance (temporarily disabled)
               </h2>
               <p className="text-[12px] dark:text-[#818181] text-[#75757e] leading-relaxed">
-                choose between light and dark theme.
+                light mode styling issues - locked to dark mode for now.
               </p>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[12px] dark:text-[#818181] text-[#75757e]">
-                {theme === "dark" ? "dark" : "light"}
+                dark
               </span>
-              <ThemeToggle theme={theme} onChange={onThemeChange} />
+              <ThemeToggle theme="dark" onChange={() => {}} />
             </div>
           </div>
 
@@ -318,8 +318,8 @@ export default function Settings({
               onChange={(e) => updateSetting("filenamePattern", e.target.value)}
               className={cn(
                 "w-full rounded-[9px] px-3 py-2 text-[13px] font-medium border outline-none transition-all",
-                "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40",
-                "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40"
+                "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40",
+                "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40"
               )}
               placeholder="%(title)s"
             />
@@ -343,8 +343,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("embedThumbnail", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -359,8 +359,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("embedMetadata", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -375,8 +375,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("embedSubtitles", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -391,8 +391,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("downloadSubtitles", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -419,8 +419,8 @@ export default function Settings({
                 onChange={(e) => updateSetting("subtitleLang", e.target.value)}
                 className={cn(
                   "w-full rounded-[9px] px-3 py-2 text-[13px] font-medium border outline-none transition-all",
-                  "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40",
-                  "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40"
+                  "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40",
+                  "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40"
                 )}
                 placeholder="en"
               />

@@ -12,10 +12,12 @@ export function NoticeBox({ children, className }: NoticeBoxProps) {
         <div
           className={cn(
             "rounded-[11px] border px-4 py-3 w-full",
-            "dark:border-white/5 dark:bg-[#191919]",
-            "border-black/5 bg-[#e8e4d9]",
             className
           )}
+          style={{
+            backgroundColor: document.documentElement.classList.contains('dark') ? '#191919' : '#f4f4f5',
+            borderColor: document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.05)' : '#e4e4e7'
+          }}
         >
           <div className="w-full overflow-hidden">
             {children}

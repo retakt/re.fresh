@@ -12,27 +12,22 @@ export default function YTPage() {
     return "home";
   });
   
-  // Load theme from localStorage
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    try {
-      const saved = localStorage.getItem("yt-downloader-theme");
-      return (saved as "light" | "dark") || "dark";
-    } catch {
-      return "dark";
-    }
-  });
+  // LOCKED TO DARK MODE - Light mode has styling issues that need to be fixed
+  const theme = "dark";
+  const setTheme = () => {}; // Disabled
 
-  // Apply theme to document and save to localStorage
+  // Force dark mode and clear any light mode from localStorage
   useEffect(() => {
-    document.documentElement.classList.remove("light", "dark");
-    document.documentElement.classList.add(theme);
-    
+    // Remove light mode from localStorage
     try {
-      localStorage.setItem("yt-downloader-theme", theme);
-    } catch (error) {
-      console.error("Failed to save theme:", error);
-    }
-  }, [theme]);
+      localStorage.removeItem("yt-downloader-theme");
+      localStorage.setItem("yt-downloader-theme", "dark");
+    } catch {}
+    
+    // Force dark class on HTML
+    document.documentElement.classList.remove("light");
+    document.documentElement.classList.add("dark");
+  }, []);
 
   // Handle hash changes for routing
   useEffect(() => {
@@ -52,11 +47,7 @@ export default function YTPage() {
 
   return (
     <div 
-      className={`min-h-dvh transition-colors ${
-        theme === "dark" 
-          ? "bg-black text-[#e1e1e1]" 
-          : "bg-[#f5f1e8] text-[#2a2a2a]"
-      }`}
+      className="min-h-dvh transition-colors bg-black text-[#e1e1e1]"
       style={{ fontFamily: "'IBM Plex Mono', monospace" }}
     >
       {currentPage === "home" && <Home onNavigate={setCurrentPage} />}

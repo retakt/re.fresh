@@ -48,8 +48,8 @@ function ModeButton({
       className={cn(
         "flex items-center gap-1.5 rounded-[9px] px-3.5 py-2 text-[13px] font-medium transition-all",
         active
-          ? "dark:text-white dark:bg-[#e1e1e1]/10 text-black bg-black/10"
-          : "dark:text-[#818181] dark:hover:bg-[#191919] text-[#75757e] hover:bg-[#e8e4d9]"
+          ? "text-[#18181b] bg-[#18181b]/8 dark:text-white dark:bg-[#e1e1e1]/10"
+          : "text-[#a1a1aa] hover:bg-[#f4f4f5] dark:text-[#818181] dark:hover:bg-[#191919]"
       )}
     >
       <Icon size={14} className="shrink-0" />
@@ -284,7 +284,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
           className={cn(
             "flex items-center gap-1.5 rounded-[9px] px-3 py-1.5 text-[12px] font-medium transition-all",
             "dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
-            "text-[#75757e] hover:text-black hover:bg-[#e8e4d9]"
+            "text-[#71717a] hover:text-[#3f3f46] hover:bg-[#f4f4f5]"
           )}
         >
           <SettingsIcon size={13} />
@@ -308,18 +308,20 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
             <div
               className={cn(
                 "flex items-center rounded-[11px] border-[1.5px] transition-all",
-                "dark:bg-black bg-[#f5f1e8]",
                 isYT
-                  ? "dark:border-[#ed2236]/40 dark:shadow-[0_0_0_2px_rgba(237,34,54,0.1)] border-[#ff0000]/40 shadow-[0_0_0_2px_rgba(255,0,0,0.1)]"
-                  : "dark:border-[#383838] border-[#adadb7]"
+                  ? "border-[#ff0000]/40 shadow-[0_0_0_2px_rgba(255,0,0,0.1)] dark:border-[#ed2236]/40 dark:shadow-[0_0_0_2px_rgba(237,34,54,0.1)]"
+                  : "border-[#e4e4e7] dark:border-[#383838]"
               )}
+              style={{
+                backgroundColor: document.documentElement.classList.contains('dark') ? '#000' : '#fff'
+              }}
             >
               <div className="pl-4 pr-2 shrink-0">
                 <Video
                   size={16}
                   className={cn(
                     "transition-colors",
-                    isYT ? "dark:text-[#ed2236] text-[#ff0000]" : "dark:text-[#383838] text-[#adadb7]"
+                    isYT ? "text-[#ff0000] dark:text-[#ed2236]" : "text-[#adadb7] dark:text-[#383838]"
                   )}
                 />
               </div>
@@ -333,8 +335,10 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                 placeholder="paste the link here"
                 className={cn(
                   "flex-1 bg-transparent py-3.5 text-[14px] font-medium outline-none",
-                  "dark:text-[#e1e1e1] text-black",
-                  "placeholder:dark:text-[#818181] placeholder:text-[#75757e]",
+                  "text-[#18181b]",
+                  "dark:text-[#e1e1e1]",
+                  "placeholder:text-[#a1a1aa]",
+                  "placeholder:dark:text-[#818181]",
                   "placeholder:opacity-100"
                 )}
                 autoComplete="off"
@@ -360,8 +364,8 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                   className={cn(
                     "flex items-center justify-center rounded-[10px] w-10 h-10 transition-all",
                     isYT
-                      ? "dark:bg-[#ed2236] dark:hover:bg-[#d61c2e] bg-[#ff0000] hover:bg-[#cc0000] text-white"
-                      : "dark:bg-[#191919] dark:text-[#383838] bg-[#e8e4d9] text-[#adadb7] cursor-not-allowed"
+                      ? "bg-[#ff0000] hover:bg-[#cc0000] text-white dark:bg-[#ed2236] dark:hover:bg-[#d61c2e]"
+                      : "bg-[#e8e4d9] text-[#adadb7] cursor-not-allowed dark:bg-[#191919] dark:text-[#383838]"
                   )}
                   aria-label="Download"
                 >
@@ -407,7 +411,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                 className={cn(
                   "flex items-center gap-1.5 rounded-[11px] px-3.5 py-2 text-[13px] font-medium transition-all",
                   "dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
-                  "text-[#75757e] hover:text-black hover:bg-[#e8e4d9]"
+                  "text-[#71717a] hover:text-[#3f3f46] hover:bg-[#f4f4f5]"
                 )}
               >
                 <Clipboard size={14} />

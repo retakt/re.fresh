@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
-@theme inline {
+@theme {
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+
+@custom-selector :--dark .dark, .dark *;
 
 @layer base {
   body {
@@ -14,7 +16,6 @@
 /* Prevent overscroll bounce on iOS */
 html {
   overscroll-behavior-y: none;
-  background-color: #000;
 }
 
 body {

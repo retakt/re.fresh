@@ -1,27 +1,37 @@
-beta-v1.6 - Admin Panel Enhancements & Cookie Validation
+Lock YT subdomain to dark mode - light mode styling issues
 
-## Features
-- ✨ Added real-time cookie validation (format + content check)
-- ✨ Implemented pulsing animations for status cards (green/red/blue)
-- ✨ Added WARP IP detection and display in admin panel
-- ✨ Cookie rotation warning when > 7 days or invalid format
-- ✨ Auto-refresh every 30 seconds for live monitoring
+CRITICAL FIX: Server was serving from /var/www/yt-downloader/dist/ not /frontend/
+- Deployment script was uploading to wrong directory
+- Fixed by copying frontend/* to dist/
 
-## Improvements
-- 🎨 Redesigned admin panel with compact, minimal UI
-- 🎨 Smooth pulse animations for active/error states
-- 🔧 Backend validates cookie format (Netscape + .youtube.com)
-- 🔧 Worker IP detection via Cloudflare trace endpoint
-- 📊 Queue statistics with animated number transitions
+Changes:
+- Disabled theme toggle completely (shows console log when clicked)
+- Locked YTPage to always use dark mode
+- Force clear localStorage and set to "dark" on mount
+- Removed theme state management (hardcoded to "dark")
+- Added note in UI: "light mode styling issues - locked to dark mode for now"
+- Toggle is now disabled, grayed out, and locked to moon icon
 
-## Technical
-- 🔌 WARP properly wired through gluetun container
-- 🍪 Cookies properly passed to yt-dlp with --cookies flag
-- 🌐 Worker uses WARP IP for downloads (bypasses rate limits)
-- 🔄 API container on separate network for serving requests
-- ✅ All animations working with proper z-index and stacking
+TODO: Fix light mode Tailwind issues tomorrow
+ROOT CAUSE OF LIGHT MODE BUG:
+- Tailwind v4 dark mode not working with class-based approach
+- Light mode colors (bg-white, bg-zinc-100) rendering as black
+- Even with !important, styles not applying correctly
+- Inline styles with document.documentElement.classList.contains('dark') check also failed
+- Suspect: Tailwind v4 @variant or @custom-selector not working as expected
+- May need to downgrade to Tailwind v3 or use different dark mode strategy
 
-## Cleanup
-- 🗑️ Removed 34 obsolete documentation files
-- 📝 Created master deployment scripts (deploy-all.sh & deploy-all.ps1)
-- 🚀 Streamlined deployment process with single command
+DEPLOYMENT NOTE:
+- Server serves from: /var/www/yt-downloader/dist/
+- Deploy script should target: dist/ not frontend/
+- Update deploy-all.sh and deploy-all.ps1 to use correct path
+
+Files changed:
+- yt/YTPage.tsx: Removed theme state, locked to dark, force localStorage
+- yt/pages/Settings.tsx: Disabled theme toggle section
+- yt/components/ThemeToggle.tsx: Disabled button, added console log, locked to moon
+- yt/pages/Home.tsx: Added inline styles (didn't work due to wrong deploy path)
+- yt/components/NoticeBox.tsx: Added inline styles (didn't work due to wrong deploy path)
+- yt/styles.css: Multiple attempts at Tailwind v4 dark mode config
+- deploy-all.ps1: Removed hardcoded CF tokens (use env vars)
+- deploy-all.sh: Removed hardcoded CF tokens (use env vars)
