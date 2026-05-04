@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Download, X, CheckCircle2, AlertCircle, Loader2, ExternalLink } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, Loader2, ArrowDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getDownloadFileUrl, type DownloadResponse } from "../lib/api";
+import { getDownloadFileUrl } from "../lib/api";
+import AnimatedCloseIcon from "./AnimatedCloseIcon";
+import NotificationBadge from "./smoothui/notification-badge";
 
 export interface DownloadItem {
   id: string;
@@ -133,9 +135,12 @@ function DownloadCard({ download, onRemove }: { download: DownloadItem; onRemove
 
 export default function DownloadManager({ downloads, onRemove, onClear }: DownloadManagerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const activeDownloads = downloads.filter(d => d.status === "pending" || d.status === "processing");
   const completedDownloads = downloads.filter(d => d.status === "completed");
   const hasDownloads = downloads.length > 0;
+  const hasCompletedDownloads = completedDownloads.length > 0;
 
   // Auto-open when there are downloads
   useEffect(() => {
@@ -144,56 +149,114 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
     }
   }, [hasDownloads]);
 
-  if (!hasDownloads) return null;
+  // Click outside to close - simplified approach
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      
+      // Check if click is outside both panel and button
+      if (
+        panelRef.current &&
+        buttonRef.current &&
+        !panelRef.current.contains(target) &&
+        !buttonRef.current.contains(target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    // Add listener after a small delay to avoid immediate closure
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isOpen]);
 
   return (
     <>
-      {/* Floating Button */}
-      <motion.button
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "fixed bottom-6 right-6 z-50",
-          "w-14 h-14 rounded-full shadow-lg",
-          "dark:bg-[#ed2236] dark:hover:bg-[#d61c2e]",
-          "bg-[#ff0000] hover:bg-[#cc0000]",
-          "flex items-center justify-center",
-          "transition-all"
-        )}
-      >
-        <div className="relative">
-          <Download size={20} className="text-white" />
-          {activeDownloads.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full dark:bg-white bg-white text-[10px] font-bold dark:text-[#ed2236] text-[#ff0000] flex items-center justify-center">
-              {activeDownloads.length}
-            </span>
+      {/* Floating Button - Top Right under Settings */}
+      <div className="fixed top-20 right-6 z-50">
+        <NotificationBadge
+          variant="count"
+          count={activeDownloads.length > 0 ? activeDownloads.length : completedDownloads.length}
+          max={99}
+          showZero={false}
+          position="top-right"
+          className={cn(
+            activeDownloads.length > 0 
+              ? "bg-white text-[#ed2236]" // White background for active downloads
+              : "bg-green-500 text-white"  // Green background for completed downloads
           )}
-        </div>
-      </motion.button>
+        >
+          <motion.button
+            ref={buttonRef}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={() => setIsOpen(!isOpen)}
+            className={cn(
+              "w-10 h-10 rounded-full shadow-lg",
+              "flex items-center justify-center",
+              "transition-all border-2",
+              hasDownloads 
+                ? "dark:bg-[#ed2236] dark:hover:bg-[#d61c2e] bg-[#ff0000] hover:bg-[#cc0000] border-transparent" 
+                : "dark:bg-transparent dark:hover:bg-[#ed2236]/10 bg-transparent hover:bg-[#ff0000]/10 dark:border-[#ed2236] border-[#ff0000]"
+            )}
+            style={{
+              boxShadow: hasDownloads 
+                ? '0 0 0 0 rgba(237, 34, 54, 0.7)' 
+                : 'none',
+              animation: hasDownloads 
+                ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' 
+                : 'none'
+            }}
+          >
+            <ArrowDown 
+              size={14} 
+              className={cn(
+                "transition-colors",
+                hasDownloads ? "text-white" : "dark:text-[#ed2236] text-[#ff0000]"
+              )} 
+            />
+          </motion.button>
+        </NotificationBadge>
+      </div>
 
       {/* Download Panel */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className={cn(
-              "fixed bottom-24 right-6 z-40",
-              "w-[400px] max-w-[calc(100vw-3rem)]",
-              "rounded-[15px] border shadow-2xl",
-              "dark:border-white/10 dark:bg-[#0a0a0a]",
-              "border-black/10 bg-white",
-              "overflow-hidden"
-            )}
-          >
-            {/* Header */}
+          <>
+            {/* Invisible backdrop for click-outside */}
+            <div
+              className="fixed inset-0 z-30"
+              onClick={() => setIsOpen(false)}
+            />
+            
+            <motion.div
+              ref={panelRef}
+              initial={{ opacity: 0, x: 20, y: -10 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0, x: 20, y: -10 }}
+              className={cn(
+                "fixed top-36 right-6 z-40",
+                "w-[400px] max-w-[calc(100vw-3rem)]",
+                "rounded-[15px] border shadow-2xl",
+                "dark:border-white/10 dark:bg-[#0a0a0a]",
+                "border-black/10 bg-white",
+                "overflow-hidden"
+              )}
+            >
+              {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b dark:border-white/5 border-black/5">
               <div className="flex items-center gap-2">
-                <Download size={16} className="dark:text-[#ed2236] text-[#ff0000]" />
+                <ArrowDown size={16} className="dark:text-[#ed2236] text-[#ff0000]" />
                 <h3 className="text-[14px] font-bold dark:text-[#e1e1e1] text-black">
-                  Downloads ({downloads.length})
+                  Downloads {hasDownloads && `(${downloads.length})`}
                 </h3>
               </div>
               
@@ -206,26 +269,41 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
                     clear all
                   </button>
                 )}
-                <button
+                <AnimatedCloseIcon
                   onClick={() => setIsOpen(false)}
-                  className="rounded-full p-1 dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-white/5 text-[#9ca3af] hover:text-black hover:bg-black/5 transition-all"
-                >
-                  <X size={14} />
-                </button>
+                  size={20}
+                  className="dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] text-[#9ca3af] hover:text-black"
+                />
               </div>
             </div>
 
-            {/* Downloads List */}
-            <div className="max-h-[400px] overflow-y-auto p-3 space-y-2">
-              <AnimatePresence mode="popLayout">
-                {downloads.map((download) => (
-                  <DownloadCard
-                    key={download.id}
-                    download={download}
-                    onRemove={() => onRemove(download.id)}
-                  />
-                ))}
-              </AnimatePresence>
+            {/* Downloads List or Empty State */}
+            <div className="max-h-[400px] overflow-y-auto p-3">
+              {hasDownloads ? (
+                <div className="space-y-2">
+                  <AnimatePresence mode="popLayout">
+                    {downloads.map((download) => (
+                      <DownloadCard
+                        key={download.id}
+                        download={download}
+                        onRemove={() => onRemove(download.id)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 px-4">
+                  <div className="w-16 h-16 rounded-full dark:bg-[#191919] bg-[#e8e4d9] flex items-center justify-center mb-3">
+                    <ArrowDown size={24} className="dark:text-[#9ca3af] text-[#9ca3af]" />
+                  </div>
+                  <p className="text-[12px] font-medium dark:text-[#e1e1e1] text-black mb-1">
+                    its quiet here heh.
+                  </p>
+                  <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af]">
+                    try downloading!
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -237,6 +315,7 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
               </div>
             )}
           </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
