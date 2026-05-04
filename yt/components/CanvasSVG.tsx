@@ -100,7 +100,7 @@ export function CanvasSVG({
     canvas.width = width * dpr;
     canvas.height = height * dpr;
 
-    const numLines = Math.floor(height / lineGap) + 10;
+    const numLines = Math.floor(width / lineGap) + 10;
     startTimeRef.current = performance.now();
 
     const animate = (currentTime: number) => {
@@ -115,7 +115,7 @@ export function CanvasSVG({
       ctx.globalAlpha = opacity;
       
       for (let i = 0; i < numLines; i++) {
-        const y = i * lineGap;
+        const x = i * lineGap;
 
         const curve1 = Math.sin(phase) * curveIntensity;
         const curve2 = Math.sin(phase + 0.5) * curveIntensity * 0.6;
@@ -125,14 +125,14 @@ export function CanvasSVG({
         ctx.lineWidth = lineWidth;
 
         ctx.beginPath();
-        ctx.moveTo(0, y);
+        ctx.moveTo(x, 0);
         ctx.bezierCurveTo(
-          width * 0.33,
-          y + curve1,
-          width * 0.66,
-          y + curve2,
-          width,
-          y,
+          x + curve1,
+          height * 0.33,
+          x + curve2,
+          height * 0.66,
+          x,
+          height,
         );
         ctx.stroke();
       }

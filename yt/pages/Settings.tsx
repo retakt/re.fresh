@@ -105,14 +105,14 @@ export default function Settings({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex items-center justify-between px-6 py-4 border-b dark:border-white/5 border-black/5">
+      <header className="flex items-center justify-between px-4 py-2 border-b dark:border-white/5 border-black/5">
         <button
           onClick={() => onNavigate("home")}
           className={cn(
-            "flex items-center gap-2 text-[13px] font-medium transition-all",
+            "flex items-center gap-1.5 text-[13px] font-medium transition-all",
             "dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
             "text-[#9ca3af] hover:text-black hover:bg-[#e8e4d9]",
-            "rounded-[9px] px-2 py-1.5"
+            "rounded-[9px] px-1.5 py-1.5 -ml-1"
           )}
         >
           <ArrowLeft size={16} />
@@ -146,8 +146,8 @@ export default function Settings({
         <div className="w-16" />
       </header>
 
-      <main className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-6">
+      <main className="flex-1 px-4 py-4 max-w-2xl mx-auto w-full">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-bold dark:text-[#e1e1e1] text-black">settings</h1>
           
           <button
@@ -162,7 +162,7 @@ export default function Settings({
           </button>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Theme */}
           <div className="space-y-3">
             <div>

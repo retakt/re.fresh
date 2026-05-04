@@ -351,7 +351,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
   return (
     <div className="flex min-h-dvh flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4">
+      <header className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[15px] font-bold tracking-tight">
             <CanvasText
@@ -381,7 +381,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
         <button
           onClick={() => onNavigate("settings")}
           className={cn(
-            "flex items-center gap-1.5 rounded-[9px] px-3 py-1.5 text-[12px] font-medium transition-all duration-150",
+            "flex items-center gap-1.5 rounded-[9px] px-1.5 py-1.5 text-[12px] font-medium transition-all duration-150 -mr-1",
             "text-white hover:text-black hover:bg-[#d1d5db]"
           )}
         >
@@ -391,11 +391,11 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       </header>
 
       {/* Main */}
-      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-20">
-        <div className="w-full max-w-[640px] space-y-6">
+      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-16">
+        <div className="w-full max-w-[640px] space-y-4">
           
           {/* Logo */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-4">
             <div className="relative">
               {/* Pulsing outer ring */}
               <div className="absolute inset-0 rounded-2xl animate-pulse-ring" 
@@ -435,19 +435,19 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
             <style>{`
               @keyframes pulse-ring {
                 0% {
-                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0.9);
+                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0.38);
                 }
                 5% {
-                  box-shadow: 0 0 0 4px rgba(34, 255, 94, 0.7);
+                  box-shadow: 0 0 0 4px rgba(34, 255, 94, 0.29);
                 }
                 10% {
-                  box-shadow: 0 0 0 8px rgba(34, 255, 94, 0.5);
+                  box-shadow: 0 0 0 8px rgba(34, 255, 94, 0.21);
                 }
                 15% {
-                  box-shadow: 0 0 0 12px rgba(34, 255, 94, 0.3);
+                  box-shadow: 0 0 0 12px rgba(34, 255, 94, 0.13);
                 }
                 20% {
-                  box-shadow: 0 0 0 16px rgba(34, 255, 94, 0.15);
+                  box-shadow: 0 0 0 16px rgba(34, 255, 94, 0.06);
                 }
                 25% {
                   box-shadow: 0 0 0 24px rgba(34, 255, 94, 0);
@@ -456,19 +456,19 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                   box-shadow: 0 0 0 0 rgba(34, 255, 94, 0);
                 }
                 50% {
-                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0.9);
+                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0.38);
                 }
                 55% {
-                  box-shadow: 0 0 0 4px rgba(34, 255, 94, 0.7);
+                  box-shadow: 0 0 0 4px rgba(34, 255, 94, 0.29);
                 }
                 60% {
-                  box-shadow: 0 0 0 8px rgba(34, 255, 94, 0.5);
+                  box-shadow: 0 0 0 8px rgba(34, 255, 94, 0.21);
                 }
                 65% {
-                  box-shadow: 0 0 0 12px rgba(34, 255, 94, 0.3);
+                  box-shadow: 0 0 0 12px rgba(34, 255, 94, 0.13);
                 }
                 70% {
-                  box-shadow: 0 0 0 16px rgba(34, 255, 94, 0.15);
+                  box-shadow: 0 0 0 16px rgba(34, 255, 94, 0.06);
                 }
                 75% {
                   box-shadow: 0 0 0 24px rgba(34, 255, 94, 0);
@@ -668,7 +668,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       </NoticeBox>
 
       {/* Footer */}
-      <footer className="px-5 py-5 text-center">
+      <footer className="px-5 py-3 text-center">
         <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] font-medium">
           by downloading, you agree to{" "}
           <button 
