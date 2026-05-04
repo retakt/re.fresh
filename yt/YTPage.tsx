@@ -48,7 +48,7 @@ export default function YTPage() {
   return (
     <div 
       className="min-h-dvh transition-colors bg-black text-[#e1e1e1]"
-      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+      style={{ fontFamily: "'Commit Mono', monospace" }}
     >
       {currentPage === "home" && <Home onNavigate={setCurrentPage} />}
       {currentPage === "settings" && (

@@ -535,6 +535,10 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
                 COMPOSER_INPUT_SIZE,
                 COMPOSER_INPUT_LEADING,
               )}
+              style={{
+                caretColor: 'var(--primary)',
+                lineHeight: '1.5rem',
+              }}
               rows={1}
               autoFocus
               aria-label="Message input"
@@ -568,10 +572,9 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
             />
 {/* Custom placeholder with encrypted text */}
             {!composerText && (
-              <div className="pointer-events-none absolute inset-0 flex items-start py-1.5">
-                <span className={cn("text-muted-foreground/80 text-[12px] sm:text-[14px]", COMPOSER_INPUT_LEADING)}>
-                  {/* Change this line: */}
-                  <span className="mr-[2px]"> {/* Optional: add a small margin right */}
+              <div className="pointer-events-none absolute inset-0 flex items-center">
+                <span className={cn("text-muted-foreground/80 text-[12px] sm:text-[14px] leading-[1.5rem]", COMPOSER_INPUT_LEADING)}>
+                  <span className="mr-[2px]">
                     Go ahead!
                   </span>
                   <EncryptedText

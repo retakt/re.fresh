@@ -18,11 +18,44 @@ export function AnimatedTooltip({
   delay = 200,
 }: AnimatedTooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipId = useId();
   const shouldReduceMotion = useReducedMotion();
 
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+    
+    const rect = triggerRef.current.getBoundingClientRect();
+    
+    let top = 0;
+    let left = 0;
+    
+    switch (placement) {
+      case "top":
+        top = rect.top - 8;
+        left = rect.left + rect.width / 2;
+        break;
+      case "bottom":
+        top = rect.bottom + 8;
+        left = rect.left + rect.width / 2;
+        break;
+      case "left":
+        top = rect.top + rect.height / 2;
+        left = rect.left - 8;
+        break;
+      case "right":
+        top = rect.top + rect.height / 2;
+        left = rect.right + 8;
+        break;
+    }
+    
+    setPosition({ top, left });
+  };
+
   const handleMouseEnter = () => {
+    updatePosition();
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
     }, delay);
@@ -105,10 +138,24 @@ export function AnimatedTooltip({
     }
   };
 
-  const placementStyles = getPlacementStyles();
+  const getTransformOrigin = () => {
+    switch (placement) {
+      case "top":
+        return "bottom center";
+      case "bottom":
+        return "top center";
+      case "left":
+        return "right center";
+      case "right":
+        return "left center";
+      default:
+        return "center";
+    }
+  };
 
   return (
     <div
+      ref={triggerRef}
       className="relative inline-block"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -126,16 +173,18 @@ export function AnimatedTooltip({
             id={tooltipId}
             role="tooltip"
             className={cn(
-              "absolute z-50 px-2.5 py-1.5 text-[11px] font-medium rounded-md pointer-events-none",
+              "fixed z-[100] px-2.5 py-1.5 text-[11px] font-medium rounded-md pointer-events-none",
               "dark:bg-[#e1e1e1] dark:text-black bg-[#2a2a2a] text-white",
-              "shadow-lg whitespace-nowrap"
+              "shadow-lg whitespace-nowrap",
+              placement === "top" && "-translate-x-1/2 -translate-y-full",
+              placement === "bottom" && "-translate-x-1/2",
+              placement === "left" && "-translate-x-full -translate-y-1/2",
+              placement === "right" && "-translate-y-1/2"
             )}
             style={{
-              bottom: placementStyles.bottom,
-              top: placementStyles.top,
-              left: placementStyles.left,
-              right: placementStyles.right,
-              transform: `translate(${placementStyles.translateX || "0"}, ${placementStyles.translateY || "0"})`,
+              top: `${position.top}px`,
+              left: `${position.left}px`,
+              transformOrigin: getTransformOrigin(),
             }}
             {...getAnimationProps()}
           >

@@ -80,10 +80,9 @@ export function CanvasText({
     const updateDimensions = () => {
       const rect = textEl.getBoundingClientRect();
       const computed = window.getComputedStyle(textEl);
-      const fontSize = parseFloat(computed.fontSize) || 16;
       setDimensions({
         width: Math.ceil(rect.width) || 400,
-        height: Math.ceil(rect.height + fontSize * 0.3) || 200, // extra for descenders
+        height: Math.ceil(rect.height) || 200,
       });
       setFont(
         `${computed.fontWeight} ${computed.fontSize} ${computed.fontFamily}`,
@@ -191,7 +190,7 @@ export function CanvasText({
   return (
     <span
       className={cn(
-        "relative inline-block",
+        "relative inline-block align-middle",
         overlay && "absolute inset-0",
         className,
       )}
@@ -204,15 +203,17 @@ export function CanvasText({
         )}
         aria-hidden="true"
       />
-      <span ref={textRef} className="invisible inline-block pb-[0.3em]" aria-hidden="true">
+      <span ref={textRef} className="invisible inline-block" aria-hidden="true">
         {text}
       </span>
       <canvas
         ref={canvasRef}
-        className="pointer-events-none absolute top-0 left-0"
+        className="pointer-events-none absolute left-0"
         style={{
           width: dimensions.width || "auto",
           height: dimensions.height || "auto",
+          top: "50%",
+          transform: "translateY(-50%)",
         }}
         aria-label={text}
         role="img"

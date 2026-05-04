@@ -85,7 +85,7 @@ function DownloadCard({ download, onRemove }: { download: DownloadItem; onRemove
         <p className="text-[13px] font-medium dark:text-[#e1e1e1] text-black truncate">
           {download.title || "YouTube Video"}
         </p>
-        <p className="text-[11px] dark:text-[#818181] text-[#75757e] mt-0.5">
+        <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] mt-0.5">
           {getStatusText()}
         </p>
         
@@ -121,7 +121,7 @@ function DownloadCard({ download, onRemove }: { download: DownloadItem; onRemove
         
         <button
           onClick={onRemove}
-          className="rounded-full p-1.5 dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-white/5 text-[#75757e] hover:text-black hover:bg-black/5 transition-all"
+          className="rounded-full p-1.5 dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-white/5 text-[#9ca3af] hover:text-black hover:bg-black/5 transition-all"
           aria-label="Remove"
         >
           <X size={14} />
@@ -201,14 +201,14 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
                 {downloads.length > 0 && (
                   <button
                     onClick={onClear}
-                    className="text-[11px] font-medium px-2 py-1 rounded-[7px] dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919] text-[#75757e] hover:text-black hover:bg-[#e8e4d9] transition-all"
+                    className="text-[11px] font-medium px-2 py-1 rounded-[7px] dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919] text-[#9ca3af] hover:text-black hover:bg-[#e8e4d9] transition-all"
                   >
                     clear all
                   </button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="rounded-full p-1 dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-white/5 text-[#75757e] hover:text-black hover:bg-black/5 transition-all"
+                  className="rounded-full p-1 dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-white/5 text-[#9ca3af] hover:text-black hover:bg-black/5 transition-all"
                 >
                   <X size={14} />
                 </button>
@@ -231,7 +231,7 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
             {/* Footer */}
             {completedDownloads.length > 0 && (
               <div className="px-4 py-2 border-t dark:border-white/5 border-black/5">
-                <p className="text-[11px] dark:text-[#818181] text-[#75757e] text-center">
+                <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] text-center">
                   {completedDownloads.length} download{completedDownloads.length !== 1 ? "s" : ""} ready
                 </p>
               </div>

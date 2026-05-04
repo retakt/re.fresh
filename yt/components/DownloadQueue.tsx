@@ -29,7 +29,7 @@ export function DownloadQueue({
           <h3 className="text-[13px] font-bold dark:text-[#e1e1e1] text-black">
             processing queue
           </h3>
-          <span className="text-[11px] dark:text-[#818181] text-[#75757e]">
+          <span className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af]">
             {items.filter((i) => i.status === "downloading").length} active
           </span>
         </div>
@@ -88,7 +88,7 @@ export function DownloadQueue({
                           />
                         )}
                       </div>
-                      <p className="text-[10px] dark:text-[#818181] text-[#75757e] mt-1 font-medium">
+                      <p className="text-[10px] dark:text-[#9ca3af] text-[#9ca3af] mt-1 font-medium">
                         {item.progress}%
                       </p>
                     </div>
@@ -111,7 +111,7 @@ export function DownloadQueue({
 
                 <button
                   onClick={() => onRemove(item.id)}
-                  className="shrink-0 p-1 rounded dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-white/5 text-[#75757e] hover:text-black hover:bg-black/5 transition-all"
+                  className="shrink-0 p-1 rounded dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-white/5 text-[#9ca3af] hover:text-black hover:bg-black/5 transition-all"
                 >
                   <X size={14} />
                 </button>

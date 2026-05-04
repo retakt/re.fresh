@@ -3,6 +3,7 @@ import { ArrowLeft, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { AnimatedTooltip } from "../components/AnimatedTooltip";
+import { CanvasText } from "../components/CanvasText";
 
 type VideoQuality = "max" | "2160" | "1440" | "1080" | "720" | "480" | "360" | "240" | "144";
 type VideoCodec = "h264" | "av1" | "vp9";
@@ -57,8 +58,8 @@ function SettingButton({
         "rounded-[9px] px-3 py-2 text-[13px] font-medium transition-all border",
         small && "px-2.5 py-1.5 text-[12px]",
         active
-          ? "bg-[#18181b] text-white border-[#18181b] dark:bg-[#e1e1e1] dark:text-black dark:border-[#e1e1e1]"
-          : "bg-transparent text-[#a1a1aa] border-transparent hover:bg-[#f4f4f5] hover:text-[#71717a] hover:border-[#e4e4e7] dark:bg-[#191919] dark:text-[#818181] dark:border-white/5 dark:hover:text-[#e1e1e1] dark:hover:border-white/10"
+          ? "dark:bg-[#e1e1e1] dark:text-black dark:border-[#e1e1e1] bg-black text-white border-black"
+          : "dark:bg-[#191919] dark:text-[#9ca3af] dark:border-white/5 dark:hover:text-[#e1e1e1] dark:hover:border-white/10 bg-[#e8e4d9] text-[#9ca3af] border-black/5 hover:text-black hover:border-black/10"
       )}
     >
       {label}
@@ -75,7 +76,6 @@ export default function Settings({
   theme: "light" | "dark";
   onThemeChange: (theme: "light" | "dark") => void;
 }) {
-  // Load settings from localStorage
   const [settings, setSettings] = useState<Settings>(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_KEY);
@@ -85,7 +85,6 @@ export default function Settings({
     }
   });
 
-  // Save settings to localStorage whenever they change
   useEffect(() => {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -106,14 +105,13 @@ export default function Settings({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b dark:border-white/5 border-black/5">
         <button
           onClick={() => onNavigate("home")}
           className={cn(
             "flex items-center gap-2 text-[13px] font-medium transition-all",
-            "dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
-            "text-[#75757e] hover:text-black hover:bg-[#e8e4d9]",
+            "dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
+            "text-[#9ca3af] hover:text-black hover:bg-[#e8e4d9]",
             "rounded-[9px] px-2 py-1.5"
           )}
         >
@@ -121,26 +119,43 @@ export default function Settings({
           <span>back</span>
         </button>
 
-        <div className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
-          <span className="dark:text-[#ed2236] text-[#ff0000]">YT</span>
-          <span className="dark:text-[#818181] text-[#75757e]">.</span>
-          <span className="dark:text-[#818181] text-[#75757e]">re</span>
+        <div className="flex items-center gap-1 text-[15px] font-bold tracking-tight">
+          <CanvasText
+            text="YT"
+            className="text-[15px] font-bold align-middle"
+            backgroundClassName="bg-[#ed2236]"
+            colors={[
+              "#FF6B8A",
+              "#F0476A",
+              "#E8325A",
+              "#D03D56",
+              "#C32148",
+              "#B5406C",
+              "#FF8FA3",
+              "#F06080",
+              "#E84070",
+              "#FF6B8A",
+            ]}
+            lineGap={1}
+            animationDuration={15}
+          />
+          <span className="dark:text-[#9ca3af] text-[#9ca3af]">.</span>
+          <span className="dark:text-[#9ca3af] text-[#9ca3af]">reTakt</span>
         </div>
 
         <div className="w-16" />
       </header>
 
-      {/* Main */}
       <main className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[20px] font-bold dark:text-[#e1e1e1] text-[#18181b]">settings</h1>
+          <h1 className="text-[20px] font-bold dark:text-[#e1e1e1] text-black">settings</h1>
           
           <button
             onClick={resetSettings}
             className={cn(
               "text-[11px] font-medium px-3 py-1.5 rounded-[9px] transition-all",
-              "dark:text-[#818181] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
-              "text-[#71717a] hover:text-[#3f3f46] hover:bg-[#f4f4f5]"
+              "dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
+              "text-[#9ca3af] hover:text-black hover:bg-[#e8e4d9]"
             )}
           >
             reset to defaults
@@ -148,35 +163,35 @@ export default function Settings({
         </div>
 
         <div className="space-y-8">
-          {/* Theme - DISABLED */}
-          <div className="space-y-3 opacity-50 pointer-events-none">
+          {/* Theme */}
+          <div className="space-y-3">
             <div>
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e] mb-1">
-                appearance (temporarily disabled)
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af] mb-1">
+                appearance
               </h2>
-              <p className="text-[12px] dark:text-[#818181] text-[#75757e] leading-relaxed">
-                light mode styling issues - locked to dark mode for now.
+              <p className="text-[12px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
+                choose between light and dark theme.
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[12px] dark:text-[#818181] text-[#75757e]">
-                dark
+              <span className="text-[12px] dark:text-[#9ca3af] text-[#9ca3af]">
+                {theme === "dark" ? "dark" : "light"}
               </span>
-              <ThemeToggle theme="dark" onChange={() => {}} />
+              <ThemeToggle theme={theme} onChange={onThemeChange} />
             </div>
           </div>
 
           {/* Video Quality */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                 video quality
               </h2>
               <AnimatedTooltip content="Best available quality if selected isn't available">
-                <Info size={13} className="dark:text-[#818181] text-[#75757e] cursor-help" />
+                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
               </AnimatedTooltip>
             </div>
-            <p className="text-[12px] dark:text-[#818181] text-[#75757e] leading-relaxed">
+            <p className="text-[12px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
               if preferred video quality isn't available, next best is picked instead.
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -195,11 +210,11 @@ export default function Settings({
           {/* Video Codec */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                 preferred youtube video codec
               </h2>
               <AnimatedTooltip content="Codec affects quality, file size, and compatibility">
-                <Info size={13} className="dark:text-[#818181] text-[#75757e] cursor-help" />
+                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
               </AnimatedTooltip>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -219,7 +234,7 @@ export default function Settings({
                 label="vp9 + opus"
               />
             </div>
-            <div className="text-[11px] dark:text-[#818181] text-[#75757e] leading-relaxed space-y-1">
+            <div className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed space-y-1">
               <p><span className="dark:text-[#e1e1e1] text-black">h264:</span> best compatibility, average quality. max quality is 1080p.</p>
               <p><span className="dark:text-[#e1e1e1] text-black">av1:</span> best quality and efficiency. supports 8k & HDR.</p>
               <p><span className="dark:text-[#e1e1e1] text-black">vp9:</span> same quality as av1, but file is ~2x bigger. supports 4k & HDR.</p>
@@ -229,11 +244,11 @@ export default function Settings({
           {/* File Container */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                 youtube file container
               </h2>
               <AnimatedTooltip content="Container format for the downloaded video">
-                <Info size={13} className="dark:text-[#818181] text-[#75757e] cursor-help" />
+                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
               </AnimatedTooltip>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -246,7 +261,7 @@ export default function Settings({
                 />
               ))}
             </div>
-            <p className="text-[11px] dark:text-[#818181] text-[#75757e] leading-relaxed">
+            <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
               when "auto" is selected, best container is picked automatically: mp4 for h264; webm for vp9/av1.
             </p>
           </div>
@@ -254,11 +269,11 @@ export default function Settings({
           {/* Audio Format */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                 audio format
               </h2>
               <AnimatedTooltip content="Audio codec for downloads">
-                <Info size={13} className="dark:text-[#818181] text-[#75757e] cursor-help" />
+                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
               </AnimatedTooltip>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -271,7 +286,7 @@ export default function Settings({
                 />
               ))}
             </div>
-            <p className="text-[11px] dark:text-[#818181] text-[#75757e] leading-relaxed">
+            <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
               "best" option downloads audio in best available format. usually it's opus.
             </p>
           </div>
@@ -279,11 +294,11 @@ export default function Settings({
           {/* Audio Quality */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                 audio bitrate
               </h2>
               <AnimatedTooltip content="Higher bitrate = better quality, larger file">
-                <Info size={13} className="dark:text-[#818181] text-[#75757e] cursor-help" />
+                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
               </AnimatedTooltip>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -297,7 +312,7 @@ export default function Settings({
                 />
               ))}
             </div>
-            <p className="text-[11px] dark:text-[#818181] text-[#75757e] leading-relaxed">
+            <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
               higher bitrate means better audio quality but larger file size.
             </p>
           </div>
@@ -305,11 +320,11 @@ export default function Settings({
           {/* Filename Pattern */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                 filename pattern
               </h2>
               <AnimatedTooltip content="Use yt-dlp variables to customize filenames">
-                <Info size={13} className="dark:text-[#818181] text-[#75757e] cursor-help" />
+                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
               </AnimatedTooltip>
             </div>
             <input
@@ -318,12 +333,12 @@ export default function Settings({
               onChange={(e) => updateSetting("filenamePattern", e.target.value)}
               className={cn(
                 "w-full rounded-[9px] px-3 py-2 text-[13px] font-medium border outline-none transition-all",
-                "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40",
-                "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40"
+                "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40",
+                "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40"
               )}
               placeholder="%(title)s"
             />
-            <p className="text-[11px] dark:text-[#818181] text-[#75757e] leading-relaxed">
+            <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
               use <span className="dark:text-[#e1e1e1] text-black">%(title)s</span> for video title, <span className="dark:text-[#e1e1e1] text-black">%(id)s</span> for video id, <span className="dark:text-[#e1e1e1] text-black">%(ext)s</span> for extension.
             </p>
           </div>
@@ -331,7 +346,7 @@ export default function Settings({
           {/* Download Options */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                 download options
               </h2>
             </div>
@@ -343,8 +358,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("embedThumbnail", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -359,8 +374,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("embedMetadata", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -375,8 +390,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("embedSubtitles", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -391,8 +406,8 @@ export default function Settings({
                   onChange={(e) => updateSetting("downloadSubtitles", e.target.checked)}
                   className={cn(
                     "w-4 h-4 rounded border transition-all cursor-pointer",
-                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]",
-                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]"
+                    "dark:bg-[#191919] dark:border-white/10 dark:checked:bg-[#ed2236] dark:checked:border-[#ed2236]",
+                    "bg-[#e8e4d9] border-black/10 checked:bg-[#ff0000] checked:border-[#ff0000]"
                   )}
                 />
                 <span className="text-[12px] dark:text-[#e1e1e1] text-black group-hover:dark:text-white group-hover:text-black/80 transition-colors">
@@ -406,11 +421,11 @@ export default function Settings({
           {settings.downloadSubtitles && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#818181] text-[#75757e]">
+                <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
                   subtitle language
                 </h2>
                 <AnimatedTooltip content="Language code (e.g., en, es, fr)">
-                  <Info size={13} className="dark:text-[#818181] text-[#75757e] cursor-help" />
+                  <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
                 </AnimatedTooltip>
               </div>
               <input
@@ -419,12 +434,12 @@ export default function Settings({
                 onChange={(e) => updateSetting("subtitleLang", e.target.value)}
                 className={cn(
                   "w-full rounded-[9px] px-3 py-2 text-[13px] font-medium border outline-none transition-all",
-                  "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40",
-                  "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40"
+                  "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40",
+                  "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40"
                 )}
                 placeholder="en"
               />
-              <p className="text-[11px] dark:text-[#818181] text-[#75757e] leading-relaxed">
+              <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
                 use comma-separated codes for multiple languages (e.g., "en,es,fr")
               </p>
             </div>
