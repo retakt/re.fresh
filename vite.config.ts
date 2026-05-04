@@ -49,6 +49,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom"],
   },
 
   build: {
@@ -64,8 +65,8 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
-          // DON'T split React - it must be in the same chunk as libraries that use it
-          // Splitting React causes "createContext undefined" and "forwardRef undefined" errors
+          // CRITICAL: React, ReactDOM, and ALL React-dependent libraries MUST stay together
+          // Splitting them causes "Invalid hook call" and "Cannot read properties of null" errors
           
           // React Router - can be separate since it's only used in routing
           if (id.includes("node_modules/react-router-dom") || id.includes("node_modules/react-router/")) {
@@ -77,11 +78,10 @@ export default defineConfig({
             return "motion";
           }
           
-          // Heavy libraries that can load independently
+          // Heavy libraries that DON'T depend on React hooks
           if (id.includes("node_modules/@supabase/")) return "supabase";
           if (id.includes("node_modules/@tiptap/") || id.includes("node_modules/prosemirror")) return "editor";
           if (id.includes("node_modules/date-fns")) return "date-fns";
-          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) return "charts";
           
           // Markdown rendering - only needed on post pages
           if (
@@ -96,26 +96,14 @@ export default defineConfig({
           // Monitoring - load async
           if (id.includes("node_modules/@sentry/")) return "sentry";
           
-          // UI library
-          if (id.includes("node_modules/@base-ui/")) return "base-ui";
-          
-          // AI SDK - only for chat page
-          if (id.includes("node_modules/ai/") || id.includes("node_modules/@ai-sdk/")) {
-            return "ai-sdk";
-          }
-          
-          // Assistant UI - only for chat page
-          if (id.includes("node_modules/@assistant-ui/")) {
-            return "assistant-ui";
-          }
-          
           // Shiki syntax highlighting - only for code blocks
           if (id.includes("node_modules/shiki") || id.includes("node_modules/react-shiki")) {
             return "shiki";
           }
           
           // Everything else from node_modules goes to vendor
-          // This includes React, ReactDOM, and @radix-ui which all need to be together
+          // This includes React, ReactDOM, @radix-ui, @assistant-ui, @base-ui, ai-sdk, etc.
+          // They MUST all be in the same chunk to share the same React instance
           if (id.includes("node_modules/")) {
             return "vendor";
           }

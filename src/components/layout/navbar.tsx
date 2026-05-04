@@ -50,8 +50,8 @@ export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarPr
       <motion.header
         className={`sticky top-0 z-50 w-full transition-all duration-500 ${
           isScrolled
-            ? "border-b border-border/60 bg-background/95 backdrop-blur-md shadow-sm"
-            : "border-b border-border/60 shadow-sm bg-background/95 backdrop-blur-md"
+            ? "border-b border-border/60 bg-background/95 backdrop-blur-md shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_-2px_rgba(200,210,255,0.12)]"
+            : "border-b border-border/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_-2px_rgba(200,210,255,0.12)] bg-background/95 backdrop-blur-md"
         }`}
         variants={containerVariants}
         initial="hidden"
@@ -98,16 +98,18 @@ export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarPr
           <motion.div className="flex items-center gap-1" variants={itemVariants}>
             <CommandPalette />
 
-            <motion.button
-              type="button"
-              onClick={toggleTheme}
-              className="rounded-lg p-2.5 text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {theme === "dark" ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
-            </motion.button>
+            <div className="relative group">
+              <motion.div
+                className="relative rounded-lg p-2.5 text-muted-foreground cursor-not-allowed"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Moon size={17} strokeWidth={2} />
+              </motion.div>
+              <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border whitespace-nowrap opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity pointer-events-none z-50">
+                needs fix
+              </div>
+            </div>
 
             <div className="ml-0.5">
               <UserMenu />

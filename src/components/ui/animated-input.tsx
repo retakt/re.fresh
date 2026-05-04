@@ -106,7 +106,7 @@ export default function AnimatedInput({
       <input
         aria-label={label}
         className={cn(
-          "peer w-full rounded-md border bg-background px-3 py-3 text-base outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+          "peer w-full rounded-md border bg-background px-3 py-3 text-base outline-none transition focus-visible:border-primary focus-visible:ring-0",
           icon ? "pl-10" : "",
           inputClassName
         )}

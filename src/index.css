@@ -108,7 +108,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 11%);
-  --ring: oklch(0.72 0.2 352.53);
+  --ring: oklch(1 0 0 / 11%);
   --chart-1: oklch(0.72 0.2 352.53);
   --chart-2: oklch(0.65 0.12 180);
   --chart-3: oklch(0.72 0.14 85);
@@ -156,6 +156,19 @@
   :focus:not(:focus-visible) {
     outline: none;
     box-shadow: none;
+  }
+}
+
+/* ── Custom thick cursor ── */
+.terminal-cursor {
+  caret-color: var(--primary);
+  /* Make cursor thicker */
+  caret-width: 2px;
+}
+
+@supports not (caret-width: 2px) {
+  .terminal-cursor {
+    caret-color: var(--primary);
   }
 }
 

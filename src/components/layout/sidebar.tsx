@@ -30,7 +30,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
   return (
     <>
       {/* ΓöÇΓöÇ DESKTOP: lg and above only ΓöÇΓöÇ */}
-      <aside className="hidden lg:flex flex-col w-44 shrink-0 py-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto scrollbar-none pr-2 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)] dark:border-white/[0.07] dark:shadow-[2px_0_8px_-2px_rgba(200,210,255,0.12)]">
+      <div className="hidden lg:block w-44 shrink-0 overflow-x-hidden">
+        <aside className="flex flex-col py-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto scrollbar-none pr-4 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)] dark:border-white/[0.07] dark:shadow-[2px_0_8px_-2px_rgba(200,210,255,0.12)] -ml-8 pl-8 mr-2">
         <nav className="flex flex-col gap-0.5">
           {NAV_LINKS.map((link) => {
             const Icon = link.icon;
@@ -74,7 +75,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             </span>
           </p>
         </div>
-      </aside>
+        </aside>
+      </div>
 
       {/* ΓöÇΓöÇ MOBILE: backdrop ΓöÇΓöÇ */}
       <AnimatePresence>

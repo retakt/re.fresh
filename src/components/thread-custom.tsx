@@ -5,6 +5,7 @@ import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { PulseLoader } from "@/components/ui/loader";
 import { Button } from "@/components/ui/button";
 import { EncryptedText } from "@/components/ui/encrypted-text";
+import { GooeyInput } from "@/components/ui/gooey-input";
 import { cn } from "@/lib/utils";
 import {
   ActionBarPrimitive,
@@ -504,9 +505,9 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
         </AuiIf>
 
         {/* Input row */}
-        <div className="flex items-end gap-1 px-2 py-2">
+        <div className="flex items-center gap-2 px-2 py-2">
           {/* File picker */}
-          <div className="shrink-0 self-end pb-0.5">
+          <div className="shrink-0">
             <input
               ref={fileInputRef}
               type="file"
@@ -531,13 +532,12 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
             <ComposerPrimitive.Input
               placeholder=""
               className={cn(
-                "max-h-40 min-h-[2rem] w-full resize-none bg-transparent py-1.5 outline-none caret-primary",
-                COMPOSER_INPUT_SIZE,
+                "max-h-40 min-h-[2rem] w-full resize-none bg-transparent px-0 pt-4 pb-2 outline-none caret-primary terminal-cursor text-base",
                 COMPOSER_INPUT_LEADING,
               )}
               style={{
                 caretColor: 'var(--primary)',
-                lineHeight: '1.5rem',
+                fontSize: '15px',
               }}
               rows={1}
               autoFocus
@@ -573,7 +573,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
 {/* Custom placeholder with encrypted text */}
             {!composerText && (
               <div className="pointer-events-none absolute inset-0 flex items-center">
-                <span className={cn("text-muted-foreground/80 text-[12px] sm:text-[14px] leading-[1.5rem]", COMPOSER_INPUT_LEADING)}>
+                <span className="text-muted-foreground/80 text-[15px] leading-[1.3]">
                   <span className="mr-[2px]">
                     Go ahead!
                   </span>
@@ -589,8 +589,8 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
             )}
           </div>
 
-          {/* Mic — toggles dictation, right before send */}
-          <div className="shrink-0 self-end pb-0.5">
+          {/* Voice Mode Button */}
+          <div className="shrink-0">
             <AuiIf condition={(s) => s.composer.dictation == null}>
               <ComposerPrimitive.Dictate asChild>
                 <TooltipIconButton
@@ -620,7 +620,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
           </div>
 
           {/* Send / Stop */}
-          <div className="shrink-0 self-end pb-0.5">
+          <div className="shrink-0">
             <AuiIf condition={(s) => !s.thread.isRunning}>
               <ComposerPrimitive.Send asChild>
                 <TooltipIconButton

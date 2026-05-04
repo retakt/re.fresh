@@ -2,6 +2,8 @@ import { CanvasText } from "@/components/ui/canvas-text";
 
 // ── Per-version title color palettes ─────────────────────────────────────────
 const VERSION_COLORS: Record<string, { bg: string; lines: string[] }> = {
+  "v1.6":   { bg: "bg-[#dc143c]", lines: ["#8B0000","#A52A2A","#B22222","#DC143C","#FF0000","#8B0000","#A52A2A","#DC143C"] },
+  "v1.6-major": { bg: "bg-[#F5F5DC]", lines: ["#8B8B9E","#9FA0C3","#D3D3D3","#E8E4D9","#F5F5DC","#8B8B9E","#9FA0C3","#E8E4D9"] },
   "v1.5.5": { bg: "bg-[#0ecfba]", lines: ["#11D8C2","#0a9e8f","#07c4b0","#059080","#0bbfab","#07a08e","#11D8C2","#059080"] },
   "v1.5":   { bg: "bg-[#38bdf8]", lines: ["#0ea5e9","#0284c7","#38bdf8","#0369a1","#0ea5e9","#0284c7","#38bdf8","#0369a1"] },
   "v1.4":   { bg: "bg-[#ff80b5]", lines: ["#ec4899","#f472b6","#db2777","#be185d","#ec4899","#db2777","#f472b6","#ec4899"] },
@@ -13,6 +15,20 @@ const VERSION_COLORS: Record<string, { bg: string; lines: string[] }> = {
 };
 
 const RELEASED: { version: string; date: string; title: string; items: string[] }[] = [
+  {
+    version: "v1.6",
+    date: "4th May, 2026",
+    title: "YouTube Downloader",
+    items: [
+      "YouTube downloader tool - yt.retakt.cc (yt-dlp backend)",
+      "auto/audio/mute modes, quality settings (max to 144p)",
+      "codec selection (h264, av1, vp9), container formats",
+      "encrypted URL paste animation, auto-detect clipboard",
+      "download manager with queue, progress tracking",
+      "admin panel - cookie rotation, WARP++ status, queue stats",
+      "canvas text with blood red texture (#dc143c)",
+    ],
+  },
   {
     version: "v1.5.5",
     date: "2nd May, 2026",
@@ -167,13 +183,32 @@ export default function WhatsNewPage() {
 
                   {/* Title */}
                   <div className="text-lg font-bold leading-tight mb-2">
-                    <CanvasText
-                      text={entry.title}
-                      backgroundClassName={bg}
-                      colors={lines}
-                      lineGap={1}
-                      animationDuration={30}
-                    />
+                    {entry.version === "v1.6" ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CanvasText
+                          text="YouTube Downloader"
+                          backgroundClassName={bg}
+                          colors={lines}
+                          lineGap={1}
+                          animationDuration={30}
+                        />
+                        <CanvasText
+                          text="[Major]"
+                          backgroundClassName={VERSION_COLORS["v1.6-major"].bg}
+                          colors={VERSION_COLORS["v1.6-major"].lines}
+                          lineGap={1}
+                          animationDuration={30}
+                        />
+                      </div>
+                    ) : (
+                      <CanvasText
+                        text={entry.title}
+                        backgroundClassName={bg}
+                        colors={lines}
+                        lineGap={1}
+                        animationDuration={30}
+                      />
+                    )}
                   </div>
 
                   {/* Items */}

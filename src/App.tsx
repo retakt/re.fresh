@@ -5,6 +5,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import AppLayout from "./pages/layout.tsx";
 import { ChatProvider } from "./components/providers/chat.tsx";
+import { NoticePanel } from "./components/notices/NoticePanel.tsx";
 
 // ── All page routes lazy-loaded — nothing eagerly parsed on first paint ───────
 const Index            = lazy(() => import("./pages/Index.tsx"));
@@ -24,6 +25,7 @@ const NotFound         = lazy(() => import("./pages/NotFound.tsx"));
 const SearchPage       = lazy(() => import("./pages/search/page.tsx"));
 const ChatPage         = lazy(() => import("./pages/chat/page.tsx"));
 const WhatsNewPage     = lazy(() => import("./pages/whats-new/page.tsx"));
+const NoticePage       = lazy(() => import("./pages/notice/[id].tsx"));
 
 // ── Admin / editor (already lazy) ────────────────────────────────────────────
 const AdminPage          = lazy(() => import("./pages/admin/page.tsx"));
@@ -55,6 +57,8 @@ function AppContent() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      {/* Notice Panel - shows on first visit */}
+      <NoticePanel />
       {/* No Suspense fallback - the HTML shell handles initial loading */}
       <Suspense>
         <Routes>
@@ -75,6 +79,9 @@ function AppContent() {
             <Route path="/search"            element={<SearchPage />} />
             <Route path="/chat"              element={<ChatPage />} />
             <Route path="/whats-new"         element={<WhatsNewPage />} />
+            
+            {/* Notice share page */}
+            <Route path="/n/:id"             element={<NoticePage />} />
 
             {/* Admin routes */}
             <Route path="/admin" element={
@@ -204,8 +211,12 @@ function AppContent() {
               </ProtectedRoute>
             } />
           </Route>
+          
+          {/* Auth routes - outside AppLayout */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          
+          {/* 404 */}
           <Route path="*"      element={<NotFound />} />
         </Routes>
       </Suspense>
