@@ -16,6 +16,7 @@ import { TermsDialog } from "../components/TermsDialog";
 import { EncryptedText } from "../components/EncryptedText";
 import { AnimatedPasteIcon } from "../components/AnimatedPasteIcon";
 import AnimatedCloseIcon from "../components/AnimatedCloseIcon";
+import { AnimatedLogo } from "../components/AnimatedLogo";
 import { getStoredSettings, type DownloadMode } from "../lib/settings";
 import { startDownload, getDownloadStatus, cancelDownload, APIError } from "../lib/api";
 import { isValidYouTubeUrl, normalizeYouTubeUrl } from "../lib/youtube";
@@ -349,9 +350,9 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
   const isYT = isValidYouTubeUrl(url);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col relative">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2">
+      <header className="flex items-center justify-between px-4 py-2 relative z-10">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[15px] font-bold tracking-tight">
             <CanvasText
@@ -391,117 +392,17 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       </header>
 
       {/* Main */}
-      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-16">
-        <div className="w-full max-w-[640px] space-y-4">
+      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-16 relative z-10">
+        <div className="w-full max-w-[640px] space-y-4 relative z-10">
           
-          {/* Logo */}
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              {/* Pulsing outer ring */}
-              <div className="absolute inset-0 rounded-2xl animate-pulse-ring" 
-                style={{
-                  animation: 'pulse-ring 5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                  boxShadow: '0 0 0 24px rgba(34, 255, 94, 0)',
-                }}
-              />
-              
-              {/* Main logo container */}
-              <div className="relative w-16 h-16 rounded-2xl bg-[#dc143c] border-2 border-[#ff6b8a]/20 overflow-hidden shadow-lg shadow-[#dc143c]/30 animate-heartbeat"
-                style={{
-                  animation: 'heartbeat 5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                }}
-              >
-                <CanvasSVG
-                  svgContent={YouTubeSVG}
-                  colors={[
-                    "#FF6B8A",
-                    "#F0476A",
-                    "#E8325A",
-                    "#D03D56",
-                    "#C32148",
-                    "#B5406C",
-                    "#FF8FA3",
-                    "#F06080",
-                    "#E84070",
-                    "#FF6B8A",
-                  ]}
-                  lineGap={2}
-                  animationDuration={15}
-                  opacity={0.35}
-                />
-              </div>
-            </div>
-            
-            <style>{`
-              @keyframes pulse-ring {
-                0% {
-                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0.38);
-                }
-                5% {
-                  box-shadow: 0 0 0 4px rgba(34, 255, 94, 0.29);
-                }
-                10% {
-                  box-shadow: 0 0 0 8px rgba(34, 255, 94, 0.21);
-                }
-                15% {
-                  box-shadow: 0 0 0 12px rgba(34, 255, 94, 0.13);
-                }
-                20% {
-                  box-shadow: 0 0 0 16px rgba(34, 255, 94, 0.06);
-                }
-                25% {
-                  box-shadow: 0 0 0 24px rgba(34, 255, 94, 0);
-                }
-                26%, 49% {
-                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0);
-                }
-                50% {
-                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0.38);
-                }
-                55% {
-                  box-shadow: 0 0 0 4px rgba(34, 255, 94, 0.29);
-                }
-                60% {
-                  box-shadow: 0 0 0 8px rgba(34, 255, 94, 0.21);
-                }
-                65% {
-                  box-shadow: 0 0 0 12px rgba(34, 255, 94, 0.13);
-                }
-                70% {
-                  box-shadow: 0 0 0 16px rgba(34, 255, 94, 0.06);
-                }
-                75% {
-                  box-shadow: 0 0 0 24px rgba(34, 255, 94, 0);
-                }
-                76%, 100% {
-                  box-shadow: 0 0 0 0 rgba(34, 255, 94, 0);
-                }
-              }
-              
-              @keyframes heartbeat {
-                0% {
-                  transform: scale(1);
-                }
-                10% {
-                  transform: scale(1.05);
-                }
-                20% {
-                  transform: scale(1);
-                }
-                50% {
-                  transform: scale(1);
-                }
-                60% {
-                  transform: scale(1.05);
-                }
-                70% {
-                  transform: scale(1);
-                }
-                100% {
-                  transform: scale(1);
-                }
-              }
-            `}</style>
+          {/* Logo - Animated on Hover/Click */}
+          <div className="flex justify-center mb-12">
+            <AnimatedLogo 
+              staticSrc="/ytfav.png"
+              animatedSrc="/yticon.apng"
+              width={84}
+              height={64}
+            />
           </div>
 
           {/* Input */}
@@ -640,7 +541,8 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       </main>
 
       {/* Notice Box */}
-      <NoticeBox>
+      <div className="relative z-10">
+        <NoticeBox>
         <p className="text-[12px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed break-words text-center">
           supports <span className="dark:text-[#e1e1e1] text-black font-bold">youtube.com</span>,{" "}
           <span className="dark:text-[#e1e1e1] text-black font-bold">youtu.be</span>,{" "}
@@ -666,9 +568,10 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
           />
         </p>
       </NoticeBox>
+      </div>
 
       {/* Footer */}
-      <footer className="px-5 py-3 text-center">
+      <footer className="px-5 py-3 text-center relative z-10">
         <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] font-medium">
           by downloading, you agree to{" "}
           <button 
