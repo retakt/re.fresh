@@ -88,6 +88,32 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_system_status",
+      description: "Get real-time status of all AI system services including Ollama, SearXNG, Weather API, and Exchange Rate API. Use this when user asks about system health, service status, or if something isn't working properly.",
+      parameters: {
+        type: "object",
+        properties: {
+          detailed: { type: "boolean", description: "Whether to include detailed response times and error messages", default: false },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_ai_tools_status",
+      description: "Get real-time status and performance metrics of all AI tools. Returns service health (READY/SLOW/DOWN) and response times in milliseconds. Use when user asks about: tool availability, service status, response times, performance, which tool is fastest/slowest, or if tools are working. Can check all tools or a specific tool by name.",
+      parameters: {
+        type: "object",
+        properties: {
+          tool_name: { type: "string", description: "Optional: specific tool to check (AI Model, Web Search, Weather API, Exchange Rate API, YouTube Backend). Leave empty for all tools." },
+        },
+      },
+    },
+  },
 ];
 
 // ── Tool executor functions ───────────────────────────────────────────────────
@@ -225,8 +251,9 @@ async function toolSearchWeb(query: string, mode: string): Promise<string> {
       language: "en",
     });
 
+    // Reduced timeout for faster failure
     const res = await fetch(`${SEARXNG_URL}/search?${params.toString()}`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3000), // Reduced from 5000ms to 3000ms
     });
 
     if (!res.ok) return "Search unavailable. Answering from training data.";
@@ -261,8 +288,177 @@ async function toolSearchWeb(query: string, mode: string): Promise<string> {
     const lines = top.map((r, i) => `[${i + 1}] ${r.title} — ${r.content} (${r.url})`);
     return `${label}:\n${lines.join("\n")}`;
 
-  } catch {
+  } catch (error) {
+    // More specific error handling
+    if (error instanceof Error && error.name === 'AbortError') {
+      return "Search timed out. Answering from training data.";
+    }
     return "Search failed. Answering from training data.";
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── System Status Tool ────────────────────────────────────────────────────────
+const MONITORED_SERVICES = [
+  {
+    name: 'AI Model (Ollama)',
+    url: import.meta.env.VITE_OLLAMA_URL ?? 'http://localhost:11434',
+    endpoint: '/api/tags',
+    timeout: 3000,
+  },
+  {
+    name: 'Web Search (SearXNG)',
+    url: import.meta.env.VITE_SEARXNG_URL ?? 'http://localhost:8080',
+    endpoint: '/search?q=test&format=json&pageno=1',
+    timeout: 3000,
+  },
+  {
+    name: 'Weather API',
+    url: 'https://wttr.in',
+    endpoint: '/test?format=j1',
+    timeout: 5000,
+  },
+  {
+    name: 'Exchange Rate API',
+    url: 'https://open.er-api.com',
+    endpoint: '/v6/latest/USD',
+    timeout: 5000,
+  },
+];
+
+async function checkService(service: typeof MONITORED_SERVICES[0]) {
+  const startTime = Date.now();
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), service.timeout);
+
+    const response = await fetch(`${service.url}${service.endpoint}`, {
+      signal: controller.signal,
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+
+    clearTimeout(timeoutId);
+    const responseTime = Date.now() - startTime;
+
+    if (response.ok) {
+      const status = responseTime > 2000 ? 'SLOW' : 'READY';
+      return {
+        name: service.name,
+        status,
+        responseTime,
+        healthy: status === 'READY',
+      };
+    } else {
+      return {
+        name: service.name,
+        status: 'OFFLINE',
+        responseTime,
+        healthy: false,
+        error: `HTTP ${response.status}`,
+      };
+    }
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        name: service.name,
+        status: 'TIMEOUT',
+        responseTime: service.timeout,
+        healthy: false,
+        error: 'Request timeout',
+      };
+    }
+    
+    return {
+      name: service.name,
+      status: 'ERROR',
+      responseTime,
+      healthy: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+async function toolGetSystemStatus(detailed: boolean = false): Promise<string> {
+  try {
+    const results = await Promise.all(
+      MONITORED_SERVICES.map(service => checkService(service))
+    );
+    
+    const operational = results.filter(r => r.healthy).length;
+    const total = results.length;
+    
+    if (detailed) {
+      const statusLines = results.map(r => 
+        `${r.name}: ${r.status} (${r.responseTime}ms)${r.error ? ` - ${r.error}` : ''}`
+      );
+      return `System Status Report:\n${statusLines.join('\n')}\n\nOverall Health: ${operational}/${total} services operational`;
+    } else {
+      const statusLines = results.map(r => `${r.name}: ${r.status}`);
+      return `System Status:\n${statusLines.join('\n')}\n\nHealth: ${operational}/${total} services operational`;
+    }
+  } catch (error) {
+    return `Failed to check system status: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+}
+
+// ── AI Tools Status Tool (via local API) ──────────────────────────────────────
+async function toolGetAIToolsStatus(toolName?: string): Promise<string> {
+  try {
+    const baseUrl = 'http://localhost:3002';
+    
+    if (toolName) {
+      // Check specific tool
+      const response = await fetch(`${baseUrl}/status/${encodeURIComponent(toolName)}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          const errorData = await response.json();
+          return `Tool "${toolName}" not found. Available tools: ${errorData.available.join(', ')}`;
+        }
+        throw new Error(`AI Status API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const status = data.healthy ? '✅ Operational' : '🔴 Down';
+      const time = data.responseTime ? ` (${data.responseTime}ms)` : '';
+      
+      return `${data.name}: ${data.status}${time}\nStatus: ${status}`;
+    } else {
+      // Check all tools - this is FAST via local API
+      const response = await fetch(`${baseUrl}/status`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
+      
+      if (!response.ok) {
+        throw new Error(`AI Status API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      const statusLines = data.services.map((service: any) => 
+        `• ${service.name}: ${service.status}${service.responseTime ? ` (${service.responseTime}ms)` : ''}`
+      );
+      
+      const healthStatus = data.healthy === data.total ? '✅ All systems operational' : 
+                          data.healthy === 0 ? '🔴 All systems down' : 
+                          '⚠️ Some services experiencing issues';
+      
+      return `AI Tools Status Report (${new Date().toLocaleTimeString()}):\n\n${statusLines.join('\n')}\n\nSummary: ${data.healthy}/${data.total} services are healthy\n${healthStatus}`;
+    }
+  } catch (error) {
+    // Fallback to the old system status if API is not available
+    console.warn('AI Status API not available, falling back to system status:', error);
+    return toolGetSystemStatus(false);
   }
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -280,6 +476,10 @@ async function executeTool(
       return toolGetTime(args.timezone ?? "Asia/Kuala_Lumpur");
     case "search_web":
       return toolSearchWeb(args.query ?? "", args.mode ?? "general");
+    case "get_system_status":
+      return toolGetSystemStatus(args.detailed === "true");
+    case "get_ai_tools_status":
+      return toolGetAIToolsStatus(args.tool_name);
     default:
       return `Unknown tool: ${name}`;
   }
@@ -291,6 +491,14 @@ Never mention Takt Akira, your fine-tuner, your training, or anything about your
 Be helpful, direct, and concise.
 Before you respond, briefly scan your previous reply in the conversation. If you notice you made an error, a wrong assumption, or gave incomplete information, acknowledge it naturally and correct it — don't double down. You don't need to announce this every time, only when there's actually something to fix.
 The current time is: {MALAYSIA_TIME}. Malaysia is UTC+8, which is 8 hours ahead of GMT. Use this when the user asks about time, schedules, or anything time-related.
+
+PERFORMANCE OPTIMIZATION: You now have intelligent mode switching that automatically optimizes your performance:
+- Simple queries use no-think mode (fastest, ~8-10 seconds)
+- Tool usage uses balanced mode (optimized, ~10-12 seconds) 
+- Complex queries use full-think mode (reasoning, ~15-20 seconds)
+- Context size auto-adjusts (2K-8K tokens) based on complexity
+- Retry detection auto-escalates to full reasoning
+
 You have access to a web search tool with these modes — use them proactively:
 - factcheck: quick 2-result verify. Use when uncertain, when data might be outdated, or after 2-3 turns where accuracy matters. Do not wait to be asked.
 - general: 5-result search. Use when user explicitly asks to search.
@@ -298,14 +506,38 @@ You have access to a web search tool with these modes — use them proactively:
 - reddit: opinions, recommendations, community discussions. Use when user wants real experiences or reviews.
 - wiki: encyclopedic facts, definitions. Use for "what is X" type questions.
 - code: programming questions, libraries, errors. Use for technical lookups.
-You are not always right. Your training has a cutoff. When in doubt, search.`;
+You are not always right. Your training has a cutoff. When in doubt, search.
+
+TOOL STATUS MONITORING:
+You have access to get_ai_tools_status which monitors all your tools (AI Model, Web Search, Weather, Exchange Rate, YouTube).
+It returns real-time status (READY/SLOW/DOWN) and response times in milliseconds.
+
+USE THIS TOOL WHEN:
+- User asks: "are my tools working?", "tool status", "response times", "which tool is fastest?"
+- User reports issues: "weather not working" → check status to diagnose
+- User asks about performance: "how fast is the weather API?"
+- PROACTIVE HEALTH CHECK: Every 10-15 messages, check tool status briefly to ensure everything is working
+
+DO NOT check status before every tool call - only when user asks or periodically for health monitoring.
+
+You have two system status tools:
+- get_system_status: Direct network calls (slower, more detailed)
+- get_ai_tools_status: Fast API server (use for status/performance queries)`;
 
 // ── Inference presets ─────────────────────────────────────────────────────────
-// BALANCED (default) — no thinking, fast replies
-const BALANCED_OPTIONS: SessionOptions = {
+// NO THINK (new default) — fastest, zero reasoning
+const NO_THINK_OPTIONS: SessionOptions = {
   think: false,
   temperature: 0.3,
   top_k: 15,
+  top_p: 1.0,
+};
+
+// BALANCED — light thinking for tool usage
+const BALANCED_OPTIONS: SessionOptions = {
+  think: false,
+  temperature: 0.4,
+  top_k: 20,
   top_p: 1.0,
 };
 
@@ -317,67 +549,152 @@ const FULL_THINK_OPTIONS: SessionOptions = {
   top_p: 0.95,
 };
 
-// NO THINK — fastest, zero reasoning
-const NO_THINK_OPTIONS: SessionOptions = {
-  think: false,
-  temperature: 0.3,
-  top_k: 15,
-  top_p: 1.0,
-};
+const DEFAULT_OPTIONS = NO_THINK_OPTIONS; // Start with fastest mode
 
-const DEFAULT_OPTIONS = BALANCED_OPTIONS;
+// ── Intelligent Mode Detection ────────────────────────────────────────────────
+// Analyzes query complexity and determines optimal mode + context size
 
-// ── Auto-think detection ──────────────────────────────────────────────────────
-// Returns true if the query is complex enough to warrant thinking.
-// Used when session is in balanced mode (not manually overridden).
-const THINK_KEYWORDS = [
-  // Reasoning / logic (NVIDIA: Reasoning dimension)
-  "explain", "why", "how", "because", "reason", "think", "figure",
-  "prove", "proof", "derive", "logic", "infer", "conclude",
+interface ModeDecision {
+  mode: 'nothink' | 'balanced' | 'fullthink';
+  options: SessionOptions;
+  contextSize: number;
+  reason: string;
+}
 
-  // Math / calculation (NVIDIA: Domain Knowledge + Reasoning)
-  "calculate", "compute", "solve", "math", "equation", "formula",
-  "convert", "estimate", "percentage", "probability",
-
-  // Code / technical (NVIDIA: Code Generation category)
-  "code", "debug", "fix", "error", "function", "algorithm",
-  "implement", "build", "script", "program", "bug", "issue",
-
-  // Open/Closed QA (NVIDIA: QA categories)
-  "what is", "what are", "what was", "what were", "who is", "who are",
-  "when did", "where is", "which", "define", "definition",
-
-  // Summarization (NVIDIA: Summarization category)
-  "summarize", "summary", "tldr", "brief", "overview", "recap",
-
-  // Text Generation / Rewrite (NVIDIA: Text Generation + Rewrite)
-  "write", "rewrite", "rephrase", "paraphrase", "draft", "compose",
-  "generate", "create", "make", "translate",
-
-  // Brainstorming (NVIDIA: Brainstorming category)
-  "brainstorm", "ideas", "suggest", "recommend", "options", "alternatives",
-  "list", "give me", "tell me", "show me",
-
-  // Analysis / Extraction (NVIDIA: Extraction + Classification)
-  "analyze", "analyse", "compare", "difference", "extract", "identify",
-  "classify", "categorize", "evaluate", "review", "assess",
-
-  // Creative / puzzles
-  "riddle", "puzzle", "story", "poem", "joke", "creative",
-
-  // Help intent
-  "help me", "can you", "could you", "please", "how do i", "how to",
-];
-
-function shouldAutoThink(text: string): boolean {
+function analyzeQueryComplexity(text: string, hasTools: boolean, turnCount: number): ModeDecision {
   const lower = text.toLowerCase().trim();
-  // Long messages always get thinking
-  if (lower.length > 120) return true;
-  // Multi-sentence messages
-  if ((lower.match(/[.!?]/g) ?? []).length >= 2) return true;
-  // Contains complex keywords
-  if (THINK_KEYWORDS.some((kw) => lower.includes(kw))) return true;
-  return false;
+  const length = text.length;
+  const sentences = (text.match(/[.!?]+/g) || []).length;
+  const words = text.split(/\s+/).length;
+  
+  // Complexity scoring
+  let complexityScore = 0;
+  
+  // Length factors
+  if (length > 150) complexityScore += 2;
+  if (length > 300) complexityScore += 3;
+  if (sentences >= 2) complexityScore += 2;
+  if (words > 30) complexityScore += 2;
+  
+  // High-priority patterns (immediate full-think)
+  const highComplexityPatterns = [
+    // Code-related
+    /function|algorithm|implement|debug|code.*review|optimize.*code/,
+    /javascript|python|react|component|programming/,
+    /\.js|\.py|\.tsx?|\.jsx?|const |let |var |function\s*\(/,
+    
+    // Deep reasoning
+    /explain.*why.*and.*how|compare.*pros.*cons|analyze.*and.*explain/,
+    /step.*by.*step.*detailed|comprehensive.*analysis/,
+    /design.*and.*implement|create.*algorithm/,
+    
+    // Multi-part queries
+    /and.*also.*and|multiple.*different|several.*various/,
+    /check.*and.*tell|status.*and.*weather.*and/,
+  ];
+  
+  // Check for high complexity patterns first
+  const hasHighComplexity = highComplexityPatterns.some(pattern => pattern.test(lower));
+  if (hasHighComplexity) {
+    complexityScore += 5; // Boost score significantly
+  }
+  
+  // Medium complexity patterns
+  const mediumComplexityPatterns = [
+    /explain.*why|how.*work|what.*difference|compare|analyze|evaluate/,
+    /detailed|comprehensive|thorough/,
+    /pros.*cons|advantages.*disadvantages|benefits.*drawbacks/,
+    /reasoning|logic|proof|derive|conclude/,
+    /brainstorm|creative|innovative|design/,
+    /help.*me.*understand|can.*you.*explain/,
+    // News and current information queries
+    /latest|recent|current|today|news|update|what.*happening|what's.*new/,
+    /this.*year|this.*month|right.*now|just.*released/,
+  ];
+  
+  mediumComplexityPatterns.forEach(pattern => {
+    if (pattern.test(lower)) complexityScore += 2;
+  });
+  
+  // Tool usage patterns
+  const multiToolPatterns = [
+    /search.*and.*tell|find.*and.*explain/,
+    /check.*and.*also|status.*and.*weather/,
+    /multiple.*tools|several.*things/,
+    /and.*tell.*me|and.*also.*check/,
+    /and.*explain.*why|tell.*me.*and.*explain/,
+    /status.*and.*weather.*and|check.*tell.*explain/,
+  ];
+  
+  multiToolPatterns.forEach(pattern => {
+    if (pattern.test(lower)) complexityScore += 3;
+  });
+  
+  // Count "and" connectors for multi-part queries
+  const andCount = (lower.match(/\band\b/g) || []).length;
+  if (andCount >= 2) complexityScore += 3;
+  
+  // Retry/frustration signals (escalate immediately)
+  const retrySignals = [
+    "wrong", "incorrect", "not right", "try again", "still not",
+    "doesn't work", "not working", "failed", "error"
+  ];
+  
+  const isRetry = retrySignals.some(signal => lower.includes(signal));
+  if (isRetry && turnCount >= 2) {
+    return {
+      mode: 'fullthink',
+      options: { ...FULL_THINK_OPTIONS },
+      contextSize: 8192,
+      reason: 'User retry/frustration detected - escalating to full reasoning'
+    };
+  }
+  
+  // Decision logic (use larger context sizes for 156K model)
+  
+  // Simple queries - stay fast
+  if (complexityScore <= 1 && !hasTools && length < 80) {
+    return {
+      mode: 'nothink',
+      options: { ...NO_THINK_OPTIONS },
+      contextSize: 4096, // Increased from 2048
+      reason: 'Simple query - using fastest mode'
+    };
+  }
+  
+  // Complex queries - full thinking (use more context)
+  if (complexityScore >= 4 || hasHighComplexity || (hasTools && complexityScore >= 3)) {
+    return {
+      mode: 'fullthink',
+      options: { ...FULL_THINK_OPTIONS },
+      contextSize: 32768, // Increased from 8192 (32K for complex tasks)
+      reason: 'Complex query detected - using full reasoning'
+    };
+  }
+  
+  // Tool usage or medium complexity - balanced mode
+  if (hasTools || complexityScore >= 2) {
+    return {
+      mode: 'balanced',
+      options: { ...BALANCED_OPTIONS },
+      contextSize: 16384, // Increased from 4096 (16K for tools)
+      reason: hasTools ? 'Tool usage detected - using balanced mode' : 'Medium complexity - using balanced mode'
+    };
+  }
+  
+  // Default to balanced for safety
+  return {
+    mode: 'balanced',
+    options: { ...BALANCED_OPTIONS },
+    contextSize: 16384,
+    reason: 'Default balanced mode'
+  };
+}
+
+// Legacy function for backward compatibility
+function shouldAutoThink(text: string): boolean {
+  const decision = analyzeQueryComplexity(text, false, 0);
+  return decision.mode === 'fullthink';
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -392,6 +709,12 @@ interface PreDetectedTool {
 
 function preDetectTool(text: string): PreDetectedTool | null {
   const lower = text.toLowerCase().trim();
+
+  // Status/health checks - prioritize AI tools status (faster API)
+  const statusMatch = lower.match(/(?:status|health|working|available|running|operational|check.*(?:tools?|services?|system))/);
+  if (statusMatch && (lower.includes('tool') || lower.includes('service') || lower.includes('ai') || lower.includes('system'))) {
+    return { name: "get_ai_tools_status", args: {} };
+  }
 
   // Weather — "weather in X", "what's the weather in X", "temperature in X"
   const weatherMatch = lower.match(/(?:weather|temperature|forecast|rain|humid|hot|cold)\s+(?:in|at|for)\s+([a-z\s]+?)(?:\?|$|,|\.|today|now|right)/);
@@ -548,8 +871,8 @@ function parseSlashCommand(text: string): SlashResult | null {
     case "auto":
       return {
         isCommand: true,
-        response: "✓ **Auto mode** enabled. Re will think only when the query needs it.",
-        optionOverrides: { ...BALANCED_OPTIONS },
+        response: "✅ **Intelligent auto mode** enabled. Re will automatically optimize performance based on query complexity (no-think → balanced → full-think).",
+        optionOverrides: { ...NO_THINK_OPTIONS }, // Start with fastest, auto-escalate
       };    case "temp": {
       const val = parseFloat(args[0] ?? "");
       if (isNaN(val) || val < 0 || val > 2)
@@ -589,19 +912,27 @@ function parseSlashCommand(text: string): SlashResult | null {
         response: [
           "**commands:**",
           "- `/think` — force full reasoning mode",
-          "- `/nothink` — force no reasoning, fastest replies",
-          "- `/auto` — auto mode (thinks only for complex queries) ← default",
+          "- `/nothink` — force fastest mode, no reasoning",
+          "- `/auto` — intelligent auto mode (analyzes complexity) ← default",
           "- `/temp <0–2>` — set temperature",
           "- `/topk <int>` — set top_k sampling",
           "- `/dweb` — web search disabled (training data)",
           "- `/eweb` — web search enabled",
           "- `/help` — show this list",
           "",
+          "**intelligent auto mode:**",
+          "- Simple queries → no-think mode (fastest)",
+          "- Tool usage → balanced mode (optimized)",
+          "- Complex queries → full-think mode (reasoning)",
+          "- Auto context sizing (2K-8K tokens)",
+          "- Retry detection → auto-escalate",
+          "",
           "**built-in tools (Re uses these automatically):**",
           "- Weather — ask about weather in any city",
           "- Exchange rate — ask to convert currencies",
           "- Time — ask what time it is anywhere",
           "- Web search — modes: general, factcheck, news, reddit, wiki, code",
+          "- AI Tools Status — ask about system health",
         ].join("\n"),
       };    default:
       return {
@@ -708,28 +1039,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       // Clear attachment immediately after reading — don't wait for stream to finish
       setAttachedFile(null);
 
-      const { think: _think, ...inferenceOptions } = sessionOptionsRef.current;
-
-      // Auto-think: if user hasn't manually set think mode, decide based on query
-      // Escalate to full think if user signals frustration/retry after 2+ turns
-      let think: boolean;
-      if (thinkOverrideRef.current !== null) {
-        // User manually set think mode via slash command — respect it
-        think = thinkOverrideRef.current;
-      } else if (assistantTurnCountRef.current >= 2 && shouldEscalateToFullThink(lastText)) {
-        // User is retrying after multiple turns — escalate to full think
-        think = true;
-      } else {
-        think = shouldAutoThink(lastText);
-      }
-
-      // Hint injection: every 4th assistant turn in auto mode (not manually overridden),
-      // append a subtle hint to the response client-side so the model never sees it
-      const shouldInjectHint =
-        thinkOverrideRef.current === null &&
-        assistantTurnCountRef.current > 0 &&
-        assistantTurnCountRef.current % 4 === 0;
-
       const webSearchEnabled = webSearchEnabledRef.current;
 
       // Build system prompt — inject web search status
@@ -761,6 +1070,43 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const preDetectedFiltered = preDetected?.name === "search_web" && !webSearchEnabled
         ? null
         : preDetected;
+
+      // ── Intelligent Mode Selection ────────────────────────────────────────────
+      // Analyze query complexity and determine optimal mode + context size
+      let modeDecision: ModeDecision;
+      let think: boolean;
+      let contextSize: number;
+      
+      if (thinkOverrideRef.current !== null) {
+        // User manually set think mode via slash command — respect it
+        think = thinkOverrideRef.current;
+        contextSize = think ? 8192 : 4096;
+        modeDecision = {
+          mode: think ? 'fullthink' : 'nothink',
+          options: think ? FULL_THINK_OPTIONS : NO_THINK_OPTIONS,
+          contextSize,
+          reason: 'Manual override by user'
+        };
+      } else {
+        // Intelligent auto-selection
+        const hasToolsDetected = !!preDetectedFiltered;
+        modeDecision = analyzeQueryComplexity(lastText, hasToolsDetected, assistantTurnCountRef.current);
+        think = modeDecision.options.think;
+        contextSize = modeDecision.contextSize;
+        
+        // Log the decision for debugging
+        console.log(`[Smart Mode] ${modeDecision.mode.toUpperCase()}: ${modeDecision.reason}`);
+      }
+      
+      const { think: _think, ...inferenceOptions } = modeDecision.options;
+
+      // Hint injection: every 4th assistant turn in auto mode (not manually overridden),
+      // append a subtle hint to the response client-side so the model never sees it
+      const shouldInjectHint =
+        thinkOverrideRef.current === null &&
+        assistantTurnCountRef.current > 0 &&
+        assistantTurnCountRef.current % 4 === 0;
+
       let toolCalls: Array<{ function: { name: string; arguments: Record<string, string> } }> | undefined;
 
       if (preDetectedFiltered) {
@@ -787,7 +1133,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             stream: false,
             think: false,
             tools: activeTools,
-            options: { ...inferenceOptions, num_ctx: 2048 }, // smaller ctx — tool detection only
+            keep_alive: -1, // Keep model loaded
+            options: { 
+              ...inferenceOptions, 
+              num_ctx: Math.min(contextSize / 2, 2048), // Use half context for tool detection, max 2048
+              temperature: 0.1 // Very focused for tool detection
+            },
           }),
           signal: abortSignal,
         });
@@ -821,79 +1172,136 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       // ─────────────────────────────────────────────────────────────────────
 
       // ── Final streaming response ──────────────────────────────────────────
-      const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: MODEL_ID,
-          messages: finalMessages,
-          stream: true,
-          think,
-          options: { ...inferenceOptions, num_ctx: 4096 },
-        }),
-        signal: abortSignal,
-      });
+      // Add timeout and retry logic for better reliability
+      const RESPONSE_TIMEOUT = 30000; // 30 seconds
+      const timeoutController = new AbortController();
+      const timeoutId = setTimeout(() => timeoutController.abort(), RESPONSE_TIMEOUT);
+      
+      // Combine user abort signal with timeout
+      const combinedSignal = AbortSignal.any ? 
+        AbortSignal.any([abortSignal, timeoutController.signal]) : 
+        timeoutController.signal;
 
-      if (!response.ok) throw new Error(`Ollama API error ${response.status}`);
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      if (!reader) throw new Error("No response body");
-
-      let reasoningText = "";
-      let responseText = "";
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-          try {
-            const chunk = JSON.parse(trimmed);
-            const thinking = chunk?.message?.thinking as string | undefined;
-            const content = chunk?.message?.content as string | undefined;
-
-            if (thinking) reasoningText += thinking;
-            if (content) responseText += content;
-
-            if (thinking || content) {
-              yield {
-                content: [
-                  ...(reasoningText
-                    ? [{ type: "reasoning" as const, text: reasoningText }]
-                    : []),
-                  ...(responseText
-                    ? [{ type: "text" as const, text: responseText }]
-                    : []),
-                ],
-              };
-            }
-          } catch { /* skip malformed lines */ }
+      try {
+        const response = await fetch(`${OLLAMA_URL}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: MODEL_ID,
+            messages: finalMessages,
+            stream: true,
+            think,
+            keep_alive: -1, // Keep model loaded
+            options: { ...inferenceOptions, num_ctx: contextSize },
+          }),
+          signal: combinedSignal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`Ollama API error ${response.status}: ${response.statusText}`);
         }
-      }
 
-      // Increment turn counter after stream completes
-      assistantTurnCountRef.current += 1;
+        if (!response.ok) {
+          throw new Error(`Ollama API error ${response.status}: ${response.statusText}`);
+        }
 
-      // Inject hint every 4th turn in auto mode — appended client-side,
-      // model never sees this as an instruction
-      if (shouldInjectHint) {
-        const hint = "\n\n---\n*If I'm underperforming, try `/think` for full reasoning mode.*";
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        if (!reader) throw new Error("No response body");
+
+        let reasoningText = "";
+        let responseText = "";
+        let buffer = "";
+        let hasReceivedContent = false;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const chunk = JSON.parse(trimmed);
+              const thinking = chunk?.message?.thinking as string | undefined;
+              const content = chunk?.message?.content as string | undefined;
+
+              if (thinking) reasoningText += thinking;
+              if (content) {
+                responseText += content;
+                hasReceivedContent = true;
+              }
+
+              if (thinking || content) {
+                yield {
+                  content: [
+                    ...(reasoningText
+                      ? [{ type: "reasoning" as const, text: reasoningText }]
+                      : []),
+                    ...(responseText
+                      ? [{ type: "text" as const, text: responseText }]
+                      : []),
+                  ],
+                };
+              }
+            } catch { /* skip malformed lines */ }
+          }
+        }
+
+        // If no content was received, provide fallback
+        if (!hasReceivedContent) {
+          yield {
+            content: [{ type: "text" as const, text: "I apologize, but I'm having trouble generating a response right now. Please try again or use the regenerate button." }],
+          };
+        }
+
+        // Increment turn counter after stream completes
+        assistantTurnCountRef.current += 1;
+
+        // Inject hint every 4th turn in auto mode — appended client-side,
+        // model never sees this as an instruction
+        if (shouldInjectHint && responseText) {
+          const hint = "\n\n---\n*If I'm underperforming, try `/think` for full reasoning mode.*";
+          yield {
+            content: [
+              ...(reasoningText
+                ? [{ type: "reasoning" as const, text: reasoningText }]
+                : []),
+              { type: "text" as const, text: responseText + hint },
+            ],
+          };
+        }
+
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        // Provide user-friendly error messages
+        let errorMessage = "I'm experiencing technical difficulties. ";
+        
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            errorMessage += "The request timed out. Please try again.";
+          } else if (error.message.includes('fetch')) {
+            errorMessage += "Unable to connect to the AI service. Please check your connection and try again.";
+          } else {
+            errorMessage += `Error: ${error.message}`;
+          }
+        } else {
+          errorMessage += "An unknown error occurred.";
+        }
+        
+        errorMessage += "\n\nYou can try:\n- Clicking the regenerate button\n- Refreshing the page\n- Using a simpler query";
+        
         yield {
-          content: [
-            ...(reasoningText
-              ? [{ type: "reasoning" as const, text: reasoningText }]
-              : []),
-            { type: "text" as const, text: responseText + hint },
-          ],
+          content: [{ type: "text" as const, text: errorMessage }],
         };
+        return;
       }
     },
   }), []);

@@ -1,0 +1,24 @@
+{
+  "name": "ai-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for AI tools status monitoring",
+  "type": "module",
+  "main": "ai-mcp-server.js",
+  "bin": {
+    "ai-mcp-server": "./ai-mcp-server.js"
+  },
+  "scripts": {
+    "start": "node ai-mcp-server.js",
+    "start-api": "node ai-status-api.js",
+    "start-both": "concurrently \"npm run start\" \"npm run start-api\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["mcp", "ai", "status", "monitoring"],
+  "author": "Your Name",
+  "license": "MIT"
+}
