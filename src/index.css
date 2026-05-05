@@ -484,7 +484,7 @@ input[type="range"]::-moz-range-thumb {
 /* ── Chat scrollbar — primary color themed, hidden on mobile ── */
 .chat-scrollbar {
   scrollbar-width: none; /* hide on mobile by default */
-  scrollbar-color: var(--primary) transparent;
+  scrollbar-color: oklch(0.872 0.071 342 / 0.25) transparent;
 }
 
 /* ── Hide stray prose list markers in empty assistant messages ── */
@@ -499,7 +499,7 @@ input[type="range"]::-moz-range-thumb {
     scrollbar-width: thin;
   }
   .chat-scrollbar::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
   }
 }
 .chat-scrollbar::-webkit-scrollbar-track {
@@ -507,10 +507,10 @@ input[type="range"]::-moz-range-thumb {
 }
 .chat-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 9999px;
-  background: color-mix(in oklch, var(--primary) 20%, transparent);
+  background: oklch(0.872 0.071 342 / 0.25);
 }
 .chat-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in oklch, var(--primary) 40%, transparent);
+  background: oklch(0.872 0.071 342 / 0.5);
 }
 @keyframes musicbar {
   from { transform: scaleY(0.3); }
@@ -790,4 +790,37 @@ img, a {
 }
 .terminal-line {
     animation: terminal-fade-in 0.3s ease-in-out;
+}
+
+/* ============================================
+   CHAT PAGE TEXT SELECTION OVERRIDE
+   ============================================ */
+
+/* Enable text selection on chat page for all content */
+[data-chat-page="true"] *:not(button):not([role="button"]):not(input):not(textarea) {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
+/* Keep buttons and interactive elements non-selectable */
+[data-chat-page="true"] button,
+[data-chat-page="true"] [role="button"],
+[data-chat-page="true"] svg,
+[data-chat-page="true"] img {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Ensure input/textarea remain selectable */
+[data-chat-page="true"] input,
+[data-chat-page="true"] textarea {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
 }

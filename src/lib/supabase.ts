@@ -91,6 +91,7 @@ export type Profile = {
   username?: string | null
   avatar_url?: string | null
   role: 'admin' | 'editor' | 'member'
+  terminal_key?: string | null
   created_at: string
 }
 

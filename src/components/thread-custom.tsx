@@ -33,11 +33,25 @@ import {
   RefreshCwIcon,
   SquareIcon,
   XIcon,
+  ImageIcon,
 } from "lucide-react";
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { AttachedFile } from "@/pages/chat/page";
 import { CanvasText } from "@/components/ui/canvas-text";
+import { UserMessageImages } from "@/components/message-images";
+import { useChatContext } from "@/components/providers/chat";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // ── Minimal Web Audio tones for mic on/off ────────────────────────────────────
 function playMicTone(type: "on" | "off") {
@@ -127,6 +141,125 @@ const COMPOSER_INPUT_SIZE = "text-[16px] sm:text-[14px]";
 const COMPOSER_INPUT_LEADING = "leading-[1.3]";
 const USER_BUBBLE_SIZE = "text-[15px] sm:text-[14px]";
 const USER_BUBBLE_LEADING = "leading-[1.4]";
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Image Attachment Preview Component ───────────────────────────────────────
+interface ImageAttachmentPreviewProps {
+  src: string;
+  name: string;
+}
+
+const ImageAttachmentPreview: FC<ImageAttachmentPreviewProps> = ({ src, name }) => {
+  const [isHoverOpen, setIsHoverOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isTouchDeviceRef = useRef(false);
+
+  // Handle long press start
+  const handleTouchStart = (e: React.TouchEvent) => {
+    isTouchDeviceRef.current = true;
+    e.preventDefault(); // Prevent default touch behavior
+    
+    longPressTimerRef.current = setTimeout(() => {
+      setIsHoverOpen(true);
+    }, 500); // 500ms for long press
+  };
+
+  // Handle long press end
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    // If hover was open (long press), just close it
+    if (isHoverOpen) {
+      setIsHoverOpen(false);
+    } else {
+      // If hover wasn't open (quick tap), open dialog
+      setIsDialogOpen(true);
+    }
+  };
+
+  // Handle touch cancel (e.g., scroll)
+  const handleTouchCancel = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setIsHoverOpen(false);
+  };
+
+  // Handle mouse click for desktop
+  const handleClick = () => {
+    if (!isTouchDeviceRef.current) {
+      setIsDialogOpen(true);
+    }
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <>
+      <HoverCard open={isHoverOpen} onOpenChange={setIsHoverOpen}>
+        <HoverCardTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-lg border border-primary/40 bg-background px-3 py-2 text-sm hover:bg-primary/10 hover:border-primary/60 transition-colors touch-none"
+            onClick={handleClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <ImageIcon className="h-4 w-4 text-primary" />
+            <span className="text-foreground">{name}</span>
+          </button>
+        </HoverCardTrigger>
+
+        <HoverCardContent className="w-80" side="top" align="end">
+          <div className="space-y-3">
+            <div className="aspect-video overflow-hidden rounded-md bg-muted">
+              <img
+                alt={name}
+                className="h-full w-full object-cover"
+                src={src}
+              />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-semibold text-sm">{name}</h4>
+              <p className="text-muted-foreground text-xs">Image attachment</p>
+            </div>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="p-2 sm:max-w-3xl [&>button]:rounded-full [&>button]:bg-foreground/60 [&>button]:p-1 [&>button]:opacity-100 [&>button]:ring-0! [&_svg]:text-background [&>button]:hover:[&_svg]:text-destructive">
+          <DialogTitle className="sr-only">
+            Image Attachment Preview
+          </DialogTitle>
+          <div className="relative mx-auto flex max-h-[80dvh] w-full items-center justify-center overflow-hidden bg-background">
+            <img
+              src={src}
+              alt={name}
+              className="block h-auto max-h-[80vh] w-auto max-w-full object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ThreadProps {
@@ -290,7 +423,7 @@ const ThreadScrollToBottom: FC = () => (
     <TooltipIconButton
       tooltip="Scroll to bottom"
       variant="outline"
-      className="absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible hover:text-primary hover:bg-primary/10 hover:border-primary/30"
+      className="absolute -top-10 z-10 self-center rounded-full p-4 disabled:invisible hover:text-primary hover:bg-primary/5 hover:border-primary/20 opacity-60 hover:opacity-100"
     >
       <ArrowDownIcon />
     </TooltipIconButton>
@@ -352,6 +485,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aui = useAui();
   const [isDragOver, setIsDragOver] = useState(false);
+  const { setLastSentImage } = useChatContext();
 
   // ── Message history (↑/↓ navigation) ───────────────────────────────────────
   const historyRef = useRef<string[]>([]);
@@ -404,6 +538,15 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
     }
     historyIdxRef.current = -1;
     savedDraftRef.current = "";
+    
+    // If there's a custom image attachment, store it
+    if (attachedFile && attachedFile.type === "image") {
+      const imageDataUrl = `data:${attachedFile.mimeType};base64,${attachedFile.base64}`;
+      setLastSentImage({ dataUrl: imageDataUrl, timestamp: Date.now() });
+    } else {
+      // Clear last sent image if sending a message without an image
+      setLastSentImage(null);
+    }
   };
   // ───────────────────────────────────────────────────────────────────────────
 
@@ -506,7 +649,7 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
 
         {/* Input row */}
         <div className="flex items-center gap-2 px-2 py-2">
-          {/* File picker */}
+          {/* File picker - custom system for all file types */}
           <div className="shrink-0">
             <input
               ref={fileInputRef}
@@ -683,12 +826,12 @@ const AssistantMessage: FC = () => {
     >
       <div
         data-slot="aui_assistant-message-content"
-        className="wrap-break-word px-2 text-foreground"
+        className="wrap-break-word px-2 text-foreground selectable-text"
       >
         {isRunning && <div className="py-1"><PulseLoader /></div>}
         <div
           className={cn(
-            "prose max-w-none",
+            "prose max-w-none selectable-text",
             PROSE_SIZE,
             PROSE_LEADING,
             "[&_p]:my-2 [&_p]:leading-[1.55]",
@@ -746,29 +889,52 @@ const AssistantActionBar: FC = () => (
 
 // ── User message ──────────────────────────────────────────────────────────────
 
-const UserMessage: FC = () => (
-  <MessagePrimitive.Root
-    data-slot="aui_user-message-root"
-    data-role="user"
-    className="fade-in slide-in-from-bottom-1 grid animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [&:where(>*)]:col-start-2"
-  >
-    <div className="relative col-start-2 min-w-0">
-      <div
-        className={cn(
-          "wrap-break-word peer rounded-2xl bg-muted px-4 py-2.5 text-foreground empty:hidden",
-          USER_BUBBLE_SIZE,
-          USER_BUBBLE_LEADING,
-        )}
-      >
-        <MessagePrimitive.Parts />
+const UserMessage: FC = () => {
+  const { lastSentImage } = useChatContext();
+  const messages = useAuiState((s) => s.thread.messages);
+  const messageId = useAuiState((s) => s.message.id);
+  
+  // Check if this is the last user message
+  const userMessages = messages.filter(m => m.role === "user");
+  const isLastUserMessage = userMessages.length > 0 && userMessages[userMessages.length - 1].id === messageId;
+  
+  // Show the last sent image only on the most recent user message
+  const showCustomImage = isLastUserMessage && lastSentImage;
+  
+  return (
+    <MessagePrimitive.Root
+      data-slot="aui_user-message-root"
+      data-role="user"
+      className="fade-in slide-in-from-bottom-1 grid animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [&:where(>*)]:col-start-2"
+    >
+      {/* Image attachments from assistant-ui system */}
+      <UserMessageImages />
+      
+      {/* Custom image attachment preview - only on last user message */}
+      {showCustomImage && (
+        <div className="col-span-full col-start-1 row-start-1 flex w-full flex-row justify-end gap-2 mb-2">
+          <ImageAttachmentPreview src={lastSentImage.dataUrl} name="trash.jpg" />
+        </div>
+      )}
+      
+      <div className="relative col-start-2 min-w-0">
+        <div
+          className={cn(
+            "wrap-break-word peer rounded-2xl bg-muted px-4 py-2.5 text-foreground empty:hidden selectable-text",
+            USER_BUBBLE_SIZE,
+            USER_BUBBLE_LEADING,
+          )}
+        >
+          <MessagePrimitive.Parts />
+        </div>
+        <div className="absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden">
+          <UserActionBar />
+        </div>
       </div>
-      <div className="absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden">
-        <UserActionBar />
-      </div>
-    </div>
-    <BranchPicker className="col-span-full col-start-1 row-start-3 -me-1 justify-end" />
-  </MessagePrimitive.Root>
-);
+      <BranchPicker className="col-span-full col-start-1 row-start-3 -me-1 justify-end" />
+    </MessagePrimitive.Root>
+  );
+};
 
 const UserActionBar: FC = () => (
   <ActionBarPrimitive.Root
@@ -786,27 +952,87 @@ const UserActionBar: FC = () => (
 
 // ── Edit composer ─────────────────────────────────────────────────────────────
 
-const EditComposer: FC = () => (
-  <MessagePrimitive.Root
-    data-slot="aui_edit-composer-wrapper"
-    className="flex flex-col px-2"
-  >
-    <ComposerPrimitive.Root className="ms-auto flex w-full max-w-[85%] flex-col rounded-2xl bg-muted">
-      <ComposerPrimitive.Input
-        className="min-h-14 w-full resize-none bg-transparent p-4 text-foreground text-sm outline-none"
-        autoFocus
-      />
-      <div className="mx-3 mb-3 flex items-center gap-2 self-end">
-        <ComposerPrimitive.Cancel asChild>
-          <Button variant="ghost" size="sm">Cancel</Button>
-        </ComposerPrimitive.Cancel>
-        <ComposerPrimitive.Send asChild>
-          <Button size="sm">Send</Button>
-        </ComposerPrimitive.Send>
-      </div>
-    </ComposerPrimitive.Root>
-  </MessagePrimitive.Root>
-);
+const EditComposer: FC = () => {
+  const { lastSentImage, setLastSentImage } = useChatContext();
+  const messages = useAuiState((s) => s.thread.messages);
+  const messageId = useAuiState((s) => s.message.id);
+  
+  // Check if this message had an image
+  const userMessages = messages.filter(m => m.role === "user");
+  const isLastUserMessage = userMessages.length > 0 && userMessages[userMessages.length - 1].id === messageId;
+  const hadImage = isLastUserMessage && lastSentImage;
+  
+  const handleRemoveImage = () => {
+    setLastSentImage(null);
+  };
+  
+  // Handle paste for images
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          setLastSentImage({ dataUrl, timestamp: Date.now() });
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  };
+  
+  return (
+    <MessagePrimitive.Root
+      data-slot="aui_edit-composer-wrapper"
+      className="flex flex-col px-2"
+    >
+      {/* Show interactive image attachment chip if this message had an image */}
+      {hadImage && (
+        <div className="ms-auto mb-2 flex w-full max-w-[85%] flex-row justify-end gap-2">
+          <div className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1 text-xs text-primary">
+            <img
+              src={lastSentImage.dataUrl}
+              alt="trash.jpg"
+              className="size-6 rounded object-cover shrink-0"
+            />
+            <span className="max-w-[200px] truncate">trash.jpg</span>
+            <button
+              onClick={handleRemoveImage}
+              className="ml-0.5 shrink-0 rounded p-0.5 hover:bg-primary/20"
+              aria-label="Remove image"
+              type="button"
+            >
+              <XIcon size={10} />
+            </button>
+          </div>
+        </div>
+      )}
+      
+      <ComposerPrimitive.Root className="ms-auto flex w-full max-w-[85%] flex-col rounded-2xl bg-muted">
+        <ComposerPrimitive.Input
+          className="min-h-14 w-full resize-none bg-transparent p-4 text-foreground text-sm outline-none"
+          autoFocus
+          onPaste={handlePaste}
+        />
+        <div className="mx-3 mb-3 flex items-center gap-2 self-end">
+          <ComposerPrimitive.Cancel asChild>
+            <Button variant="ghost" size="sm">Cancel</Button>
+          </ComposerPrimitive.Cancel>
+          <ComposerPrimitive.Send asChild>
+            <Button size="sm">Resend</Button>
+          </ComposerPrimitive.Send>
+        </div>
+      </ComposerPrimitive.Root>
+    </MessagePrimitive.Root>
+  );
+};
 
 // ── Branch picker ─────────────────────────────────────────────────────────────
 

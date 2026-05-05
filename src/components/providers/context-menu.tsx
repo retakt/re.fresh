@@ -102,34 +102,6 @@ const globalContextMenuItems: ContextMenuItemConfig[] = [
 
 // Global context menu provider that covers the whole page
 export function ContextMenuProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => {
-      // Allow native context menu on chat page so users can copy text
-      if (window.location.pathname === '/chat') return;
-
-      // Allow default context menu on form inputs and text areas
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.contentEditable === 'true' ||
-        target.closest('[contenteditable="true"]') ||
-        target.closest('input') ||
-        target.closest('textarea')
-      ) {
-        return;
-      }
-      
-      e.preventDefault();
-    };
-
-    document.addEventListener('contextmenu', handleContextMenu);
-    
-    return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-    };
-  }, []);
-
   return (
     <SmoothUIContextMenu items={globalContextMenuItems}>
       <div className="min-h-screen w-full">

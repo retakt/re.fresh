@@ -9,7 +9,6 @@ import {
   useAuiState,
   useAui,
 } from "@assistant-ui/react";
-import { useShallow } from "zustand/shallow";
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +20,11 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { cn } from "@/lib/utils";
@@ -46,18 +50,43 @@ const useFileSrc = (file: File | undefined) => {
 };
 
 const useAttachmentSrc = () => {
-  const { file, src } = useAuiState(
-    useShallow((s): { file?: File; src?: string } => {
-      if (s.attachment.type !== "image") return {};
-      if (s.attachment.file) return { file: s.attachment.file };
-      const src = s.attachment.content?.filter((c) => c.type === "image")[0]
-        ?.image;
-      if (!src) return {};
-      return { src };
-    }),
-  );
+  const attachment = useAuiState((s) => s.attachment);
+  const [src, setSrc] = useState<string | undefined>(undefined);
 
-  return useFileSrc(file) ?? src;
+  useEffect(() => {
+    // Clear src if not an image
+    if (attachment.type !== "image") {
+      setSrc(undefined);
+      return;
+    }
+
+    // If there's a file, create object URL
+    if (attachment.file) {
+      const objectUrl = URL.createObjectURL(attachment.file);
+      setSrc(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    }
+
+    // Try to extract image URL from content
+    const content = attachment.content;
+    if (Array.isArray(content)) {
+      const imageContent = content.find((c: any) => c.type === "image") as any;
+      if (imageContent?.image) {
+        setSrc(imageContent.image);
+        return;
+      }
+    }
+
+    // Fallback: check if content has image property directly
+    if (content && typeof content === "object" && "image" in content) {
+      setSrc((content as any).image);
+      return;
+    }
+
+    setSrc(undefined);
+  }, [attachment]);
+
+  return src;
 };
 
 type AttachmentPreviewProps = {
@@ -123,6 +152,36 @@ const AttachmentThumb: FC = () => {
   );
 };
 
+const AttachmentHoverPreview: FC<PropsWithChildren> = ({ children }) => {
+  const src = useAttachmentSrc();
+  const isImage = useAuiState((s) => s.attachment.type === "image");
+  const fileName = useAuiState((s) => s.attachment.name);
+
+  // If no image source or not an image type, just return children without hover
+  if (!src || !isImage) return children;
+
+  return (
+    <HoverCard openDelay={200}>
+      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+      <HoverCardContent className="w-80" side="top" align="center">
+        <div className="space-y-3">
+          <div className="aspect-video overflow-hidden rounded-md bg-muted">
+            <img
+              alt={fileName || "Image preview"}
+              className="h-full w-full object-contain"
+              src={src}
+            />
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-semibold text-sm">{fileName || "Image"}</h4>
+            <p className="text-muted-foreground text-xs">Image attachment</p>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
 const AttachmentUI: FC = () => {
   const aui = useAui();
   const isComposer = aui.attachment.source !== "message";
@@ -150,18 +209,20 @@ const AttachmentUI: FC = () => {
           isImage && "aui-attachment-root-composer only:*:first:size-24",
         )}
       >
-        <AttachmentPreviewDialog>
-          <TooltipTrigger asChild>
-            <div
-              className="aui-attachment-tile size-14 cursor-pointer overflow-hidden rounded-[calc(var(--composer-radius)-var(--composer-padding))] border bg-muted transition-opacity hover:opacity-75"
-              role="button"
-              tabIndex={0}
-              aria-label={`${typeLabel} attachment`}
-            >
-              <AttachmentThumb />
-            </div>
-          </TooltipTrigger>
-        </AttachmentPreviewDialog>
+        <AttachmentHoverPreview>
+          <AttachmentPreviewDialog>
+            <TooltipTrigger asChild>
+              <div
+                className="aui-attachment-tile size-14 cursor-pointer overflow-hidden rounded-[calc(var(--composer-radius)-var(--composer-padding))] border bg-muted transition-opacity hover:opacity-75"
+                role="button"
+                tabIndex={0}
+                aria-label={`${typeLabel} attachment`}
+              >
+                <AttachmentThumb />
+              </div>
+            </TooltipTrigger>
+          </AttachmentPreviewDialog>
+        </AttachmentHoverPreview>
         {isComposer && <AttachmentRemove />}
       </AttachmentPrimitive.Root>
       <TooltipContent side="top">

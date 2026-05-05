@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import type { ChatModelAdapter, ChatModelRunOptions } from "@assistant-ui/react";
 import { PauseDictationAdapter } from "@/lib/pause-dictation-adapter";
+import { ImageAttachmentAdapter } from "@/lib/image-attachment-adapter";
 import type { AttachedFile } from "@/pages/chat/page";
 
 // ── Ollama config ─────────────────────────────────────────────────────────────
@@ -947,6 +948,8 @@ interface ChatContextValue {
   sessionId: string;
   attachedFile: AttachedFile | null;
   setAttachedFile: (f: AttachedFile | null) => void;
+  lastSentImage: { dataUrl: string; timestamp: number } | null;
+  setLastSentImage: (img: { dataUrl: string; timestamp: number } | null) => void;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -960,6 +963,7 @@ export function useChatContext() {
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const sessionId = SESSION_ID;
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
+  const [lastSentImage, setLastSentImage] = useState<{ dataUrl: string; timestamp: number } | null>(null);
 
   const attachedFileRef = useRef<AttachedFile | null>(null);
   attachedFileRef.current = attachedFile;
@@ -1010,7 +1014,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           .map((c) => (c.type === "text" ? c.text : ""))
           .join("");
 
-        // For the last message, inject file attachment
+        // Check for image attachments in message content (from assistant-ui attachment system OR custom system)
+        const imageAttachments = m.content.filter((c: any) => c.type === "image");
+        
+        // For the last message, inject file attachment (legacy system)
         if (isLast && file) {
           if (file.type === "text") {
             return {
@@ -1018,10 +1025,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               content: `[Attached file: ${file.name}]\n\`\`\`\n${file.content}\n\`\`\`\n\n${textContent}`,
             };
           } else if (file.type === "image") {
+            // Image will be in message content already (added by send interceptor)
+            // Just extract base64 for Ollama
+            const base64 = file.base64;
             return {
               role: m.role,
               content: textContent || "What is in this image?",
-              images: [file.base64],
+              images: [base64],
             };
           } else if (file.type === "audio") {
             // Gemma 4 audio input — pass as audio field
@@ -1031,6 +1041,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               audio: file.base64,
             };
           }
+        }
+
+        // Handle image attachments from assistant-ui attachment system
+        if (imageAttachments.length > 0) {
+          const images = imageAttachments.map((img: any) => {
+            // Extract base64 from data URL if needed
+            const imageData = img.image;
+            if (imageData.startsWith("data:")) {
+              // Extract just the base64 part
+              const base64Match = imageData.match(/^data:image\/[^;]+;base64,(.+)$/);
+              return base64Match ? base64Match[1] : imageData;
+            }
+            return imageData;
+          });
+
+          return {
+            role: m.role,
+            content: textContent || "What is in this image?",
+            images,
+          };
         }
 
         return { role: m.role, content: textContent };
@@ -1312,11 +1342,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   );
 
   const runtime = useLocalRuntime(adapter, {
-    adapters: { dictation: dictationAdapter },
+    adapters: { 
+      dictation: dictationAdapter,
+      attachments: new ImageAttachmentAdapter(),
+    },
   });
 
   return (
-    <ChatContext.Provider value={{ sessionId, attachedFile, setAttachedFile }}>
+    <ChatContext.Provider value={{ sessionId, attachedFile, setAttachedFile, lastSentImage, setLastSentImage }}>
       <AssistantRuntimeProvider runtime={runtime}>
         {children}
       </AssistantRuntimeProvider>
