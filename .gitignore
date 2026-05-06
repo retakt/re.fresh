@@ -30,4 +30,16 @@ Thumbs.db
 
 # Logs
 *.log
+*.pid
 npm-debug.log*
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+cookies.txt
+*cookies*.txt
+
+# Compressed archives
+*.tar.gz
+*.zip
