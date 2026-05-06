@@ -7,6 +7,7 @@ import Sidebar from "@/components/layout/sidebar.tsx";
 import Footer from "@/components/layout/footer.tsx";
 import FloatingPlayer from "@/components/player/FloatingPlayer.tsx";
 import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
+import { AnimatedGrainyBg } from "@/components/ui/animated-grainy-bg";
 import { cn } from "@/lib/utils";
 
 function PageFallback() {
@@ -63,8 +64,26 @@ export default function AppLayout() {
   }, [sidebarOpen]);
 
   return (
-    <div className="flex h-[var(--app-height)] w-full max-w-full flex-col bg-background text-foreground overflow-x-hidden overflow-y-hidden">
-      <Navbar onMenuToggle={toggleSidebar} isSidebarOpen={sidebarOpen} />
+    <div className="flex h-[var(--app-height)] w-full max-w-full flex-col bg-background text-foreground overflow-hidden relative">
+      {/* Global Paper Grain Background */}
+      <AnimatedGrainyBg
+        animationType="pulse"
+        grainType="paper"
+        grainIntensity={30}
+        grainSize={100}
+        colors={["#000000", "#0d0d0d", "#060606", "#0a0a0a"]}
+        speed={0.5}
+        darkMode={true}
+        position="fixed"
+        zIndex={0}
+        size="full"
+        grainBlendMode="overlay"
+        className="pointer-events-none"
+        animate={false}
+      />
+      
+      <div className="relative z-10 flex h-full w-full flex-col">
+        <Navbar onMenuToggle={toggleSidebar} isSidebarOpen={sidebarOpen} />
 
       {/* Mobile drawer — fixed, outside flex row, only rendered on mobile */}
       <div className="md:hidden">
@@ -72,7 +91,7 @@ export default function AppLayout() {
       </div>
 
       {/* ── DESKTOP layout — constrained viewport ── */}
-      <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6 min-h-0 overflow-x-hidden">
+      <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6 min-h-0 overflow-hidden">
         {/* Desktop sidebar */}
         <div className="hidden md:block w-44 shrink-0 h-full overflow-x-hidden">
           <Sidebar />
@@ -81,7 +100,7 @@ export default function AppLayout() {
         <main
           id="main-content"
           className={cn(
-            "flex-1 min-w-0 flex flex-col min-h-0 overflow-x-hidden",
+            "flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden",
             isChatPage ? "py-0" : "py-5 sm:py-8 md:pl-6 lg:pl-8"
           )}
         >
@@ -95,12 +114,12 @@ export default function AppLayout() {
                 duration: 0.25, 
                 ease: [0.22, 1, 0.36, 1] // easeOutExpo for snappier feel
               }}
-              className="flex-1 min-h-0 flex flex-col overflow-x-hidden overflow-y-hidden"
+              className="flex-1 min-h-0 flex flex-col overflow-hidden"
             >
               <ErrorBoundary key={location.pathname} fallback={<PageFallback />}>
                 <div className={cn(
-                  "flex-1 flex flex-col min-h-0 overflow-x-hidden",
-                  isChatPage ? "overflow-y-hidden" : "overflow-y-auto"
+                  "flex-1 flex flex-col min-h-0 overflow-hidden",
+                  isChatPage ? "" : "overflow-y-auto"
                 )}>
                   <Outlet />
                 </div>
@@ -112,6 +131,7 @@ export default function AppLayout() {
 
       <Footer />
       <FloatingPlayer />
+      </div>
     </div>
   );
 }

@@ -61,8 +61,51 @@ function AppContent() {
       <ScrollToTop />
       {/* Notice Panel - shows on first visit */}
       <NoticePanel />
-      {/* No Suspense fallback - the HTML shell handles initial loading */}
-      <Suspense>
+      {/* Suspense with HTML shell-inspired loader */}
+      <Suspense fallback={
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          background: '#0a0a0f'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px'
+          }}>
+            {/* Spinner with gradient border */}
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'conic-gradient(from 0deg, transparent, #e11d48)',
+              animation: 'spin 0.8s linear infinite',
+              padding: '3px'
+            }}>
+              <div style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                background: '#0a0a0f'
+              }} />
+            </div>
+            {/* Logo */}
+            <span style={{
+              fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+              fontSize: '18px',
+              letterSpacing: '-0.02em',
+              fontWeight: 700,
+              color: '#e5e5e5'
+            }}>
+              <span style={{ color: '#38bdf8' }}>re</span>
+              <span style={{ color: '#e11d48' }}>.</span>
+            </span>
+          </div>
+        </div>
+      }>
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/"                  element={<Index />} />

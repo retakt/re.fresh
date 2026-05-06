@@ -4,6 +4,7 @@ import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh.tsx";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { FaGithub, FaSpotify, FaTelegram } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
+import { ContributionGraph, type ContributionData } from "@/components/ui/smoothui/contribution-graph";
 
 /* ---------------- SOCIAL LINKS ---------------- */
 
@@ -47,6 +48,47 @@ const FACTS = [
   "Lazy~Life Enjoyer",
   "Open source is a right!",
 ];
+
+/* ---------------- SAMPLE CONTRIBUTION DATA ---------------- */
+
+// Generate contribution data for 2026 with specific pattern
+const generateSampleData = (): ContributionData[] => {
+  const data: ContributionData[] = [];
+  const year = 2026;
+  
+  // March 1st to May 7th, 2026 - random data
+  const startDate = new Date(year, 2, 1); // March 1st (month is 0-indexed)
+  const endDate = new Date(year, 4, 7);   // May 7th
+  
+  for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // Generate random contribution data with more variation
+    const random = Math.random();
+    
+    if (random > 0.3) { // 70% chance of having some activity in active period
+      const count = Math.floor(Math.random() * 25) + 1;
+      let level = 0;
+      
+      if (count >= 20) level = 4;
+      else if (count >= 15) level = 3;
+      else if (count >= 8) level = 2;
+      else if (count >= 3) level = 1;
+      else level = 0;
+      
+      // Only add to data if level > 0 (this creates the empty squares)
+      if (level > 0) {
+        data.push({
+          date: dateStr,
+          count,
+          level
+        });
+      }
+    }
+  }
+  
+  return data;
+};
 
 /* ---------------- PAGE ---------------- */
 
@@ -127,6 +169,31 @@ export default function AboutPage() {
               <IconComp />
             </a>
           ))}
+        </div>
+      </motion.div>
+
+      {/* Activity Graph */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.26, ease: "easeOut" }}
+        className="space-y-3"
+      >
+        <h2
+          className="font-bold uppercase tracking-widest text-muted-foreground"
+          style={{ fontSize: "clamp(9px, 2.5vw, 11px)" }}
+        >
+          Activity
+        </h2>
+        
+        <div className="w-full p-4 rounded-xl border bg-card">
+          <ContributionGraph 
+            data={generateSampleData()} 
+            year={2026}
+            showLegend={true}
+            showTooltips={true}
+            className="w-full"
+          />
         </div>
       </motion.div>
     </div>

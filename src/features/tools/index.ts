@@ -15,8 +15,7 @@ const toolConfigs: ToolConfig[] = [
     gradient: "from-pink-400/20 to-purple-400/10",
     iconBg: "bg-pink-100/80 dark:bg-pink-900/20",
     iconColor: "text-pink-400 dark:text-pink-300",
-    border: "border-pink-600/60 dark:border-pink-600/60",
-    shadow: "shadow-[0_0_10px_rgba(219,39,119,0.2)] hover:shadow-[0_0_20px_rgba(219,39,119,0.3),0_0_40px_rgba(219,39,119,0.15)]",
+    border: "border-pink-600/30",
     enabled: false,
   },
   {
@@ -26,8 +25,7 @@ const toolConfigs: ToolConfig[] = [
     gradient: "from-yellow-400/20 to-amber-300/10",
     iconBg: "bg-yellow-100/80 dark:bg-yellow-900/20",
     iconColor: "text-yellow-500 dark:text-yellow-300",
-    border: "border-yellow-600/60 dark:border-yellow-600/60",
-    shadow: "shadow-[0_0_10px_rgba(202,138,4,0.2)] hover:shadow-[0_0_20px_rgba(202,138,4,0.3),0_0_40px_rgba(202,138,4,0.15)]",
+    border: "border-yellow-600/30",
     enabled: false,
   },
   {
@@ -37,8 +35,7 @@ const toolConfigs: ToolConfig[] = [
     gradient: "from-orange-400/20 to-amber-300/10",
     iconBg: "bg-orange-100/80 dark:bg-orange-900/20",
     iconColor: "text-orange-400 dark:text-orange-300",
-    border: "border-orange-600/60 dark:border-orange-600/60",
-    shadow: "shadow-[0_0_10px_rgba(234,88,12,0.2)] hover:shadow-[0_0_20px_rgba(234,88,12,0.3),0_0_40px_rgba(234,88,12,0.15)]",
+    border: "border-orange-600/30",
     enabled: false,
   },
   {
@@ -48,8 +45,7 @@ const toolConfigs: ToolConfig[] = [
     gradient: "from-blue-400/20 to-indigo-300/10",
     iconBg: "bg-blue-100/80 dark:bg-blue-900/20",
     iconColor: "text-blue-400 dark:text-blue-300",
-    border: "border-blue-600/60 dark:border-blue-600/60",
-    shadow: "shadow-[0_0_10px_rgba(37,99,235,0.2)] hover:shadow-[0_0_20px_rgba(37,99,235,0.3),0_0_40px_rgba(37,99,235,0.15)]",
+    border: "border-blue-600/30",
     enabled: false,
   },
   {
@@ -59,8 +55,7 @@ const toolConfigs: ToolConfig[] = [
     gradient: "from-purple-400/20 to-violet-300/10",
     iconBg: "bg-purple-100/80 dark:bg-purple-900/20",
     iconColor: "text-purple-400 dark:text-purple-300",
-    border: "border-purple-600/60 dark:border-purple-600/60",
-    shadow: "shadow-[0_0_10px_rgba(147,51,234,0.2)] hover:shadow-[0_0_20px_rgba(147,51,234,0.3),0_0_40px_rgba(147,51,234,0.15)]",
+    border: "border-purple-600/30",
     enabled: false,
   },
   {
@@ -70,8 +65,7 @@ const toolConfigs: ToolConfig[] = [
     gradient: "from-teal-400/20 to-cyan-300/10",
     iconBg: "bg-teal-100/80 dark:bg-teal-900/20",
     iconColor: "text-teal-400 dark:text-teal-300",
-    border: "border-teal-600/60 dark:border-teal-600/60",
-    shadow: "shadow-[0_0_10px_rgba(13,148,136,0.2)] hover:shadow-[0_0_20px_rgba(13,148,136,0.3),0_0_40px_rgba(13,148,136,0.15)]",
+    border: "border-teal-600/30",
     enabled: false,
   },
 ];

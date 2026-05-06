@@ -21,19 +21,17 @@ export const NOTICES: Notice[] = [
   {
     id: "n_001",
     title: "[Major] YouTube Downloader",
-    body: `YouTube downloader tool - yt.retakt.cc (yt-dlp backend)
+    body: `y0uTube Downloader - yt.retakt.cc (yt-dlp backend)
 
-• auto/audio/mute modes, quality settings (max to 144p)
+• auto/audio/mute modes, quality settings (max to 2160p)
 • codec selection (h264, av1, vp9), container formats  
 • encrypted URL paste animation, auto-detect clipboard
-• download manager with queue, progress tracking
-• admin panel - cookie rotation, WARP++ status, queue stats
-• canvas text with blood red texture (#dc143c)`,
+• download manager with queue, progress tracking`,
     tag: "major",
     date: "4th May, 2026",
     priority: 1,
     link: {
-      text: "Try YouTube Downloader →",
+      text: "Try it! →",
       url: "https://yt.retakt.cc"
     }
   },

@@ -108,7 +108,7 @@ export function AdminTilesSimple() {
         {/* item1: Posts - Tall left */}
         <Link
           to={adminTiles[0].href}
-          className={`flex flex-col items-start justify-between rounded-lg border border-pink-600/60 shadow-[0_0_10px_rgba(219,39,119,0.2)] hover:shadow-[0_0_20px_rgba(219,39,119,0.3),0_0_40px_rgba(219,39,119,0.15)] bg-gradient-to-br ${adminTiles[0].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group`}
+          className={`flex flex-col items-start justify-between rounded-lg border border-pink-600/30 bg-gradient-to-br ${adminTiles[0].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item1' }}
         >
           <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg ${adminTiles[0].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -120,7 +120,7 @@ export function AdminTilesSimple() {
         {/* item2: API & Configs - Wide top center */}
         <Link
           to={adminTiles[1].href}
-          className={`flex items-center justify-start gap-1.5 sm:gap-3 rounded-lg border border-red-600/60 shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-[0_0_20px_rgba(220,38,38,0.3),0_0_40px_rgba(220,38,38,0.15)] bg-gradient-to-br ${adminTiles[1].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group`}
+          className={`flex items-center justify-start gap-1.5 sm:gap-3 rounded-lg border border-red-600/30 bg-gradient-to-br ${adminTiles[1].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item2' }}
         >
           <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-lg ${adminTiles[1].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
@@ -132,7 +132,7 @@ export function AdminTilesSimple() {
         {/* item3: Quotes - Tall right */}
         <Link
           to={adminTiles[2].href}
-          className={`flex flex-col items-start justify-between rounded-lg border border-rose-600/60 shadow-[0_0_10px_rgba(225,29,72,0.2)] hover:shadow-[0_0_20px_rgba(225,29,72,0.3),0_0_40px_rgba(225,29,72,0.15)] bg-gradient-to-br ${adminTiles[2].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group overflow-hidden`}
+          className={`flex flex-col items-start justify-between rounded-lg border border-rose-600/30 bg-gradient-to-br ${adminTiles[2].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group overflow-hidden focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item3' }}
         >
           <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg ${adminTiles[2].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -144,7 +144,7 @@ export function AdminTilesSimple() {
         {/* item4: Requests - Tall left bottom */}
         <Link
           to={adminTiles[3].href}
-          className={`flex flex-col items-start justify-between rounded-lg border border-sky-600/60 shadow-[0_0_10px_rgba(2,132,199,0.2)] hover:shadow-[0_0_20px_rgba(2,132,199,0.3),0_0_40px_rgba(2,132,199,0.15)] bg-gradient-to-br ${adminTiles[3].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group`}
+          className={`flex flex-col items-start justify-between rounded-lg border border-sky-600/30 bg-gradient-to-br ${adminTiles[3].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item4' }}
         >
           <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg ${adminTiles[3].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -156,7 +156,7 @@ export function AdminTilesSimple() {
         {/* item5: Members - Small center */}
         <Link
           to={adminTiles[4].href}
-          className={`flex items-center justify-start gap-1 sm:gap-2 rounded-lg border border-violet-600/60 shadow-[0_0_10px_rgba(124,58,237,0.2)] hover:shadow-[0_0_20px_rgba(124,58,237,0.3),0_0_40px_rgba(124,58,237,0.15)] bg-gradient-to-br ${adminTiles[4].color.gradient} p-1 sm:p-2 hover:scale-[1.02] transition-all cursor-pointer group`}
+          className={`flex items-center justify-start gap-1 sm:gap-2 rounded-lg border border-violet-600/30 bg-gradient-to-br ${adminTiles[4].color.gradient} p-1 sm:p-2 hover:scale-[1.02] transition-all cursor-pointer group focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item5' }}
         >
           <div className={`w-5 h-5 sm:w-8 sm:h-8 rounded-lg ${adminTiles[4].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
@@ -168,7 +168,7 @@ export function AdminTilesSimple() {
         {/* item6: Files - Small center */}
         <Link
           to={adminTiles[5].href}
-          className={`flex items-center justify-start gap-1 sm:gap-2 rounded-lg border border-emerald-600/60 shadow-[0_0_10px_rgba(5,150,105,0.2)] hover:shadow-[0_0_20px_rgba(5,150,105,0.3),0_0_40px_rgba(5,150,105,0.15)] bg-gradient-to-br ${adminTiles[5].color.gradient} p-1 sm:p-2 hover:scale-[1.02] transition-all cursor-pointer group overflow-hidden`}
+          className={`flex items-center justify-start gap-1 sm:gap-2 rounded-lg border border-emerald-600/30 bg-gradient-to-br ${adminTiles[5].color.gradient} p-1 sm:p-2 hover:scale-[1.02] transition-all cursor-pointer group overflow-hidden focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item6' }}
         >
           <div className={`w-5 h-5 sm:w-8 sm:h-8 rounded-lg ${adminTiles[5].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
@@ -180,7 +180,7 @@ export function AdminTilesSimple() {
         {/* item7: Tutorials - Tall center bottom */}
         <Link
           to={adminTiles[6].href}
-          className={`flex items-center justify-start gap-1.5 sm:gap-2.5 rounded-lg border border-amber-600/60 shadow-[0_0_10px_rgba(217,119,6,0.2)] hover:shadow-[0_0_20px_rgba(217,119,6,0.3),0_0_40px_rgba(217,119,6,0.15)] bg-gradient-to-br ${adminTiles[6].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group`}
+          className={`flex items-center justify-start gap-1.5 sm:gap-2.5 rounded-lg border border-amber-600/30 bg-gradient-to-br ${adminTiles[6].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item7' }}
         >
           <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg ${adminTiles[6].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
@@ -192,7 +192,7 @@ export function AdminTilesSimple() {
         {/* item8: Music - Wide bottom right */}
         <Link
           to={adminTiles[7].href}
-          className={`flex items-center justify-start gap-1.5 sm:gap-3 rounded-lg border border-cyan-600/60 shadow-[0_0_10px_rgba(8,145,178,0.2)] hover:shadow-[0_0_20px_rgba(8,145,178,0.3),0_0_40px_rgba(8,145,178,0.15)] bg-gradient-to-br ${adminTiles[7].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group`}
+          className={`flex items-center justify-start gap-1.5 sm:gap-3 rounded-lg border border-cyan-600/30 bg-gradient-to-br ${adminTiles[7].color.gradient} p-1.5 sm:p-2.5 hover:scale-[1.01] transition-all cursor-pointer group focus:outline-none focus-visible:outline-none`}
           style={{ gridArea: 'item8' }}
         >
           <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg ${adminTiles[7].color.bg} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>

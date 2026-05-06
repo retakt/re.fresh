@@ -31,7 +31,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
     <>
       {/* ΓöÇΓöÇ DESKTOP: lg and above only ΓöÇΓöÇ */}
       <div className="hidden lg:block w-44 shrink-0 overflow-x-hidden h-full">
-        <aside className="flex flex-col pt-8 h-full overflow-hidden pr-4 border-r border-gray-400/60 shadow-[2px_0_10px_rgba(192,192,192,0.2)] dark:border-gray-400/60 dark:shadow-[2px_0_10px_rgba(192,192,192,0.2)] -ml-8 pl-8 mr-2">
+        <aside className="flex flex-col pt-8 h-full overflow-hidden pr-4 border-r border-gray-400/30 shadow-[1px_0_5px_rgba(192,192,192,0.1)] dark:border-gray-400/30 dark:shadow-[1px_0_5px_rgba(192,192,192,0.1)] -ml-8 pl-8 mr-2">
         <div className="flex flex-col flex-1 min-h-0 relative h-full">
           <nav className="flex flex-col gap-0.5 flex-1 pb-16">
             {NAV_LINKS.map((link) => {

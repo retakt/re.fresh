@@ -307,7 +307,7 @@ export const Thread: FC<ThreadProps> = ({
     <>
       <DragOverlay onFile={processFile} />
       <ThreadPrimitive.Root
-      className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
+      className="aui-root aui-thread-root @container flex h-full max-h-full flex-col overflow-hidden"
       style={{
         ["--thread-max-width" as string]: "44rem",
         ["--composer-radius" as string]: "24px",
@@ -333,7 +333,7 @@ export const Thread: FC<ThreadProps> = ({
 
           <ThreadPrimitive.ViewportFooter
             data-slot="aui_thread-viewport-footer"
-            className="sticky bottom-0 mt-auto flex flex-col gap-2 overflow-visible rounded-t-(--composer-radius) bg-background pb-6 md:pb-12"
+            className="sticky bottom-0 mt-auto flex flex-col gap-2 overflow-visible rounded-t-(--composer-radius) pb-6 md:pb-12"
           >
             <ThreadScrollToBottom />
             <Composer

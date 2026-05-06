@@ -6,21 +6,16 @@ import {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Fresh for 2 min — no refetch during this window
-      staleTime: 2 * 60 * 1000,
-      // Keep in memory for 15 min after last use
-      gcTime: 15 * 60 * 1000,
-      refetchOnWindowFocus: true,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      refetchOnMount: true,
-      retry: 3,
-      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
-      // Network mode - fail fast on offline, retry on reconnect
-      networkMode: 'online',
+      refetchOnMount: false,
+      retry: 1,
+      retryDelay: 1000,
     },
     mutations: {
-      retry: 2,
-      networkMode: 'online',
+      retry: 1,
     },
   },
 });

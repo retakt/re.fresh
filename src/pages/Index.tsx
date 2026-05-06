@@ -44,14 +44,11 @@ type ContentItem = {
 export default function Index() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  // Persisted filter — survives refresh
   const [activeFilter, setActiveFilter] = usePersistedState<FilterType>("home-filter", "all");
 
-  // ── Quotes — date-based, stable all day, no sessionStorage ──────────────
-  // Same quote all day for everyone. Changes at midnight. ↻ cycles manually.
+  // Simple daily quote rotation
   const getDailyIndex = () => {
-    const d = new Date();
-    const dayNumber = Math.floor(d.getTime() / (1000 * 60 * 60 * 24));
+    const dayNumber = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
     return dayNumber % ALL_QUOTES.length;
   };
 
@@ -59,127 +56,101 @@ export default function Index() {
   const quotePalette = QUOTE_CARD_PALETTES[quoteIndex % QUOTE_CARD_PALETTES.length];
   const quote = ALL_QUOTES[quoteIndex];
 
-  const cycleQuote = useCallback(() => {
+  const cycleQuote = () => {
     setQuoteIndex((i) => (i + 1) % ALL_QUOTES.length);
-  }, []);
+  };
 
-  const fetchAll = useCallback(async () => {
-      // 10-second timeout — if Supabase is slow, show empty state instead of infinite skeleton
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 10_000)
-      );
+  const fetchAll = async () => {
+    try {
+      const [postsRes, tutorialsRes, musicRes] = await Promise.all([
+        supabase
+          .from("posts")
+          .select("id, title, slug, created_at, view_count")
+          .eq("published", true)
+          .order("created_at", { ascending: false })
+          .limit(10),
+        supabase
+          .from("tutorials")
+          .select("id, title, slug, created_at, difficulty, view_count")
+          .eq("published", true)
+          .order("created_at", { ascending: false })
+          .limit(10),
+        supabase
+          .from("music")
+          .select("id, title, created_at, genre, release_type, album, view_count")
+          .eq("published", true)
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
 
-      try {
-        const [postsRes, tutorialsRes, musicRes] = await Promise.race([
-          Promise.all([
-            supabase
-              .from("posts")
-              .select("id, title, slug, created_at, view_count")
-              .eq("published", true)
-              .order("created_at", { ascending: false })
-              .limit(10),
-            supabase
-              .from("tutorials")
-              .select("id, title, slug, created_at, difficulty, view_count")
-              .eq("published", true)
-              .order("created_at", { ascending: false })
-              .limit(10),
-            supabase
-              .from("music")
-              .select("id, title, created_at, genre, release_type, album, view_count")
-              .eq("published", true)
-              .order("created_at", { ascending: false })
-              .limit(10),
-          ]),
-          timeout,
-        ]);
+      // Fetch tags for posts
+      const postIds = (postsRes.data || []).map((p) => p.id);
+      const { data: tagData } = postIds.length > 0
+        ? await supabase
+            .from("content_tags")
+            .select("content_id, tags(name)")
+            .eq("content_type", "post")
+            .in("content_id", postIds)
+        : { data: [] };
 
-        // Fetch first tag for each post
-        const postIds = (postsRes.data || []).map((p) => p.id);
-        const { data: tagData } = postIds.length > 0
-          ? await supabase
-              .from("content_tags")
-              .select("content_id, tags(name)")
-              .eq("content_type", "post")
-              .in("content_id", postIds)
-          : { data: [] };
-
-        // Map post id → first tag name
-        const postTagMap: Record<string, string> = {};
-        for (const row of tagData ?? []) {
-          if (!postTagMap[row.content_id]) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const tagName = (row.tags as any)?.name;
-            if (tagName) postTagMap[row.content_id] = `#${tagName}`;
-          }
+      // Map post tags
+      const postTagMap: Record<string, string> = {};
+      for (const row of tagData ?? []) {
+        if (!postTagMap[row.content_id]) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const tagName = (row.tags as any)?.name;
+          if (tagName) postTagMap[row.content_id] = `#${tagName}`;
         }
-
-        const mapped: ContentItem[] = [
-          ...(postsRes.data || []).map((p) => ({
-            id: p.id,
-            title: p.title,
-            type: "blog" as const,
-            href: `/blog/${p.slug}`,
-            date: p.created_at,
-            meta: postTagMap[p.id] ?? "Blog",
-            viewCount: p.view_count ?? 0,
-          })),
-          ...(tutorialsRes.data || []).map((t) => ({
-            id: t.id,
-            title: t.title,
-            type: "tutorial" as const,
-            href: `/tutorials/${t.slug}`,
-            date: t.created_at,
-            meta: t.difficulty ?? "Tutorial",
-            viewCount: t.view_count ?? 0,
-          })),
-          ...(musicRes.data || []).map((m) => ({
-            id: m.id,
-            title: m.title,
-            type: "music" as const,
-            href: (m.release_type === "album" || m.release_type === "ep") && m.album
-              ? `/music/album/${encodeURIComponent(m.album)}`
-              : `/music/song/${m.id}`,
-            date: m.created_at,
-            meta: m.genre ?? m.release_type ?? "Music",
-            viewCount: m.view_count ?? 0,
-          })),
-        ];
-
-        mapped.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        setItems(mapped);
-      } catch {
-        // Timeout or network error — show empty state, don't hang forever
-        setItems([]);
-      } finally {
-        setLoading(false);
       }
-  }, []);
 
-  useEffect(() => { void fetchAll(); }, [fetchAll]);
+      const mapped: ContentItem[] = [
+        ...(postsRes.data || []).map((p) => ({
+          id: p.id,
+          title: p.title,
+          type: "blog" as const,
+          href: `/blog/${p.slug}`,
+          date: p.created_at,
+          meta: postTagMap[p.id] ?? "Blog",
+          viewCount: p.view_count ?? 0,
+        })),
+        ...(tutorialsRes.data || []).map((t) => ({
+          id: t.id,
+          title: t.title,
+          type: "tutorial" as const,
+          href: `/tutorials/${t.slug}`,
+          date: t.created_at,
+          meta: t.difficulty ?? "Tutorial",
+          viewCount: t.view_count ?? 0,
+        })),
+        ...(musicRes.data || []).map((m) => ({
+          id: m.id,
+          title: m.title,
+          type: "music" as const,
+          href: (m.release_type === "album" || m.release_type === "ep") && m.album
+            ? `/music/album/${encodeURIComponent(m.album)}`
+            : `/music/song/${m.id}`,
+          date: m.created_at,
+          meta: m.genre ?? m.release_type ?? "Music",
+          viewCount: m.view_count ?? 0,
+        })),
+      ];
 
-  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
-  useEffect(() => {
-    const handleResume = () => { void fetchAll(); };
-    window.addEventListener("app-resume", handleResume);
-    return () => window.removeEventListener("app-resume", handleResume);
-  }, [fetchAll]);
-
-  // Loading state safety net - prevent stuck loading
-  useEffect(() => {
-    if (loading) {
-      const timeout = setTimeout(() => setLoading(false), 15000);
-      return () => clearTimeout(timeout);
+      mapped.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setItems(mapped);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setItems([]);
+    } finally {
+      setLoading(false);
     }
-  }, [loading]);
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   const filtered = useMemo(() => {
-    const base =
-      activeFilter === "all"
-        ? items
-        : items.filter((i) => i.type === activeFilter);
+    const base = activeFilter === "all" ? items : items.filter((i) => i.type === activeFilter);
     return base.slice(0, 5);
   }, [items, activeFilter]);
 
@@ -221,7 +192,7 @@ export default function Index() {
           </p>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); cycleQuote(); }}
+            onClick={cycleQuote}
             className={`absolute bottom-2.5 right-2.5 rounded-full p-1.5 border border-current/20 shadow-sm transition-all hover:scale-110 opacity-50 hover:opacity-90 ${quotePalette.accent}`}
             aria-label="Next quote"
           >
@@ -243,7 +214,7 @@ export default function Index() {
             {loading ? (
               <div className="h-7 w-32 bg-muted/30 rounded-lg animate-pulse" />
             ) : (
-              <div className="flex items-center gap-0.5 rounded-lg p-0.5 border-2 border-teal-600/80 shadow-[0_0_15px_rgba(13,148,136,0.3)] hover:shadow-[0_0_25px_rgba(13,148,136,0.4),0_0_50px_rgba(13,148,136,0.2)] transition-shadow" style={{ background: "linear-gradient(135deg, rgba(17,216,194,0.10) 0%, rgba(17,216,194,0.05) 100%)" }}>
+              <div className="flex items-center gap-0.5 rounded-lg p-0.5 border border-teal-600/30 transition-shadow" style={{ background: "linear-gradient(135deg, rgba(17,216,194,0.10) 0%, rgba(17,216,194,0.05) 100%)" }}>
                 {FILTERS.map((f) => (
                   <button
                     key={f.value}
