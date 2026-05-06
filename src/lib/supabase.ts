@@ -17,6 +17,26 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     // The lock was causing onAuthStateChange to silently fail after page reload
     lock: <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn(),
   },
+  global: {
+    headers: {
+      'x-client-info': 'retakt-web',
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+    // Heartbeat to keep connection alive during inactivity
+    heartbeatIntervalMs: 30000, // 30 seconds
+    // Reconnect settings
+    reconnectAfterMs: (tries: number) => {
+      // Exponential backoff: 1s, 2s, 4s, 8s, max 10s
+      return Math.min(1000 * Math.pow(2, tries), 10000);
+    },
+  },
 })
 
 export type Post = {

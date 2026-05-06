@@ -92,6 +92,14 @@ export default function FilesPage() {
     return () => window.removeEventListener("app-resume", handleResume);
   }, [fetchFiles]);
 
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   return (
     <div className="space-y-6">
       <PageHeader

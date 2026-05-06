@@ -30,50 +30,53 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
   return (
     <>
       {/* ΓöÇΓöÇ DESKTOP: lg and above only ΓöÇΓöÇ */}
-      <div className="hidden lg:block w-44 shrink-0 overflow-x-hidden">
-        <aside className="flex flex-col py-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto scrollbar-none pr-4 border-r border-border/50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)] dark:border-white/[0.07] dark:shadow-[2px_0_8px_-2px_rgba(200,210,255,0.12)] -ml-8 pl-8 mr-2">
-        <nav className="flex flex-col gap-0.5">
-          {NAV_LINKS.map((link) => {
-            const Icon = link.icon;
-            const active =
-              link.href === "/"
-                ? location.pathname === "/"
-                : location.pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                to={link.href}
-                aria-current={active ? "page" : undefined}
-                onMouseEnter={() => prefetchRoute(link.href)}
-                onFocus={() => prefetchRoute(link.href)}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all",
-                  active
-                    ? link.teal
-                      ? "bg-[#11D8C2]/10 text-[#11D8C2]"
-                      : "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                )}
-              >
-                <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
-                <span className={cn("font-medium", active ? "font-semibold" : "")}>{link.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mt-auto pt-6">
-          <p className="text-xs flex flex-col gap-0.5">
-            <span className="text-muted-foreground/50">made by</span>
-            <span className="font-semibold">
-              <CanvasText
-                text="Takt Akira"
-                backgroundClassName="bg-muted-foreground"
-                colors={["#fb7185", "#f43f5e", "#e11d48", "#4ecdc4", "#2dd4bf", "#14b8a6"]}
-                lineGap={4}
-                animationDuration={15}
-              />
-            </span>
-          </p>
+      <div className="hidden lg:block w-44 shrink-0 overflow-x-hidden h-full">
+        <aside className="flex flex-col pt-8 h-full overflow-hidden pr-4 border-r border-gray-400/60 shadow-[2px_0_10px_rgba(192,192,192,0.2)] dark:border-gray-400/60 dark:shadow-[2px_0_10px_rgba(192,192,192,0.2)] -ml-8 pl-8 mr-2">
+        <div className="flex flex-col flex-1 min-h-0 relative h-full">
+          <nav className="flex flex-col gap-0.5 flex-1 pb-16">
+            {NAV_LINKS.map((link) => {
+              const Icon = link.icon;
+              const active =
+                link.href === "/"
+                  ? location.pathname === "/"
+                  : location.pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  aria-current={active ? "page" : undefined}
+                  onMouseEnter={() => prefetchRoute(link.href)}
+                  onFocus={() => prefetchRoute(link.href)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all",
+                    active
+                      ? link.teal
+                        ? "bg-[#11D8C2]/10 text-[#11D8C2]"
+                        : "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  )}
+                >
+                  <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
+                  <span className={cn("font-medium", active ? "font-semibold" : "")}>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="absolute bottom-1.5 left-0 right-0 px-2">
+            <p className="text-sm flex flex-col gap-0.5">
+              <span className="text-muted-foreground/50 text-[10px]">made by~</span>
+              <span className="font-bold">
+                <CanvasText
+                  text="takt"
+                  className="text-base font-extrabold"
+                  backgroundClassName="bg-[#995BD5]"
+                  colors={[ "#995BD5", "#B88FE8","#995BD5","#cd9bffff","#f556daff", "#96D74C", "#A8E066", "#96D74C", "#f89bfcff","#97e440ff","#fa2dd8ff","#6fa135ff","#a3e25cff","#9efa35ff","#8bfc0bff",]}
+                  lineGap={3}
+                  animationDuration={15}
+                />
+              </span>
+            </p>
+          </div>
         </div>
         </aside>
       </div>
@@ -116,8 +119,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             {/* Scrollable nav content ΓÇö ref resets scroll to top on every open */}
             <div
               ref={(el) => { if (el) el.scrollTop = 0; }}
-              className="scrollbar-none px-4 py-6 flex flex-col"
-              style={{ overflowY: "scroll", flex: "1 1 0", minHeight: 0 }}
+              className="px-4 py-6 flex flex-col flex-1 min-h-0"
             >
               <motion.nav
                 className="flex flex-col gap-1"
@@ -169,7 +171,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                 })}
               </motion.nav>
 
-              <div className="mt-auto pt-8 px-1">
+              <div className="flex-1"></div>
+              <div className="pt-8 px-1 flex-shrink-0">
                 <p className="text-xs flex flex-col gap-0.5">
                   <span className="text-muted-foreground/50">made by</span>
                   <span className="font-semibold">

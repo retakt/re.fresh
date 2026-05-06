@@ -66,21 +66,22 @@ function CodeBlock({
         };
         
         const effectiveLang = languageMap[lang] || lang;
+        
+        // Ensure we're using the correct theme
+        const effectiveTheme = theme || 'dark';
 
         // Try to highlight with the specified language, fallback to plaintext if it fails
         let highlighted;
         try {
           highlighted = await codeToHtml(visibleCode, {
             lang: effectiveLang,
-            themes,
-            defaultColor: theme,
+            theme: effectiveTheme === 'dark' ? themes.dark : themes.light,
           });
         } catch (langError) {
           console.warn(`Language "${lang}" not supported, falling back to plaintext`);
           highlighted = await codeToHtml(visibleCode, {
             lang: 'plaintext',
-            themes,
-            defaultColor: theme,
+            theme: effectiveTheme === 'dark' ? themes.dark : themes.light,
           });
         }
 

@@ -81,10 +81,13 @@ function CodeBlock({ cursor, className, ...props }: CodeBlockProps) {
   const { code } = useCode();
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
+  // Default to 'dark' since forcedTheme is dark in theme provider
+  const effectiveTheme = resolvedTheme || 'dark';
+
   return (
     <CodeBlockPrimitive
       ref={scrollRef}
-      theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+      theme={effectiveTheme === 'dark' ? 'dark' : 'light'}
       scrollContainerRef={scrollRef}
       className={cn(
         'relative text-sm p-4 overflow-x-auto overflow-y-auto max-h-[500px]',

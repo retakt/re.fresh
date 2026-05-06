@@ -99,6 +99,14 @@ export default function TutorialsPage() {
     return () => window.removeEventListener("app-resume", handleResume);
   }, [fetchTutorials]);
 
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
     onRefresh: fetchTutorials,
     disabled: false,

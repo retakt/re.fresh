@@ -11,8 +11,9 @@ interface SimpleTerminalProps {
 export function SimpleTerminal({ className }: SimpleTerminalProps) {
   const { user, profile } = useAuthContext();
   const [output, setOutput] = useState<string[]>([
-    'Terminal ready - Full VPS access enabled',
-    'Type "help" for available commands.',
+    're.Terminal',
+    'commands:-',
+    '--help',
   ]);
   const [input, setInput] = useState('');
   const [isMonitoring, setIsMonitoring] = useState(false);
@@ -171,7 +172,7 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
     
     // Special commands that work without auth
     if (cmd.toLowerCase() === 'clear' || cmd.toLowerCase() === 'cls') {
-      setOutput(['Terminal ready - Full VPS access enabled']);
+      setOutput(['Terminal ready - Full access enabled']);
       return;
     }
     
@@ -180,33 +181,28 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
         'Available commands:',
         '',
         '  system-status  - Check backend services via Open Terminal',
-        '  ai-status      - Check AI tools via Status API (requires API running)',
-        '  ai-check <tool> - Check specific AI tool (requires API running)',
-        '  start-monitor  - Start background monitoring (logs to logs/ai-monitor.log)',
-        '  stop-monitor   - Stop background monitoring',
-        '  show-monitor   - Show monitor status and recent logs',
-        '  start-api      - Start Status API server on port 3002',
-        '  stop-api       - Stop Status API server',
         '  docker ps      - List running containers',
         '  whoami         - Show current user',
-        '  ls -la         - List files',
+        '  pwd            - Show current directory',
+        '  ls -la [path]  - List files (use full paths)',
+        '  cat <file>     - View file contents',
         '  clear          - Clear terminal',
         '  help           - Show this help',
         '',
-        'Full VPS Access - No restrictions!',
+        'Important: Each command runs independently!',
+        '  • Use full paths: /workspace/host/var/www/retakt/',
+        '  • cd does NOT persist between commands',
+        '  • Combine commands: cd /path && ls -la',
         '',
-        'Monitored Services:',
-        '  • AI Model (Ollama) - https://chat-api.retakt.cc',
-        '  • Web Search (SearXNG) - https://search-api.retakt.cc',
-        '  • Weather API - https://wttr.in',
-        '  • Exchange Rate API - https://open.er-api.com',
-        '  • YouTube Backend - https://yt.retakt.cc',
-        '  • Open Terminal - https://tmux.retakt.cc',
+        'Your server files are at:',
+        '  /workspace/host/var/www/retakt/',
         '',
-        'Workflow:',
-        '  1. start-monitor           (starts logging every 30s)',
-        '  2. start-api               (starts HTTP API on port 3002)',
-        '  3. Ask AI: "what are the pings?" (AI fetches from API)'
+        'Examples:',
+        '  ls -la /workspace/host/var/www/retakt/',
+        '  cd /workspace/host/var/www/retakt && ls -la',
+        '  cat /workspace/host/var/www/retakt/index.html',
+        '',
+        'Full access - No restrictions!'
       ]);
       return;
     }
@@ -286,7 +282,7 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
         '  clear          - Clear terminal',
         '  help           - Show this help',
         '',
-        'Full VPS Access - No restrictions!',
+        'Full access - No restrictions!',
         '',
         'Monitored Services:',
         '  • AI Model (Ollama) - https://chat-api.retakt.cc',
@@ -378,7 +374,7 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
   return (
     <div className={`w-full h-full flex flex-col rounded-lg shadow-lg font-mono text-[10px] xs:text-[11px] sm:text-xs bg-amber-950/10 backdrop-blur-sm text-teal-300 border border-amber-400/10 ${className}`}>
       {/* Header with glowing coffee mug - optimized for mobile */}
-      <div className="p-1.5 sm:p-2 rounded-t-md flex items-center justify-between border-b bg-amber-900/15 backdrop-blur-sm border-amber-400/15">
+      <div className="p-1.5 sm:p-2 rounded-t-md flex items-center justify-between border-b bg-amber-900/15 backdrop-blur-sm border-yellow-600/60 shadow-[0_2px_10px_rgba(202,138,4,0.2)]">
         <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Coffee mug with conditional glow */}
           <div className="relative">
@@ -540,7 +536,7 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
 
       {/* Input bar - only show when NOT monitoring, optimized for mobile */}
       {!isMonitoring && (
-        <form onSubmit={handleSubmit} className="flex items-center p-1.5 sm:p-2 border-t border-amber-400/15 bg-amber-900/10 backdrop-blur-sm">
+        <form onSubmit={handleSubmit} className="flex items-center p-1.5 sm:p-2 border-t border-yellow-600/60 shadow-[0_-2px_10px_rgba(202,138,4,0.2)] bg-amber-900/10 backdrop-blur-sm">
           <span className="mr-1.5 sm:mr-2 text-cyan-400 text-xs sm:text-sm">$</span>
           <input
             ref={inputRef}

@@ -48,6 +48,21 @@ export default function AdminAccessRequestsPage() {
 
   useEffect(() => { void fetchRequests(); }, [fetchRequests]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchRequests(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchRequests]);
+
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const handleApprove = async (id: string, email: string) => {
     setSavingId(id);
     const result = await invokeAdminFunction("approve-access-request", { requestId: id });

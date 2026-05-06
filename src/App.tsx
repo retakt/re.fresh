@@ -6,6 +6,8 @@ import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import AppLayout from "./pages/layout.tsx";
 import { ChatProvider } from "./components/providers/chat.tsx";
 import { NoticePanel } from "./components/notices/NoticePanel.tsx";
+import { startConnectionMonitor } from "./lib/connection-monitor.ts";
+import 'allotment/dist/style.css';
 
 // ── All page routes lazy-loaded — nothing eagerly parsed on first paint ───────
 const Index            = lazy(() => import("./pages/Index.tsx"));
@@ -225,6 +227,11 @@ function AppContent() {
 }
 
 export default function App() {
+  // Start connection monitor on app mount
+  useEffect(() => {
+    startConnectionMonitor();
+  }, []);
+
   return (
     <DefaultProviders>
       <ErrorBoundary>

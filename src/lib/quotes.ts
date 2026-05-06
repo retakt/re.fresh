@@ -69,13 +69,13 @@ export function shuffleQuotes(quotes: Quote[]): Quote[] {
 
 // Color palettes for the quote card
 export const QUOTE_CARD_PALETTES = [
-  { bg: "from-pink-500/10 to-pink-500/5",    border: "border-pink-200/40 dark:border-pink-800/30",    accent: "text-pink-500" },
-  { bg: "from-cyan-500/10 to-cyan-500/5",    border: "border-cyan-200/40 dark:border-cyan-800/30",    accent: "text-cyan-500" },
-  { bg: "from-violet-500/10 to-violet-500/5", border: "border-violet-200/40 dark:border-violet-800/30", accent: "text-violet-500" },
-  { bg: "from-amber-500/10 to-amber-500/5",  border: "border-amber-200/40 dark:border-amber-800/30",  accent: "text-amber-500" },
-  { bg: "from-emerald-500/10 to-emerald-500/5", border: "border-emerald-200/40 dark:border-emerald-800/30", accent: "text-emerald-500" },
-  { bg: "from-rose-500/10 to-rose-500/5",    border: "border-rose-200/40 dark:border-rose-800/30",    accent: "text-rose-500" },
-  { bg: "from-indigo-500/10 to-indigo-500/5", border: "border-indigo-200/40 dark:border-indigo-800/30", accent: "text-indigo-500" },
+  { bg: "from-pink-500/10 to-pink-500/5",    border: "border-2 border-pink-600/80 dark:border-pink-600/80",    accent: "text-pink-500", shadow: "shadow-[0_0_15px_rgba(219,39,119,0.3)] hover:shadow-[0_0_25px_rgba(219,39,119,0.4),0_0_50px_rgba(219,39,119,0.2)]" },
+  { bg: "from-cyan-500/10 to-cyan-500/5",    border: "border-2 border-cyan-600/80 dark:border-cyan-600/80",    accent: "text-cyan-500", shadow: "shadow-[0_0_15px_rgba(8,145,178,0.3)] hover:shadow-[0_0_25px_rgba(8,145,178,0.4),0_0_50px_rgba(8,145,178,0.2)]" },
+  { bg: "from-violet-500/10 to-violet-500/5", border: "border-2 border-violet-600/80 dark:border-violet-600/80", accent: "text-violet-500", shadow: "shadow-[0_0_15px_rgba(124,58,237,0.3)] hover:shadow-[0_0_25px_rgba(124,58,237,0.4),0_0_50px_rgba(124,58,237,0.2)]" },
+  { bg: "from-amber-500/10 to-amber-500/5",  border: "border-2 border-amber-600/80 dark:border-amber-600/80",  accent: "text-amber-500", shadow: "shadow-[0_0_15px_rgba(217,119,6,0.3)] hover:shadow-[0_0_25px_rgba(217,119,6,0.4),0_0_50px_rgba(217,119,6,0.2)]" },
+  { bg: "from-emerald-500/10 to-emerald-500/5", border: "border-2 border-emerald-600/80 dark:border-emerald-600/80", accent: "text-emerald-500", shadow: "shadow-[0_0_15px_rgba(5,150,105,0.3)] hover:shadow-[0_0_25px_rgba(5,150,105,0.4),0_0_50px_rgba(5,150,105,0.2)]" },
+  { bg: "from-rose-500/10 to-rose-500/5",    border: "border-2 border-rose-600/80 dark:border-rose-600/80",    accent: "text-rose-500", shadow: "shadow-[0_0_15px_rgba(225,29,72,0.3)] hover:shadow-[0_0_25px_rgba(225,29,72,0.4),0_0_50px_rgba(225,29,72,0.2)]" },
+  { bg: "from-indigo-500/10 to-indigo-500/5", border: "border-2 border-indigo-600/80 dark:border-indigo-600/80", accent: "text-indigo-500", shadow: "shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.4),0_0_50px_rgba(79,70,229,0.2)]" },
 ];
 
 export function getQuotePalette(quoteId: string) {

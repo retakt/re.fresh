@@ -8,14 +8,15 @@
   inset: 0;
   z-index: 9999;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
-  pointer-events: none;
+  padding-top: 80px;
+  pointer-events: auto;
   
-  /* Glass backdrop blur */
-  backdrop-filter: blur(12px) saturate(180%);
-  background: rgba(0, 0, 0, 0.4);
+  /* Glass backdrop blur - reduced for visibility */
+  backdrop-filter: blur(2px) saturate(120%);
+  background: rgba(0, 0, 0, 0.15);
   
   /* Transition */
   transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -28,10 +29,10 @@
   max-width: 420px; /* Thinner on desktop */
   pointer-events: auto;
   
-  /* Glass effect - Like command palette */
+  /* Glass effect - Like command palette - more transparent */
   backdrop-filter: blur(20px) saturate(180%);
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
   
   /* Shadow */
@@ -79,6 +80,7 @@
 @media (max-width: 640px) {
   .notice-panel {
     padding: 16px;
+    padding-top: 150px;
   }
   
   .notice-panel-content {

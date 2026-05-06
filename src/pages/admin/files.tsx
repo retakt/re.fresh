@@ -27,6 +27,21 @@ export default function AdminFilesPage() {
 
   useEffect(() => { void fetchFiles(); }, [fetchFiles]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchFiles(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchFiles]);
+
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
     const { error } = await supabase.from("files").delete().eq("id", id);

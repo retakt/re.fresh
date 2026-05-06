@@ -167,6 +167,14 @@ export default function Index() {
     return () => window.removeEventListener("app-resume", handleResume);
   }, [fetchAll]);
 
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const filtered = useMemo(() => {
     const base =
       activeFilter === "all"
@@ -198,8 +206,8 @@ export default function Index() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.2 }}
-          className={`relative overflow-hidden rounded-xl border bg-gradient-to-br
-            ${quotePalette.bg} ${quotePalette.border} px-3.5 py-3 select-none`}
+          className={`relative overflow-hidden rounded-xl bg-gradient-to-br
+            ${quotePalette.bg} ${quotePalette.border} ${quotePalette.shadow} px-3.5 py-3 select-none transition-shadow`}
         >
           <Quote
             size={32}
@@ -235,7 +243,7 @@ export default function Index() {
             {loading ? (
               <div className="h-7 w-32 bg-muted/30 rounded-lg animate-pulse" />
             ) : (
-              <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: "linear-gradient(135deg, rgba(17,216,194,0.10) 0%, rgba(17,216,194,0.05) 100%)", border: "1px solid rgba(17,216,194,0.18)" }}>
+              <div className="flex items-center gap-0.5 rounded-lg p-0.5 border-2 border-teal-600/80 shadow-[0_0_15px_rgba(13,148,136,0.3)] hover:shadow-[0_0_25px_rgba(13,148,136,0.4),0_0_50px_rgba(13,148,136,0.2)] transition-shadow" style={{ background: "linear-gradient(135deg, rgba(17,216,194,0.10) 0%, rgba(17,216,194,0.05) 100%)" }}>
                 {FILTERS.map((f) => (
                   <button
                     key={f.value}
@@ -250,7 +258,7 @@ export default function Index() {
                     {activeFilter === f.value && (
                       <motion.span
                         layoutId="activeFilter"
-                        className="absolute inset-0 bg-background rounded-md shadow-sm"
+                        className="absolute inset-0 bg-emerald-400/30 rounded-md shadow-sm"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.28 }}
                       />
                     )}
@@ -285,9 +293,9 @@ export default function Index() {
                       <Link
                         to={item.href}
                         className={`group flex items-center gap-3 rounded-xl border
-                          bg-gradient-to-r ${palette.gradient} ${palette.border}
+                          bg-gradient-to-r ${palette.gradient} ${palette.border} ${palette.shadow}
                           px-3 py-2.5 transition-all
-                          outline-none hover:shadow-lg ${palette.hoverShadow} hover:-translate-y-0.5 active:scale-[0.99]`}
+                          outline-none hover:-translate-y-0.5 active:scale-[0.99]`}
                       >
                         <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${palette.iconBg}`}>
                           <Icon size={13} className={palette.iconColor} strokeWidth={2} />
@@ -367,8 +375,8 @@ export default function Index() {
               );
 
               const baseClass = `flex flex-col items-center justify-center gap-1 rounded-xl border
-                ${tool.border} bg-gradient-to-br ${tool.gradient}
-                p-2 text-center transition-all hover:scale-[1.04] hover:shadow-md active:scale-[0.97]`;
+                ${tool.border} bg-gradient-to-br ${tool.gradient} ${tool.shadow || ''}
+                p-2 text-center transition-all hover:scale-[1.04] active:scale-[0.97]`;
 
               if (tool.enabled && tool.href) {
                 return (

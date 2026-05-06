@@ -38,9 +38,9 @@ export default function Footer({
         </div>
       </footer>
 
-      {/* ── DESKTOP: fixed at bottom ── */}
+      {/* ── DESKTOP: in document flow like mobile ── */}
       <footer
-        className={`hidden md:block fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 bg-background/95 backdrop-blur-sm ${className}`}
+        className={`hidden md:block w-full border-t border-border/40 bg-background/95 ${className}`}
       >
         <div className="mx-auto w-full max-w-6xl px-4 lg:px-6 py-1.5 flex items-center justify-between gap-2">
           <p className="text-[10px] font-semibold truncate">

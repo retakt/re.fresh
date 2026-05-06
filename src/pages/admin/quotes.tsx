@@ -49,6 +49,21 @@ export default function AdminQuotesPage() {
 
   useEffect(() => { void fetchDbQuotes(); }, [fetchDbQuotes]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchDbQuotes(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchDbQuotes]);
+
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const openAdd = () => { setEditingId(null); setText(""); setAuthor(""); setShowForm(true); };
   const openEdit = (q: QuoteRow) => { setEditingId(q.isDb ? q.id : null); setText(q.text); setAuthor(q.author); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditingId(null); setText(""); setAuthor(""); };

@@ -28,6 +28,21 @@ export default function AdminMusicPage() {
 
   useEffect(() => { void fetchTracks(); }, [fetchTracks]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchTracks(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchTracks]);
+
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
     const { error } = await supabase.from("music").delete().eq("id", id);

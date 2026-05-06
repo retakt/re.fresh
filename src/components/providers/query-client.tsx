@@ -12,11 +12,15 @@ const queryClient = new QueryClient({
       gcTime: 15 * 60 * 1000,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      retry: 2,
+      refetchOnMount: true,
+      retry: 3,
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
+      // Network mode - fail fast on offline, retry on reconnect
+      networkMode: 'online',
     },
     mutations: {
-      retry: 1,
+      retry: 2,
+      networkMode: 'online',
     },
   },
 });

@@ -76,6 +76,14 @@ export default function BlogPage() {
     return () => window.removeEventListener("app-resume", handleResume);
   }, [fetchPosts]);
 
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   // Pull-to-refresh on mobile — always enabled so users can escape a stuck skeleton
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
     onRefresh: fetchPosts,

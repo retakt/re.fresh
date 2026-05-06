@@ -27,6 +27,21 @@ export default function AdminTutorialsPage() {
 
   useEffect(() => { void fetchTutorials(); }, [fetchTutorials]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchTutorials(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchTutorials]);
+
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
     const { error } = await supabase.from("tutorials").delete().eq("id", id);

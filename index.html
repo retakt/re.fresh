@@ -2,7 +2,7 @@
 <html lang="en" suppressHydrationWarning>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
     <!-- Performance optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -83,7 +83,7 @@
       <!-- Inline loading shell — visible before JS parses, theme-aware -->
       <div id="app-shell" style="
         min-height: 100dvh;
-        background: var(--shell-bg, #ffffff);
+        background: #0a0a0f;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -107,7 +107,7 @@
               width: 100%;
               height: 100%;
               border-radius: 50%;
-              background: var(--shell-bg, #ffffff);
+              background: #0a0a0f;
             "></div>
           </div>
           <!-- Logo -->
@@ -116,8 +116,9 @@
             font-size: 18px;
             letter-spacing: -0.02em;
             font-weight: 700;
+            color: #e5e5e5;
           ">
-            <span style="color: #38bdf8;">re</span><span style="color: rgba(0,0,0,0.25);">.</span>
+            <span style="color: #38bdf8;">re</span><span style="color: #e11d48;">.</span>
           </span>
         </div>
       </div>
@@ -125,23 +126,16 @@
     <style>
       @keyframes shell-spin { to { transform: rotate(360deg); } }
       
-      /* Dark mode shell */
-      html.dark #app-shell { 
-        background: #0a0a0f !important; 
-      }
-      html.dark #app-shell > div > div > div {
-        background: #0a0a0f !important;
-      }
-      html.dark #app-shell span span:last-child { 
-        color: rgba(255,255,255,0.2) !important; 
+      /* Force dark background immediately */
+      html, body {
+        background-color: #0a0a0f !important;
+        color: #e5e5e5 !important;
       }
       
-      /* Light mode shell */
-      html.light #app-shell {
-        background: #ffffff !important;
-      }
-      html.light #app-shell > div > div > div {
-        background: #ffffff !important;
+      /* Ensure root div also has dark background */
+      #root {
+        background-color: #0a0a0f !important;
+        min-height: 100vh;
       }
     </style>
     <script>

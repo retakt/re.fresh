@@ -8,17 +8,20 @@ import * as Sentry from "@sentry/react";
 initMonitoring();
 
 // ── Viewport height sync (iOS Safari fix) ────────────────────────────────────
-// Keeps --app-height accurate when the keyboard, notch, or dynamic island
-// changes the visible viewport. Also nudges a repaint on tab resume.
+// Keeps --app-height accurate for address bar changes, but NOT for keyboard.
+// Using innerHeight instead of visualViewport prevents layout shift when keyboard opens.
 function syncViewportHeight() {
-  const h = window.visualViewport?.height ?? window.innerHeight;
+  // Use innerHeight which doesn't change when keyboard opens
+  // This prevents the footer from jumping up when typing
+  const h = window.innerHeight;
   document.documentElement.style.setProperty("--app-height", `${h}px`);
 }
 
 syncViewportHeight();
 
+// Only listen to resize and orientation change, not visualViewport resize
+// This way keyboard opening/closing won't trigger layout recalculation
 window.addEventListener("resize", syncViewportHeight, { passive: true });
-window.visualViewport?.addEventListener("resize", syncViewportHeight, { passive: true });
 window.addEventListener("orientationchange", syncViewportHeight, { passive: true });
 
 // pageshow fires on back-forward cache restore (bfcache) — critical for Safari
@@ -36,8 +39,22 @@ window.addEventListener("pageshow", (e) => {
   }
 });
 
+// Debounce app-resume to prevent rapid-fire events
+let resumeTimeout: number | null = null;
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) syncViewportHeight();
+  if (!document.hidden) {
+    // Only trigger when page becomes visible (not when hiding)
+    syncViewportHeight();
+    
+    // Debounce: only fire if page has been hidden for at least 1 second
+    if (resumeTimeout) {
+      clearTimeout(resumeTimeout);
+    }
+    resumeTimeout = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("app-resume"));
+      resumeTimeout = null;
+    }, 100);
+  }
 });
 
 // ── Stale cache auto-recovery ─────────────────────────────────────────────────

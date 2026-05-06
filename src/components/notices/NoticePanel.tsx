@@ -36,10 +36,9 @@ export function NoticePanel() {
               ease: [0.16, 1, 0.3, 1]
             }}
             className="notice-panel-content"
-            onClick={(e) => e.stopPropagation()}
           >
             {/* Header with Canvas Text - Always Horizontal */}
-            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/10">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/30">
               <div className="flex flex-row items-center gap-1 sm:gap-1.5">
                 {/* Canvas Text - Update (Green) - BIGGER */}
                 <CanvasText
@@ -61,14 +60,6 @@ export function NoticePanel() {
                   animationDuration={30}
                 />
               </div>
-              
-              <button
-                onClick={dismiss}
-                className="p-1 sm:p-1.5 rounded-lg transition-colors text-white/60 hover:text-white hover:bg-white/10 shrink-0"
-                aria-label="Close notice"
-              >
-                <X size={16} className="sm:w-[18px] sm:h-[18px]" />
-              </button>
             </div>
 
             {/* Content - Changelog Style */}
@@ -149,16 +140,14 @@ export function NoticePanel() {
               </motion.div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-between p-4 border-t border-white/10 bg-black/20">
-              <NoticeShareButton noticeId={notice.id} />
-              
-              <button
-                onClick={dismiss}
-                className="text-xs font-medium text-white/60 hover:text-white transition-colors"
-              >
-                Dismiss
-              </button>
+            {/* Actions - Only Share Button */}
+            <div className="flex items-center justify-end px-3 py-2 sm:px-4 border-t border-white/30">
+              <div onClick={(e) => e.stopPropagation()}>
+                <NoticeShareButton 
+                  noticeId={notice.id}
+                  className="px-6 py-3 text-sm sm:text-base"
+                />
+              </div>
             </div>
           </motion.div>
         </motion.div>

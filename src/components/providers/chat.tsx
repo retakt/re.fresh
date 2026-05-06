@@ -872,7 +872,7 @@ function parseSlashCommand(text: string): SlashResult | null {
     case "auto":
       return {
         isCommand: true,
-        response: "✅ **Intelligent auto mode** enabled. Re will automatically optimize performance based on query complexity (no-think → balanced → full-think).",
+        response: "Intelligent auto mode enabled. Re will automatically optimize performance based on query complexity (no-think → balanced → full-think).",
         optionOverrides: { ...NO_THINK_OPTIONS }, // Start with fastest, auto-escalate
       };    case "temp": {
       const val = parseFloat(args[0] ?? "");

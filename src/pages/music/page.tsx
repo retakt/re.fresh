@@ -313,6 +313,14 @@ export default function MusicPage() {
     return () => window.removeEventListener("app-resume", handleResume);
   }, [fetchTracks]);
 
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   const { pullDistance, refreshing, isTriggered } = usePullToRefresh({
     onRefresh: fetchTracks,
     disabled: false,

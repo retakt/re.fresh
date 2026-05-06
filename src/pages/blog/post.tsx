@@ -71,7 +71,7 @@ export default function BlogPostPage() {
       <div className="max-w-3xl">
         {post ? (
           // Show content with loading background
-          <article className="flex flex-col min-h-[80vh]">
+          <article className="flex flex-col">
             <div className={`relative mb-8 overflow-hidden rounded-lg border border-border/60 px-5 py-7 shadow-sm sm:px-7 sm:py-8 bg-gradient-to-b ${getCardPalette(post.id).headerGradient}`}>
               {/* Background image skeleton */}
               {post.cover_image && (
@@ -135,7 +135,7 @@ export default function BlogPostPage() {
   }
 
   return (
-    <article className="max-w-3xl flex flex-col min-h-[80vh]">
+    <article className="max-w-3xl flex flex-col">
       {/* Full image overlay - shown when holding */}
       {showFullImage && post.cover_image && (
         <div 

@@ -9,6 +9,7 @@ export type ToolConfig = {
   iconBg: string;
   iconColor: string;
   border: string;
+  shadow?: string;
   enabled: boolean;
   href?: string;
 };

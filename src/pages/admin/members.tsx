@@ -54,6 +54,21 @@ export default function AdminMembersPage() {
 
   useEffect(() => { void fetchMembers(); }, [fetchMembers]);
 
+  // Re-fetch when returning from bfcache (tab switch, phone sleep, back-forward nav)
+  useEffect(() => {
+    const handleResume = () => { void fetchMembers(); };
+    window.addEventListener("app-resume", handleResume);
+    return () => window.removeEventListener("app-resume", handleResume);
+  }, [fetchMembers]);
+
+  // Loading state safety net - prevent stuck loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => setLoading(false), 15000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
+
   // Always refresh session before calling the invite function
   // This ensures we have a fresh token after JWT key rotation
   const getFreshToken = async (): Promise<string | null> => {

@@ -838,6 +838,7 @@ const AssistantMessage: FC = () => {
             "[&_li]:leading-[1.55]",
             "[&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm",
             "[&>*:empty]:hidden [&_ul:empty]:hidden [&_li:empty]:hidden",
+            "[&_.aui-text-running-cursor]:hidden", // Hide the default grey cursor
           )}
         >
           <MessagePrimitive.Parts

@@ -6,8 +6,8 @@
 
 const TERMINAL_URL = import.meta.env.VITE_OPEN_TERMINAL_URL ?? 'http://localhost:8001';
 
-// Hardcoded API key - no auth bullshit
-const TERMINAL_API_KEY = 'um3qh0ope24yJBJqC0Qtc8gNEldM1BqkaMCG33-59H5YYF23xH9KLkGEr2TzlWtp';
+// Use environment variable for API key
+const TERMINAL_API_KEY = import.meta.env.VITE_OPEN_TERMINAL_API_KEY ?? 'terminal123';
 
 export function setTerminalKey(key: string) {
   // Do nothing - we use hardcoded key

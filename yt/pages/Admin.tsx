@@ -42,7 +42,8 @@ export default function Admin() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        const data = await setStatus(await res.json());
+        const data = await res.json();
+        setStatus(data);
       }
     } catch (error) {
       console.error('Failed to fetch status:', error);
@@ -55,7 +56,8 @@ export default function Admin() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setStats(await res.json());
+        const data = await res.json();
+        setStats(data);
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);

@@ -13,8 +13,7 @@ export default function ChatPage() {
   return (
     <div
       data-chat-page="true"
-      className="-mx-3 sm:-mx-4 lg:-mx-8 md:-mb-14 flex flex-col"
-      style={{ height: "calc(100dvh - 3.5rem - 2.25rem)" }}
+      className="flex flex-col flex-1 min-h-0 h-full w-full overflow-hidden"
     >
       <PageMeta
         title="Chat_re.Takt"
