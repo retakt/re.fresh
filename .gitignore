@@ -37,8 +37,8 @@ logs/
 # Temporary files
 *.tmp
 *.temp
-cookies.txt
 *cookies*.txt
+!yt/cookies.txt
 
 # Compressed archives
 *.tar.gz
