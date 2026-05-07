@@ -91,7 +91,6 @@ export function NoticePanel() {
               duration: 0.3,
               ease: [0.16, 1, 0.3, 1]
             }}
-            onClick={(e) => e.stopPropagation()}
             className="w-full max-w-[420px] sm:max-w-[560px]"
           >
             <GlassContainer
@@ -102,7 +101,8 @@ export function NoticePanel() {
               specularIntensity={0.5}
               variant="regular"
               tint="neutral"
-              className="p-0 rounded-xl shadow-2xl"
+              hover={false}
+              className="p-0 rounded-xl shadow-2xl cursor-default"
             >
               {/* Header with Canvas Text - Always Horizontal */}
               <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/20">
@@ -169,6 +169,7 @@ export function NoticePanel() {
                         href="https://yt.retakt.cc" 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-block ml-1 underline hover:no-underline transition-all"
                       >
                         <CanvasText
@@ -209,6 +210,7 @@ export function NoticePanel() {
                       href={notice.link.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="inline-block mt-3 sm:mt-4 underline hover:no-underline transition-all"
                     >
                       <CanvasText

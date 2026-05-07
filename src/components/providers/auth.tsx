@@ -37,12 +37,15 @@ type AuthContextValue = {
 };
 
 // ─── Events that should trigger a profile (re-)fetch ─────────────────────────
-// TOKEN_REFRESHED is intentionally excluded — it does NOT change the user's
-// profile data and was the source of the 3rd duplicate /profiles request.
+// INITIAL_SESSION is handled by getSession() directly — not via the listener.
 const PROFILE_FETCH_EVENTS = new Set<AuthChangeEvent>([
-  "INITIAL_SESSION",
   "SIGNED_IN",
   "USER_UPDATED",
+]);
+
+// TOKEN_REFRESHED only re-fetches if profile was lost (e.g. after inactivity)
+const PROFILE_RECOVERY_EVENTS = new Set<AuthChangeEvent>([
+  "TOKEN_REFRESHED",
 ]);
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -121,6 +124,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // ── Step 1: Eagerly load the session from storage so we never flash
+    //    "logged out" on hard refresh while waiting for the listener.
+    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
+      if (!mounted) return;
+      const initialUser = initialSession?.user ?? null;
+      setSession(initialSession);
+      setUser(initialUser);
+
+      if (initialUser) {
+        const data = await fetchProfile(initialUser.id);
+        if (mounted) setProfile(data);
+      }
+
+      if (mounted) setLoading(false);
+    });
+
+    // ── Step 2: Listen for subsequent auth changes (sign in, sign out,
+    //    token refresh, etc.) — but never touch `loading` again after init.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
@@ -133,16 +154,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!nextUser || event === "SIGNED_OUT") {
           setProfile(null);
-          if (mounted) setLoading(false);
           return;
         }
 
         if (PROFILE_FETCH_EVENTS.has(event)) {
           const data = await fetchProfile(nextUser.id);
           if (mounted) setProfile(data);
+          return;
         }
 
-        if (mounted) setLoading(false);
+        // TOKEN_REFRESHED: only re-fetch if profile was lost (inactivity recovery)
+        if (PROFILE_RECOVERY_EVENTS.has(event)) {
+          setProfile((current) => {
+            if (current === null) {
+              fetchProfile(nextUser.id).then((data) => {
+                if (mounted) setProfile(data);
+              });
+            }
+            return current;
+          });
+        }
       },
     );
 
@@ -210,8 +241,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { data, error: error ?? null };
       },
       signOut: async () => {
-        const { error } = await supabase.auth.signOut();
-        return { error: error ?? null };
+        // Best-effort Supabase signOut — ignore errors
+        try {
+          await supabase.auth.signOut();
+        } catch (_) {
+          // ignore
+        }
+
+        // Force-clear all auth storage regardless of Supabase result
+        try {
+          // Clear the specific Supabase session key
+          localStorage.removeItem("retakt-auth");
+          // Wipe any other Supabase-related keys
+          Object.keys(localStorage).forEach((key) => {
+            if (
+              key.startsWith("sb-") ||
+              key.startsWith("supabase") ||
+              key.includes("retakt-auth")
+            ) {
+              localStorage.removeItem(key);
+            }
+          });
+          sessionStorage.clear();
+          // Clear all cookies for this domain
+          document.cookie.split(";").forEach((cookie) => {
+            const name = cookie.split("=")[0].trim();
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+          });
+        } catch (_) {
+          // ignore storage errors
+        }
+
+        return { error: null };
       },
       refreshProfile: async () => {
         if (!user) return;

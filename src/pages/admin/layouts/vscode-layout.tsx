@@ -6,7 +6,7 @@ import { AdminTilesSimple } from './admin-tiles-simple';
 // Notes Panel Component
 function NotesPanel() {
   return (
-    <div className="w-full h-full p-2">
+    <div className="w-full h-full p-1 ">
       <div className="w-full h-full rounded-lg border border-yellow-600/60 shadow-[0_0_10px_rgba(202,138,4,0.2)] bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-center relative overflow-hidden">
         {/* Diagonal lines */}
         <div className="absolute inset-0">
@@ -42,11 +42,18 @@ export function VSCodeLayout() {
 
   console.log('🎨 VSCode Layout rendering - isMobile:', isMobile); // Debug render
 
+  // CSS variables for grey sash styling
+  const allotmentStyle = {
+    '--focus-border': '#6b7280',
+    '--separator-border': '#6b7280',
+    '--sash-size': '2px'
+  } as React.CSSProperties;
+
   if (isMobile) {
     // Mobile: Vertical layout - Terminal (50%), Grid (30%), Notes (20%)
     return (
-      <div className="w-full h-full">
-        <Allotment key="mobile-layout-v2" vertical defaultSizes={[50, 30, 20]}>
+      <div className="w-full h-full" style={allotmentStyle}>
+        <Allotment key="mobile-layout-v2" vertical defaultSizes={[50, 30, 20]} separator={false}>
           {/* Terminal - Top 50% */}
           <Allotment.Pane minSize={200}>
             <div className="w-full h-full p-1 sm:p-2">
@@ -74,8 +81,8 @@ export function VSCodeLayout() {
 
   // Desktop: Original layout - Tiles (35%), Terminal+Notes (65%)
   return (
-    <div className="w-full h-full">
-      <Allotment vertical defaultSizes={[35, 65]}>
+    <div className="w-full h-full" style={allotmentStyle}>
+      <Allotment vertical defaultSizes={[35, 65]} separator={false}>
         {/* Top: Admin Tiles Bento Grid */}
         <Allotment.Pane minSize={150}>
           <div className="w-full h-full bg-gray-50/50 dark:bg-gray-900/20">
@@ -85,7 +92,7 @@ export function VSCodeLayout() {
 
         {/* Bottom: Terminal (left) + Notes (right) */}
         <Allotment.Pane minSize={200}>
-          <Allotment vertical={false} defaultSizes={[75, 25]}>
+          <Allotment vertical={false} defaultSizes={[75, 25]} separator={false}>
             {/* Terminal - Bottom Left (75%) */}
             <Allotment.Pane minSize={200}>
               <div className="w-full h-full p-2">

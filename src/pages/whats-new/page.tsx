@@ -18,15 +18,13 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
   {
     version: "v1.6",
     date: "4th May, 2026",
-    title: "YouTube Downloader",
+    title: "y0uTube Downloader",
     items: [
-      "YouTube downloader tool - yt.retakt.cc (yt-dlp backend)",
-      "auto/audio/mute modes, quality settings (max to 144p)",
-      "codec selection (h264, av1, vp9), container formats",
-      "encrypted URL paste animation, auto-detect clipboard",
+      "y0uTube Downloader - yt.retakt.cc (yt-dlp backend)",
+      "auto/audio/mute modes, quality settings (max to 2160p)",
+      "codec selection (h264, av1, vp9)",
+      "auto-detect clipboard",
       "download manager with queue, progress tracking",
-      "admin panel - cookie rotation, WARP++ status, queue stats",
-      "canvas text with blood red texture (#dc143c)",
     ],
   },
   {
@@ -186,7 +184,7 @@ export default function WhatsNewPage() {
                     {entry.version === "v1.6" ? (
                       <div className="flex items-center gap-2 flex-wrap">
                         <CanvasText
-                          text="YouTube Downloader"
+                          text="y0uTube Downloader"
                           backgroundClassName={bg}
                           colors={lines}
                           lineGap={1}
@@ -216,7 +214,32 @@ export default function WhatsNewPage() {
                     {entry.items.map((item, i) => (
                       <li key={i} className="text-[13px] text-muted-foreground leading-relaxed flex gap-2">
                         <span className="shrink-0 mt-[0.45rem] size-1 rounded-full bg-primary/50" />
-                        <span className="min-w-0">{item}</span>
+                        <span className="min-w-0">
+                          {entry.version === "v1.6" && i === 0 ? (
+                            // Special handling for YouTube Downloader link
+                            <span>
+                              y0uTube Downloader - 
+                              <a 
+                                href="https://yt.retakt.cc" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-block ml-1 hover:opacity-80 transition-opacity"
+                              >
+                                <CanvasText
+                                  text="yt.retakt.cc"
+                                  className="text-[13px] font-medium align-middle whitespace-nowrap"
+                                  backgroundClassName={VERSION_COLORS["v1.6-major"].bg}
+                                  colors={VERSION_COLORS["v1.6-major"].lines}
+                                  lineGap={1}
+                                  animationDuration={30}
+                                />
+                              </a>
+                              {" "}(yt-dlp backend)
+                            </span>
+                          ) : (
+                            item
+                          )}
+                        </span>
                       </li>
                     ))}
                   </ul>

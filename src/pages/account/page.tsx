@@ -393,7 +393,7 @@ export default function AccountPage() {
 
   const handleLogout = async () => {
     await signOut();
-    // Stay on current page — don't redirect to login
+    window.location.replace("/");
   };
 
   return (

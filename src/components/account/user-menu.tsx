@@ -23,8 +23,8 @@ export default function UserMenu() {
 
   const handleLogout = async () => {
     setOpen(false);
-    const { error } = await signOut();
-    if (!error) window.location.href = "/";
+    await signOut();
+    window.location.replace("/");
   };
 
   const itemCls = "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-left outline-none cursor-pointer transition-colors hover:bg-secondary data-[highlighted]:bg-secondary";

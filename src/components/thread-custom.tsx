@@ -34,6 +34,8 @@ import {
   SquareIcon,
   XIcon,
   ImageIcon,
+  CornerDownLeftIcon,
+  TypeIcon,
 } from "lucide-react";
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -486,6 +488,12 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
   const aui = useAui();
   const [isDragOver, setIsDragOver] = useState(false);
   const { setLastSentImage } = useChatContext();
+  
+  // Enter behavior toggle state - default to send on Enter for mobile
+  const [enterToSend, setEnterToSend] = useState(() => {
+    // Default to true on mobile devices
+    return window.innerWidth < 768;
+  });
 
   // ── Message history (↑/↓ navigation) ───────────────────────────────────────
   const historyRef = useRef<string[]>([]);
@@ -706,10 +714,14 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
                 }
                 // Enter sends — record history
                 if (e.key === "Enter" && !e.shiftKey) {
-                  handleSend();
-                  if (window.innerWidth < 768) {
-                    setTimeout(() => ta.blur(), 50);
+                  if (enterToSend) {
+                    e.preventDefault();
+                    handleSend();
+                    if (window.innerWidth < 768) {
+                      setTimeout(() => ta.blur(), 50);
+                    }
                   }
+                  // If enterToSend is false, let the default behavior (new line) happen
                 }
               }}
             />
@@ -730,6 +742,24 @@ const Composer: FC<ComposerProps> = ({ attachedFile, onAttachFile, onRemoveFile,
                 </span>
               </div>
             )}
+          </div>
+
+          {/* Enter behavior toggle */}
+          <div className="shrink-0">
+            <TooltipIconButton
+              tooltip={enterToSend ? "Enter sends message" : "Enter adds new line"}
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+              onClick={() => setEnterToSend(!enterToSend)}
+            >
+              {enterToSend ? (
+                <CornerDownLeftIcon className="size-4" />
+              ) : (
+                <TypeIcon className="size-4" />
+              )}
+            </TooltipIconButton>
           </div>
 
           {/* Voice Mode Button */}
