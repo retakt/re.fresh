@@ -1,14 +1,23 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   Home, BookOpen, Music2, GraduationCap,
-  User, FolderOpen, X, MessageSquare, Sparkles,
+  User, FolderOpen, X, MessageSquare, Sparkles, TerminalSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { prefetchRoute } from "@/lib/prefetch";
 import { CanvasText } from "@/components/ui/canvas-text";
+import { useAuthContext } from "@/components/providers/auth";
 
-const NAV_LINKS = [
+interface NavLink {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  teal: boolean;
+  authRequired?: boolean;
+}
+
+const NAV_LINKS: NavLink[] = [
   { href: "/whats-new", icon: Sparkles,       label: "What's New", teal: true  },
   { href: "/",          icon: Home,           label: "Home",       teal: false },
   { href: "/blog",      icon: BookOpen,       label: "Blog",       teal: false },
@@ -17,6 +26,7 @@ const NAV_LINKS = [
   { href: "/about",     icon: User,           label: "About",      teal: false },
   { href: "/files",     icon: FolderOpen,     label: "Files",      teal: false },
   { href: "/chat",      icon: MessageSquare,  label: "Chat",       teal: false },
+  { href: "/terminal",  icon: TerminalSquare, label: "Terminal",   teal: false, authRequired: true },
 ];
 
 interface SidebarProps {
@@ -26,6 +36,11 @@ interface SidebarProps {
 
 export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const location = useLocation();
+  const { role } = useAuthContext();
+
+  const visibleLinks = NAV_LINKS.filter(
+    (link) => !link.authRequired || role !== "guest"
+  );
 
   return (
     <>
@@ -34,7 +49,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
         <aside className="flex flex-col pt-8 h-full overflow-hidden pr-4 border-r border-gray-400/30 shadow-[1px_0_5px_rgba(192,192,192,0.1)] dark:border-gray-400/30 dark:shadow-[1px_0_5px_rgba(192,192,192,0.1)] -ml-8 pl-8">
         <div className="flex flex-col flex-1 min-h-0 relative h-full">
           <nav className="flex flex-col gap-0.5 flex-1 pb-16">
-            {NAV_LINKS.map((link) => {
+            {visibleLinks.map((link) => {
               const Icon = link.icon;
               const active =
                 link.href === "/"
@@ -133,7 +148,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                   },
                 }}
               >
-                {NAV_LINKS.map((link) => {
+                {visibleLinks.map((link) => {
                   const Icon = link.icon;
                   const active =
                     link.href === "/"

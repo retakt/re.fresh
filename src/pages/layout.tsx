@@ -45,8 +45,8 @@ export default function AppLayout() {
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  // Check if current page is chat
-  const isChatPage = location.pathname === '/chat';
+  // Check if current page is chat or terminal (full-height, no padding)
+  const isChatPage = location.pathname === '/chat' || location.pathname === '/terminal';
 
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {

@@ -53,6 +53,29 @@ const NOTIFICATIONS_KEY = "re.takt.notifications.enabled";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+/**
+ * 3.1 Session Validation Helper
+ * 
+ * Validates if a session is still valid by checking:
+ * - Session is not null
+ * - access_token exists
+ * - user object exists and has required properties (id)
+ * - expires_at is not missing
+ * - expires_at is in the future (with 10 second buffer for clock skew)
+ */
+function isSessionValid(session: Session | null): boolean {
+  if (!session) return false;
+  if (!session.access_token || !session.user) return false;
+  if (!session.user.id) return false; // User must have an id
+  if (!session.expires_at) return false;
+
+  const expiresAt = session.expires_at * 1000; // Convert to milliseconds
+  const now = Date.now();
+  const buffer = 10000; // 10 second buffer to account for clock skew
+
+  return expiresAt > now + buffer;
+}
+
 function getDisplayName(user: User | null, profile: Profile | null) {
   const profileName = profile?.username?.trim();
   const metadataName =
@@ -128,8 +151,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //    "logged out" on hard refresh while waiting for the listener.
     supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
       if (!mounted) return;
-      const initialUser = initialSession?.user ?? null;
-      setSession(initialSession);
+
+      // 3.2 Validate session after loading from storage
+      const validSession = isSessionValid(initialSession) ? initialSession : null;
+      const initialUser = validSession?.user ?? null;
+
+      // 3.3 & 3.4 Clear invalid session from storage and log
+      if (initialSession && !isSessionValid(initialSession)) {
+        // 3.4 Add logging for invalid session detection
+        console.warn("[auth] Invalid session detected on load, clearing auth state", {
+          expiresAt: initialSession.expires_at,
+          now: Math.floor(Date.now() / 1000),
+          hasAccessToken: !!initialSession.access_token,
+          hasUser: !!initialSession.user,
+        });
+
+        // 3.3 Clear invalid session from storage
+        try {
+          localStorage.removeItem("retakt-auth");
+          // Clear all Supabase-managed keys
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith("sb-") || key.startsWith("supabase")) {
+              localStorage.removeItem(key);
+            }
+          });
+        } catch (e) {
+          console.error("[auth] Failed to clear invalid session from storage", e);
+        }
+      }
+
+      setSession(validSession);
       setUser(initialUser);
 
       if (initialUser) {

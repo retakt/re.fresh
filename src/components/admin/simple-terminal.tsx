@@ -4,6 +4,18 @@ import { executeSystemStatusCheck, checkTerminalHealth, setTerminalKey, getTermi
 import { useAuthContext } from '@/components/providers/auth';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * Please use the new SharedTerminal component at /terminal instead.
+ * 
+ * Migration path:
+ * - Navigate to /terminal in your app
+ * - All commands from simple-terminal are available in shared-terminal
+ * - New features: persistent PTY session, real-time collaboration, better ANSI support
+ * 
+ * See: src/components/terminal/shared-terminal.tsx
+ */
+
 interface SimpleTerminalProps {
   className?: string;
 }

@@ -44,6 +44,7 @@ const AdminMembersPage        = lazy(() => import("./pages/admin/members.tsx"));
 const AdminQuotesPage         = lazy(() => import("./pages/admin/quotes.tsx"));
 const AdminAccessRequestsPage = lazy(() => import("./pages/admin/access-requests.tsx"));
 const YouTubeDownloaderPage   = lazy(() => import("./pages/admin/api-config.tsx"));
+const TerminalPage            = lazy(() => import("./pages/terminal.tsx"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -123,6 +124,7 @@ function AppContent() {
             <Route path="/files"             element={<FilesPage />} />
             <Route path="/search"            element={<SearchPage />} />
             <Route path="/chat"              element={<ChatPage />} />
+            <Route path="/terminal"          element={<TerminalPage />} />
             <Route path="/whats-new"         element={<WhatsNewPage />} />
             
             {/* Notice share page */}

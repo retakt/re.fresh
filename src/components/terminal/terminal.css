@@ -1,0 +1,60 @@
+/* ─── xterm.js scrollbar — amber/minimal ─────────────────────────────────── */
+
+.xterm .xterm-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.35);
+  border-radius: 3px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.65);
+}
+
+/* Firefox */
+.xterm .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 191, 36, 0.35) transparent;
+}
+
+/* ─── Terminal container ──────────────────────────────────────────────────── */
+
+.terminal-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* xterm root element fills the container */
+.terminal-container .xterm {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Force xterm viewport to be transparent so app bg shows through */
+.terminal-container .xterm .xterm-viewport {
+  background: transparent !important;
+}
+
+/* The screen canvas fills the xterm element */
+.terminal-container .xterm .xterm-screen {
+  width: 100% !important;
+}
+
+/* Cursor color */
+.terminal-container .xterm .xterm-cursor-layer .xterm-cursor {
+  background-color: #fbbf24 !important;
+}
+
+/* Selection */
+.terminal-container .xterm .xterm-selection div {
+  background-color: rgba(120, 53, 15, 0.5) !important;
+}

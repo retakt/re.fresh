@@ -43,3 +43,6 @@ logs/
 # Compressed archives
 *.tar.gz
 *.zip
+
+
+.kiro
