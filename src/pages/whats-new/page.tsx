@@ -1,4 +1,6 @@
 import { CanvasText } from "@/components/ui/canvas-text";
+import { motion } from "motion/react";
+import { useState, useEffect, useRef } from "react";
 
 // ── Per-version title color palettes ─────────────────────────────────────────
 const VERSION_COLORS: Record<string, { bg: string; lines: string[] }> = {
@@ -57,8 +59,7 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
       "chat open sourced - llm (qwen3.5)",
       "--auto-mode (fine-tuned to perform without assistance)",
       "slash (/) commands, thinking modes, streaming responses",
-      "image + text file attachments, syntax highlighting",
-      "restore, edit sent messages",
+      "image + text file attachments",
     ],
   },
   {
@@ -123,6 +124,60 @@ const UPCOMING: string[] = [
 ];
 
 export default function WhatsNewPage() {
+  const [activeVersion, setActiveVersion] = useState<string | null>(null);
+  const [hoveredVersion, setHoveredVersion] = useState<string | null>(null);
+  const [linePosition, setLinePosition] = useState({ top: 0, height: 0 });
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Track scroll position to update active section
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const version = entry.target.getAttribute("data-version");
+            if (version) {
+              setActiveVersion(version);
+            }
+          }
+        });
+      },
+      {
+        rootMargin: "-20% 0px -50% 0px",
+        threshold: 0,
+      }
+    );
+
+    sectionRefs.current.forEach((element) => {
+      observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Update glowing line segment position to cover active section only (shorter)
+  useEffect(() => {
+    const targetVersion = hoveredVersion || activeVersion;
+    if (!targetVersion || !timelineRef.current) return;
+
+    const targetElement = sectionRefs.current.get(targetVersion);
+
+    if (targetElement && timelineRef.current) {
+      const timelineRect = timelineRef.current.getBoundingClientRect();
+      const targetRect = targetElement.getBoundingClientRect();
+      
+      const top = targetRect.top - timelineRect.top;
+      const height = targetRect.height + 8; // Add small padding to cover gaps between sections
+      
+      // Constrain the line to stay within timeline bounds
+      const maxBottom = timelineRect.height - 8; // Leave 8px padding at bottom
+      const constrainedHeight = Math.min(height, maxBottom - top);
+
+      setLinePosition({ top, height: Math.max(0, constrainedHeight) });
+    }
+  }, [activeVersion, hoveredVersion]);
+
   return (
     <div className="w-full max-w-2xl space-y-3 pb-8">
       {/* Header */}
@@ -146,103 +201,148 @@ export default function WhatsNewPage() {
           Released
         </h2>
 
-        <div className="relative pl-6">
-          {/* Timeline line — 0.75rem from left (center of dot) */}
-          <div className="absolute left-[0.6875rem] top-2 bottom-2 w-px bg-primary/40" />
+        <div ref={timelineRef} className="relative pl-6">
+          {/* Base dim line - full height */}
+          <div 
+            className="absolute left-[0.6875rem] top-2 bottom-2 w-[0.5px] -translate-x-1/2" 
+            style={{ 
+              backgroundColor: "#11D8C2", 
+              opacity: 1,
+            }}
+          />
+          
+          {/* Clipping container for glowing line */}
+          <div className="absolute left-0 top-0 bottom-0 w-full overflow-hidden pointer-events-none" style={{ isolation: "isolate" }}>
+            {/* Animated glowing line segment - short bright segment around active section */}
+            <motion.div
+              className="absolute left-[0.6875rem] w-[0.5px] -translate-x-1/2"
+              style={{ 
+                backgroundColor: "#11D8C2",
+                opacity: 1,
+                boxShadow: "0 0 12px rgba(17, 216, 194, 0.9), 0 0 6px rgba(17, 216, 194, 0.7), 0 0 3px rgba(17, 216, 194, 0.9), 0 0 1px #11D8C2"
+              }}
+              animate={{ 
+                top: linePosition.top + 8,
+                height: linePosition.height 
+              }}
+              transition={{ type: "spring", stiffness: 80, damping: 20 }}
+            />
+          </div>
 
           <div className="space-y-2">
             {RELEASED.map((entry) => {
               const { bg, lines } = VERSION_COLORS[entry.version] ?? VERSION_COLORS["v1.0"];
+              const isActive = activeVersion === entry.version || hoveredVersion === entry.version;
+              
               return (
-                <div key={entry.version} className="relative">
-
-                  {/* Dot — on the line */}
+                <div
+                  key={entry.version}
+                  ref={(el) => {
+                    if (el) sectionRefs.current.set(entry.version, el);
+                  }}
+                  data-version={entry.version}
+                  onMouseEnter={() => setHoveredVersion(entry.version)}
+                  onMouseLeave={() => setHoveredVersion(null)}
+                  className="relative transition-opacity duration-200 hover:opacity-100"
+                  style={{ opacity: isActive ? 1 : 0.85 }}
+                >
+                  {/* Static circle that changes color when active */}
                   <div className="absolute -left-6 top-1 z-10 flex items-center justify-center w-[1.375rem]">
-                    <div
-                      className="size-2.5 rounded-full border-2"
-                      style={{ borderColor: "#11D8C2", backgroundColor: "var(--background)" }}
+                    <motion.div
+                      className="size-2.5 rounded-full border-2 transition-colors duration-300"
+                      style={{
+                        borderColor: isActive ? "#11D8C2" : "#0ecfba",
+                        backgroundColor: "var(--background)",
+                      }}
+                      animate={{
+                        scale: isActive ? 1.2 : 1,
+                      }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     />
                   </div>
 
-                  {/* Version + date — above title, left aligned */}
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="border-b border-red-500">
-                      <CanvasText
-                        text={entry.version}
-                        className="font-mono text-xs font-bold"
-                        backgroundClassName="bg-[#ef4444]"
-                        colors={["#ef4444","#dc2626","#ef4444","#b91c1c","#dc2626","#ef4444","#b91c1c","#dc2626"]}
-                        lineGap={1}
-                        animationDuration={30}
-                      />
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/50">{entry.date}</span>
-                  </div>
+                  <div className="relative">
 
-                  {/* Title */}
-                  <div className="text-lg font-bold leading-tight mb-2">
-                    {entry.version === "v1.6" ? (
-                      <div className="flex items-center gap-2 flex-wrap">
+                    {/* Version + date — above title, left aligned */}
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="border-b border-red-500">
                         <CanvasText
-                          text="y0uTube Downloader"
+                          text={entry.version}
+                          className="font-mono text-xs font-bold"
+                          backgroundClassName="bg-[#ef4444]"
+                          colors={["#ef4444","#dc2626","#ef4444","#b91c1c","#dc2626","#ef4444","#b91c1c","#dc2626"]}
+                          lineGap={1}
+                          animationDuration={30}
+                        />
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/50">{entry.date}</span>
+                    </div>
+
+                    {/* Title */}
+                    <div className="text-lg font-bold leading-tight mb-2">
+                      {entry.version === "v1.6" ? (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <CanvasText
+                            text="y0uTube Downloader"
+                            backgroundClassName={bg}
+                            colors={lines}
+                            lineGap={1}
+                            animationDuration={30}
+                          />
+                          <CanvasText
+                            text="[Major]"
+                            backgroundClassName={VERSION_COLORS["v1.6-major"].bg}
+                            colors={VERSION_COLORS["v1.6-major"].lines}
+                            lineGap={1}
+                            animationDuration={30}
+                          />
+                        </div>
+                      ) : (
+                        <CanvasText
+                          text={entry.title}
                           backgroundClassName={bg}
                           colors={lines}
                           lineGap={1}
                           animationDuration={30}
                         />
-                        <CanvasText
-                          text="[Major]"
-                          backgroundClassName={VERSION_COLORS["v1.6-major"].bg}
-                          colors={VERSION_COLORS["v1.6-major"].lines}
-                          lineGap={1}
-                          animationDuration={30}
-                        />
-                      </div>
-                    ) : (
-                      <CanvasText
-                        text={entry.title}
-                        backgroundClassName={bg}
-                        colors={lines}
-                        lineGap={1}
-                        animationDuration={30}
-                      />
-                    )}
-                  </div>
+                      )}
+                    </div>
 
-                  {/* Items */}
-                  <ul className="space-y-1">
-                    {entry.items.map((item, i) => (
-                      <li key={i} className="text-[13px] text-muted-foreground leading-relaxed flex gap-2">
-                        <span className="shrink-0 mt-[0.45rem] size-1 rounded-full bg-primary/50" />
-                        <span className="min-w-0">
-                          {entry.version === "v1.6" && i === 0 ? (
-                            // Special handling for YouTube Downloader link
-                            <span>
-                              y0uTube Downloader - 
-                              <a 
-                                href="https://yt.retakt.cc" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-block ml-1 hover:opacity-80 transition-opacity"
-                              >
-                                <CanvasText
-                                  text="yt.retakt.cc"
-                                  className="text-[13px] font-medium align-middle whitespace-nowrap"
-                                  backgroundClassName={VERSION_COLORS["v1.6-major"].bg}
-                                  colors={VERSION_COLORS["v1.6-major"].lines}
-                                  lineGap={1}
-                                  animationDuration={30}
-                                />
-                              </a>
-                              {" "}(yt-dlp backend)
-                            </span>
-                          ) : (
-                            item
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                    {/* Items */}
+                    <ul className="space-y-1">
+                      {entry.items.map((item, i) => (
+                        <li key={i} className="text-[13px] text-muted-foreground leading-relaxed flex gap-2">
+                          <span className="shrink-0 mt-[0.45rem] size-1 rounded-full" style={{ backgroundColor: "#11D8C2" }} />
+                          <span className="min-w-0">
+                            {entry.version === "v1.6" && i === 0 ? (
+                              // Special handling for YouTube Downloader link
+                              <span>
+                                y0uTube Downloader - 
+                                <a 
+                                  href="https://yt.retakt.cc" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-block ml-1 hover:opacity-80 transition-opacity"
+                                >
+                                  <CanvasText
+                                    text="yt.retakt.cc"
+                                    className="text-[13px] font-medium align-middle whitespace-nowrap"
+                                    backgroundClassName={VERSION_COLORS["v1.6-major"].bg}
+                                    colors={VERSION_COLORS["v1.6-major"].lines}
+                                    lineGap={1}
+                                    animationDuration={30}
+                                  />
+                                </a>
+                                {" "}(yt-dlp backend)
+                              </span>
+                            ) : (
+                              item
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
                 </div>
               );
@@ -272,7 +372,6 @@ export default function WhatsNewPage() {
           ))}
         </ul>
       </section>
-
     </div>
   );
 }

@@ -145,7 +145,7 @@ export function NoticePanel() {
                   <div className="text-sm sm:text-base md:text-lg font-bold leading-tight mb-2 sm:mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <CanvasText
-                        text="YouTube Downloader"
+                        text="y0uTube Downloader"
                         backgroundClassName="bg-[#dc143c]"
                         colors={["#8B0000","#A52A2A","#B22222","#DC143C","#FF0000","#8B0000","#A52A2A","#DC143C"]}
                         lineGap={1}

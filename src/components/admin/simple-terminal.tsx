@@ -22,8 +22,19 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [terminalKeyApproved, setTerminalKeyApproved] = useState(true); // Always approved
+  const [currentWorkingDir, setCurrentWorkingDir] = useState<string>(''); // Persistent cwd state
+  const [isCommandRunning, setIsCommandRunning] = useState(false); // Command execution state
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Helper function to clean ANSI escape codes from terminal output
+  const cleanAnsiCodes = useCallback((text: string): string => {
+    return text
+      .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '') // Remove ANSI escape sequences
+      .replace(/\x1b\[[0-9]*[GK]/g, '')     // Remove cursor positioning codes  
+      .replace(/\r/g, '')                    // Remove carriage returns
+      .trim();
+  }, []);
 
   // Auto-approve terminal access - no auth needed
   useEffect(() => {
@@ -45,12 +56,16 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
     }
   }, [output]);
 
-  // Auto-focus input when not monitoring
+  // Auto-focus input when not monitoring and after commands complete
   useEffect(() => {
-    if (!isMonitoring && inputRef.current) {
-      inputRef.current.focus();
+    if (!isMonitoring && !isCommandRunning && inputRef.current) {
+      // Small delay to ensure DOM updates are complete
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isMonitoring]);
+  }, [isMonitoring, isCommandRunning]);
 
   // REAL monitoring function using backend terminal
   const runRealCheck = useCallback(async () => {
@@ -132,11 +147,32 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
     setOutput(prev => [...prev, '', 'Monitoring stopped. Type "system-status" to restart.']);
   }, [intervalId]);
 
-  // Execute any command on the backend
-  const executeCommand = useCallback(async (cmd: string) => {
+  // Execute any command on the backend, prepending cwd if set
+  const executeCommand = useCallback(async (cmd: string, overrideCwd?: string, timeoutMs?: number) => {
+    if (isCommandRunning) {
+      setOutput(prev => [...prev, 'Command already running. Please wait or refresh the page.']);
+      return;
+    }
+
+    setIsCommandRunning(true);
+
     try {
       const { executeTerminalCommand } = await import('@/lib/terminal');
-      const result = await executeTerminalCommand(cmd, 30);
+      const cwd = overrideCwd !== undefined ? overrideCwd : currentWorkingDir;
+      const fullCmd = cwd ? `cd "${cwd}" && ${cmd}` : cmd;
+      
+      // Use backend timeout only, no frontend timeout unless specified
+      const backendTimeout = timeoutMs ? Math.min(timeoutMs / 1000, 300) : 300; // Default 5min max
+      const result = await executeTerminalCommand(fullCmd, backendTimeout);
+      
+      setIsCommandRunning(false);
+      
+      // Restore focus after command completes
+      setTimeout(() => {
+        if (inputRef.current && !isMonitoring) {
+          inputRef.current.focus();
+        }
+      }, 50);
       
       // If we got empty result, show nothing (command had no output)
       if (!result || result.trim() === '') {
@@ -144,17 +180,33 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
         return;
       }
       
-      // Parse output into lines
-      const lines = result.split(/\r?\n/);
-      setOutput(prev => [...prev, ...lines]);
+      // Parse output into lines, limit to prevent UI freeze
+      const lines = result.split(/\r?\n/).slice(0, 1000); // Max 1000 lines
+      if (result.split(/\r?\n/).length > 1000) {
+        lines.push('... (output truncated, use "tail" or redirect to file for full output)');
+      }
+      
+      // Clean ANSI escape codes from output
+      const cleanedLines = lines.map(line => cleanAnsiCodes(line)).filter(line => line.length > 0);
+      
+      setOutput(prev => [...prev, ...cleanedLines]);
     } catch (error) {
+      setIsCommandRunning(false);
+      
+      // Restore focus after error
+      setTimeout(() => {
+        if (inputRef.current && !isMonitoring) {
+          inputRef.current.focus();
+        }
+      }, 50);
+      
       console.error('Error executing command:', error);
       setOutput(prev => [
         ...prev,
         `ERROR: ${error instanceof Error ? error.message : 'Command execution failed'}`,
       ]);
     }
-  }, []);
+  }, [currentWorkingDir, isCommandRunning]);
 
   // Handle command submission
   const handleSubmit = useCallback((e: React.FormEvent) => {
@@ -163,6 +215,7 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
     
     if (!cmd) return;
     
+    // Single command - execute normally
     // Add to command history
     setCommandHistory(prev => [...prev, cmd]);
     setHistoryIndex(-1);
@@ -173,6 +226,101 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
     // Special commands that work without auth
     if (cmd.toLowerCase() === 'clear' || cmd.toLowerCase() === 'cls') {
       setOutput(['Terminal ready - Full access enabled']);
+      setTimeout(() => inputRef.current?.focus(), 50);
+      return;
+    }
+
+    // Handle cd — update cwd state, resolve relative paths on backend
+    if (cmd === 'cd' || cmd.toLowerCase() === 'cd ~') {
+      // cd with no args or cd ~ → go to home
+      import('@/lib/terminal').then(({ executeTerminalCommand }) => {
+        const base = currentWorkingDir ? `cd "${currentWorkingDir}" && ` : '';
+        return executeTerminalCommand(`${base}cd ${cmd === 'cd' ? '' : '~'} && pwd`, 10);
+      }).then(result => {
+        const newDir = result.trim().split('\n').pop()?.trim() ?? '';
+        const cleanDir = cleanAnsiCodes(newDir);
+        if (cleanDir && !cleanDir.includes('No such file')) {
+          setCurrentWorkingDir(cleanDir);
+          setOutput(prev => [...prev, cleanDir]);
+        }
+        // Restore focus
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }).catch(error => {
+        setOutput(prev => [...prev, `ERROR: ${error instanceof Error ? error.message : 'cd failed'}`]);
+        setTimeout(() => inputRef.current?.focus(), 50);
+      });
+      return;
+    }
+
+    if (cmd.startsWith('cd ')) {
+      const target = cmd.slice(3).trim();
+      
+      // Special case for "cd host" - shortcut to /workspace/host
+      if (target === 'host') {
+        setCurrentWorkingDir('/workspace/host');
+        setOutput(prev => [...prev, '/workspace/host']);
+        setTimeout(() => inputRef.current?.focus(), 50);
+        return;
+      }
+      
+      // Properly escape the target path
+      const escapedTarget = target.replace(/'/g, "'\"'\"'");
+      import('@/lib/terminal').then(({ executeTerminalCommand }) => {
+        const base = currentWorkingDir ? `cd "${currentWorkingDir}" && ` : '';
+        return executeTerminalCommand(`${base}cd '${escapedTarget}' && pwd`, 10);
+      }).then(result => {
+        const lines = result.trim().split('\n');
+        const newDir = lines[lines.length - 1]?.trim() ?? '';
+        const cleanDir = cleanAnsiCodes(newDir);
+        if (cleanDir && !cleanDir.includes('No such file') && !cleanDir.includes('cd:')) {
+          setCurrentWorkingDir(cleanDir);
+          setOutput(prev => [...prev, cleanDir]);
+        } else {
+          // Show the actual error from cd command
+          const errorLine = lines.find(line => line.includes('cd:')) || `cd: ${target}: No such file or directory`;
+          setOutput(prev => [...prev, cleanAnsiCodes(errorLine)]);
+        }
+        // Restore focus
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }).catch(error => {
+        setOutput(prev => [...prev, `cd: ${target}: No such file or directory`]);
+        setTimeout(() => inputRef.current?.focus(), 50);
+      });
+      return;
+    }
+
+    // Kill running command
+    if (cmd.toLowerCase() === 'kill' || cmd.toLowerCase() === 'ctrl+c') {
+      setIsCommandRunning(false);
+      setOutput(prev => [...prev, '^C (frontend state reset - backend command may still be running)']);
+      setTimeout(() => inputRef.current?.focus(), 50);
+      return;
+    }
+
+    // Quick shortcut to host filesystem root
+    if (cmd.toLowerCase() === 'cdhost') {
+      setCurrentWorkingDir('/workspace/host');
+      setOutput(prev => [...prev, '/workspace/host']);
+      setTimeout(() => inputRef.current?.focus(), 50);
+      return;
+    }
+
+    if (cmd === 'pwd') {
+      if (currentWorkingDir) {
+        setOutput(prev => [...prev, currentWorkingDir]);
+      } else {
+        // Ask backend for actual cwd
+        import('@/lib/terminal').then(({ executeTerminalCommand }) => {
+          return executeTerminalCommand('pwd', 10);
+        }).then(result => {
+          const dir = cleanAnsiCodes(result.trim());
+          setCurrentWorkingDir(dir);
+          setOutput(prev => [...prev, dir]);
+        }).catch(error => {
+          setOutput(prev => [...prev, `ERROR: ${error instanceof Error ? error.message : 'pwd failed'}`]);
+          setTimeout(() => inputRef.current?.focus(), 50);
+        });
+      }
       return;
     }
     
@@ -184,26 +332,41 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
         '  docker ps      - List running containers',
         '  whoami         - Show current user',
         '  pwd            - Show current directory',
-        '  ls -la [path]  - List files (use full paths)',
+        '  cd <path>      - Change directory (persists across commands)',
+        '  cdhost         - Quick jump to host filesystem root',
+        '  ls             - List files in current directory',
         '  cat <file>     - View file contents',
+        '  kill           - Stop running command',
         '  clear          - Clear terminal',
         '  help           - Show this help',
         '',
-        'Important: Each command runs independently!',
-        '  • Use full paths: /workspace/host/var/www/retakt/',
-        '  • cd does NOT persist between commands',
-        '  • Combine commands: cd /path && ls -la',
+        'cd now persists between commands!',
+        `  Current directory: ${currentWorkingDir || '(default)'}`,
         '',
-        'Your server files are at:',
-        '  /workspace/host/var/www/retakt/',
+        'Navigation shortcuts:',
+        '  cd ~           - Go to container home (/root)',
+        '  cd /           - Go to container filesystem root',
+        '  cd host        - Go to host filesystem (/workspace/host)',
+        '  cdhost         - Same as "cd host" (quick shortcut)',
+        '  cd /workspace  - Go to workspace (your files)',
+        '  cd ..          - Go back one directory',
+        '',
+        'Your actual server files are at:',
+        '  /workspace/host/opt/',
+        '  /workspace/host/etc/',
+        '  Current project: status-api/, yt/, src/',
         '',
         'Examples:',
-        '  ls -la /workspace/host/var/www/retakt/',
-        '  cd /workspace/host/var/www/retakt && ls -la',
-        '  cat /workspace/host/var/www/retakt/index.html',
+        '  cd host                           (jump to host root)',
+        '  cdhost                            (same as above)',
+        '  cd status-api                     (status API server)',
+        '  cd yt/backend                     (YouTube backend)',
+        '  ls -la',
+        '  cat package.json',
         '',
         'Full access - No restrictions!'
       ]);
+      setTimeout(() => inputRef.current?.focus(), 50);
       return;
     }
 
@@ -325,14 +488,120 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
         setOutput(prev => [...prev, `ERROR: ${error.message}`]);
       });
     } else if (cmd.toLowerCase() === 'start-api') {
-      executeCommand('cd /workspace/host/var/www/retakt/status-api && mkdir -p logs && npm install && nohup node server.js > logs/status-api.log 2>&1 & echo $! > logs/status-api.pid && echo "Status API started on port 3002" && sleep 1 && cat logs/status-api.pid');
+      executeCommand('if [ -d "/workspace/host/var/www/retakt/status-api" ]; then cd /workspace/host/var/www/retakt/status-api && mkdir -p logs && npm install && nohup node server.js > logs/status-api.log 2>&1 & echo $! > logs/status-api.pid && echo "Status API started on port 3002" && sleep 1 && cat logs/status-api.pid; else echo "ERROR: Status API not found at /workspace/host/var/www/retakt/status-api"; echo "Run the deploy script first: ./deploy.sh"; echo "Or check if the path exists: ls -la /workspace/host/var/www/retakt/"; fi');
     } else if (cmd.toLowerCase() === 'stop-api') {
       executeCommand('cd /workspace/host/var/www/retakt/status-api && if [ -f logs/status-api.pid ]; then kill $(cat logs/status-api.pid) && rm logs/status-api.pid && echo "Status API stopped"; else echo "Status API is not running"; fi');
     } else {
       // Execute any other command on the backend
       executeCommand(cmd);
     }
-  }, [input, startMonitoring, executeCommand, terminalKeyApproved, user]);
+  }, [input, startMonitoring, executeCommand, terminalKeyApproved, user, currentWorkingDir]);
+
+  // Handle paste events for multi-line command detection
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    
+    // Check if pasted content contains multiple lines or semicolons
+    if (pastedText.includes('\n') || pastedText.includes(';')) {
+      e.preventDefault(); // Prevent default paste behavior
+      
+      // Split commands on newlines and semicolons, clean them up
+      const commands = pastedText
+        .split(/[\n;]+/)
+        .map(c => c.trim())
+        .filter(c => c.length > 0);
+      
+      if (commands.length > 1) {
+        // Multiple commands detected - execute them sequentially
+        setInput(''); // Clear input field
+        
+        commands.forEach((command, index) => {
+          setTimeout(() => {
+            // Add to command history
+            setCommandHistory(prev => [...prev, command]);
+            setOutput(prev => [...prev, `$ ${command}`]);
+            
+            // Execute each command with the same logic as handleSubmit
+            if (command.toLowerCase() === 'clear' || command.toLowerCase() === 'cls') {
+              setOutput(prev => [...prev.slice(0, -1), 'Terminal ready - Full access enabled']);
+            } else if (command === 'cd' || command.toLowerCase() === 'cd ~') {
+              // Handle cd commands
+              import('@/lib/terminal').then(({ executeTerminalCommand }) => {
+                const base = currentWorkingDir ? `cd "${currentWorkingDir}" && ` : '';
+                return executeTerminalCommand(`${base}cd ${command === 'cd' ? '' : '~'} && pwd`, 10);
+              }).then(result => {
+                const newDir = result.trim().split('\n').pop()?.trim() ?? '';
+                const cleanDir = cleanAnsiCodes(newDir);
+                if (cleanDir && !cleanDir.includes('No such file')) {
+                  setCurrentWorkingDir(cleanDir);
+                  setOutput(prev => [...prev, cleanDir]);
+                }
+              }).catch(error => {
+                setOutput(prev => [...prev, `ERROR: ${error instanceof Error ? error.message : 'cd failed'}`]);
+              });
+            } else if (command.startsWith('cd ')) {
+              const target = command.slice(3).trim();
+              if (target === 'host') {
+                setCurrentWorkingDir('/workspace/host');
+                setOutput(prev => [...prev, '/workspace/host']);
+              } else {
+                const escapedTarget = target.replace(/'/g, "'\"'\"'");
+                import('@/lib/terminal').then(({ executeTerminalCommand }) => {
+                  const base = currentWorkingDir ? `cd "${currentWorkingDir}" && ` : '';
+                  return executeTerminalCommand(`${base}cd '${escapedTarget}' && pwd`, 10);
+                }).then(result => {
+                  const lines = result.trim().split('\n');
+                  const newDir = lines[lines.length - 1]?.trim() ?? '';
+                  const cleanDir = cleanAnsiCodes(newDir);
+                  if (cleanDir && !cleanDir.includes('No such file') && !cleanDir.includes('cd:')) {
+                    setCurrentWorkingDir(cleanDir);
+                    setOutput(prev => [...prev, cleanDir]);
+                  } else {
+                    const errorLine = lines.find(line => line.includes('cd:')) || `cd: ${target}: No such file or directory`;
+                    setOutput(prev => [...prev, cleanAnsiCodes(errorLine)]);
+                  }
+                }).catch(error => {
+                  setOutput(prev => [...prev, `cd: ${target}: No such file or directory`]);
+                });
+              }
+            } else if (command.toLowerCase() === 'cdhost') {
+              setCurrentWorkingDir('/workspace/host');
+              setOutput(prev => [...prev, '/workspace/host']);
+            } else if (command === 'pwd') {
+              if (currentWorkingDir) {
+                setOutput(prev => [...prev, currentWorkingDir]);
+              } else {
+                import('@/lib/terminal').then(({ executeTerminalCommand }) => {
+                  return executeTerminalCommand('pwd', 10);
+                }).then(result => {
+                  const dir = cleanAnsiCodes(result.trim());
+                  setCurrentWorkingDir(dir);
+                  setOutput(prev => [...prev, dir]);
+                }).catch(error => {
+                  setOutput(prev => [...prev, `ERROR: ${error instanceof Error ? error.message : 'pwd failed'}`]);
+                });
+              }
+            } else {
+              // Execute other commands normally
+              executeCommand(command);
+            }
+          }, index * 300); // Slightly longer delay between commands for better visibility
+        });
+        
+        // Restore focus after all commands are queued
+        setTimeout(() => {
+          if (inputRef.current && !isMonitoring) {
+            inputRef.current.focus();
+          }
+        }, commands.length * 300 + 100);
+        
+        return; // Don't continue with normal paste behavior
+      }
+    }
+    
+    // Single line or no special characters - let default paste behavior happen
+    // The input will be updated normally and can be submitted with Enter
+  }, [currentWorkingDir, executeCommand, cleanAnsiCodes, isMonitoring]);
 
   // Handle keyboard navigation for command history
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -418,7 +687,12 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
       {/* Terminal Output - optimized for mobile with better touch scrolling */}
       <div
         ref={outputRef}
-        className="flex-1 p-1.5 sm:p-2 overflow-y-auto bg-transparent touch-pan-y overscroll-contain scrollbar-hide"
+        onClick={() => {
+          if (!isMonitoring && !isCommandRunning && inputRef.current) {
+            inputRef.current.focus();
+          }
+        }}
+        className="flex-1 p-1.5 sm:p-2 overflow-y-auto bg-transparent touch-pan-y overscroll-contain scrollbar-hide cursor-text"
         style={{ 
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
@@ -537,22 +811,38 @@ export function SimpleTerminal({ className }: SimpleTerminalProps) {
       {/* Input bar - only show when NOT monitoring, optimized for mobile */}
       {!isMonitoring && (
         <form onSubmit={handleSubmit} className="flex items-center p-1.5 sm:p-2 border-t border-yellow-600/60 shadow-[0_-2px_10px_rgba(202,138,4,0.2)] bg-amber-900/10 backdrop-blur-sm">
-          <span className="mr-1.5 sm:mr-2 text-cyan-400 text-xs sm:text-sm">$</span>
+          <span className="mr-1.5 sm:mr-2 text-cyan-400 text-xs sm:text-sm flex-shrink-0">
+            {currentWorkingDir ? (
+              <span>
+                <span className="text-emerald-400 font-medium">{currentWorkingDir.split('/').pop() || currentWorkingDir}</span>
+                <span> $</span>
+              </span>
+            ) : '$'}
+          </span>
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent focus:outline-none text-yellow-400 placeholder-yellow-600 text-xs sm:text-sm min-w-0 py-0.5"
-            placeholder="Enter command..."
+            onPaste={handlePaste}
+            disabled={isCommandRunning}
+            className={`flex-1 bg-transparent focus:outline-none text-yellow-400 placeholder-yellow-600 text-xs sm:text-sm min-w-0 py-0.5 ${
+              isCommandRunning ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            placeholder={isCommandRunning ? "Command running... (type 'kill' to reset UI)" : "Enter command..."}
             autoComplete="off"
             spellCheck="false"
           />
           <button
             type="submit"
-            className="ml-1.5 sm:ml-2 p-1 sm:p-1.5 rounded-full transition-colors hover:bg-amber-800/30 active:bg-amber-800/50"
-            title="Execute command"
+            disabled={isCommandRunning}
+            className={`ml-1.5 sm:ml-2 p-1 sm:p-1.5 rounded-full transition-colors ${
+              isCommandRunning 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-amber-800/30 active:bg-amber-800/50'
+            }`}
+            title={isCommandRunning ? "Command running" : "Execute command"}
           >
             <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>

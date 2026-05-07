@@ -20,7 +20,7 @@ export interface Notice {
 export const NOTICES: Notice[] = [
   {
     id: "n_001",
-    title: "[Major] YouTube Downloader",
+    title: "y0uTube Downloader [Major]",
     body: `y0uTube Downloader - yt.retakt.cc (yt-dlp backend)
 
 • auto/audio/mute modes, quality settings (max to 2160p)
