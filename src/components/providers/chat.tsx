@@ -948,6 +948,8 @@ interface ChatContextValue {
   sessionId: string;
   attachedFile: AttachedFile | null;
   setAttachedFile: (f: AttachedFile | null) => void;
+  lastSentImage: { dataUrl: string; timestamp: number } | null;
+  setLastSentImage: (img: { dataUrl: string; timestamp: number } | null) => void;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -961,6 +963,7 @@ export function useChatContext() {
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const sessionId = SESSION_ID;
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
+  const [lastSentImage, setLastSentImage] = useState<{ dataUrl: string; timestamp: number } | null>(null);
 
   const attachedFileRef = useRef<AttachedFile | null>(null);
   attachedFileRef.current = attachedFile;
@@ -1346,7 +1349,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <ChatContext.Provider value={{ sessionId, attachedFile, setAttachedFile }}>
+    <ChatContext.Provider value={{ sessionId, attachedFile, setAttachedFile, lastSentImage, setLastSentImage }}>
       <AssistantRuntimeProvider runtime={runtime}>
         {children}
       </AssistantRuntimeProvider>

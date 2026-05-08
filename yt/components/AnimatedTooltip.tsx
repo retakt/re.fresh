@@ -1,4 +1,4 @@
-import { useState, useRef, useId } from "react";
+import { useState, useRef, useId, useEffect } from "react";
 import { motion, useReducedMotion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -21,36 +21,48 @@ export function AnimatedTooltip({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const timeoutRef = useRef<NodeJS.Timeout>();
   const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipId = useId();
   const shouldReduceMotion = useReducedMotion();
 
+  const clamp = (value: number, min: number, max: number) => {
+    return Math.min(Math.max(value, min), max);
+  };
+
   const updatePosition = () => {
     if (!triggerRef.current) return;
-    
+
     const rect = triggerRef.current.getBoundingClientRect();
-    
+    const tooltipRect = tooltipRef.current?.getBoundingClientRect();
+    const tooltipWidth = tooltipRect?.width ?? 180;
+    const tooltipHeight = tooltipRect?.height ?? 32;
+    const margin = 8;
+
     let top = 0;
     let left = 0;
-    
+
     switch (placement) {
       case "top":
-        top = rect.top - 8;
-        left = rect.left + rect.width / 2;
+        top = rect.top - tooltipHeight - margin;
+        left = rect.left + rect.width / 2 - tooltipWidth / 2;
         break;
       case "bottom":
-        top = rect.bottom + 8;
-        left = rect.left + rect.width / 2;
+        top = rect.bottom + margin;
+        left = rect.left + rect.width / 2 - tooltipWidth / 2;
         break;
       case "left":
-        top = rect.top + rect.height / 2;
-        left = rect.left - 8;
+        top = rect.top + rect.height / 2 - tooltipHeight / 2;
+        left = rect.left - tooltipWidth - margin;
         break;
       case "right":
-        top = rect.top + rect.height / 2;
-        left = rect.right + 8;
+        top = rect.top + rect.height / 2 - tooltipHeight / 2;
+        left = rect.right + margin;
         break;
     }
-    
+
+    left = clamp(left, margin, window.innerWidth - tooltipWidth - margin);
+    top = clamp(top, margin, window.innerHeight - tooltipHeight - margin);
+
     setPosition({ top, left });
   };
 
@@ -68,9 +80,31 @@ export function AnimatedTooltip({
     setIsVisible(false);
   };
 
+  const handleToggle = () => {
+    if (isVisible) {
+      setIsVisible(false);
+      return;
+    }
+
+    setIsVisible(true);
+  };
+
+  useEffect(() => {
+    if (!isVisible) return;
+    updatePosition();
+    const handleResize = () => updatePosition();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isVisible, placement]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       setIsVisible(false);
+    }
+
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleToggle();
     }
   };
 
@@ -156,30 +190,29 @@ export function AnimatedTooltip({
   return (
     <div
       ref={triggerRef}
-      className="relative inline-block"
+      className="relative inline-flex items-center justify-center p-1"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleMouseEnter}
       onBlur={handleMouseLeave}
+      onClick={handleToggle}
       onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-describedby={isVisible ? tooltipId : undefined}
     >
-      <div aria-describedby={isVisible ? tooltipId : undefined}>
-        {children}
-      </div>
+      <div className="pointer-events-none">{children}</div>
 
       <AnimatePresence>
         {isVisible && (
           <motion.div
+            ref={tooltipRef}
             id={tooltipId}
             role="tooltip"
             className={cn(
               "fixed z-[100] px-2.5 py-1.5 text-[11px] font-medium rounded-md pointer-events-none",
               "dark:bg-[#e1e1e1] dark:text-black bg-[#2a2a2a] text-white",
-              "shadow-lg whitespace-nowrap",
-              placement === "top" && "-translate-x-1/2 -translate-y-full",
-              placement === "bottom" && "-translate-x-1/2",
-              placement === "left" && "-translate-x-full -translate-y-1/2",
-              placement === "right" && "-translate-y-1/2"
+              "shadow-lg whitespace-nowrap"
             )}
             style={{
               top: `${position.top}px`,

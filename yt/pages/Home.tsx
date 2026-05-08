@@ -159,10 +159,26 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
 
   const handlePaste = useCallback(async () => {
     try {
-      const text = await navigator.clipboard.readText();
-      if (text) setUrl(text.trim());
+      const text = (await navigator.clipboard.readText()).trim();
+      if (!text) return;
+
+      if (isValidYouTubeUrl(text)) {
+        const normalized = normalizeYouTubeUrl(text);
+        if (normalized) {
+          setHasValidUrl(true);
+          setIsPasteAnimating(true);
+          setTimeout(() => setIsPasteAnimating(false), 500);
+          setEncryptedUrl(normalized);
+          setShowEncrypted(true);
+          return;
+        }
+      }
+
+      setHasValidUrl(false);
+      setUrl(text);
     } catch {
       inputRef.current?.focus();
+      alert("Clipboard access not available. Please paste manually using Ctrl+V or right-click paste.");
     }
   }, []);
 
@@ -186,52 +202,31 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
         
         setEncryptedUrl(normalized);
         setShowEncrypted(true);
+        return;
       }
-    } else {
-      // Not a YouTube URL, just paste normally
-      setHasValidUrl(false);
-      setUrl(trimmed);
     }
+
+    // Not a YouTube URL, just paste normally
+    setHasValidUrl(false);
+    setUrl(trimmed);
   }, []);
 
   // Auto-detect and paste YouTube URL from clipboard on focus
   const handleInputFocus = useCallback(async () => {
-    // Only auto-paste once per session and if input is empty
-    if (hasAutoPastedRef.current || url) return;
-    
-    try {
-      const clipboardText = await navigator.clipboard.readText();
-      const trimmed = clipboardText.trim();
-      
-      // Check if clipboard contains a YouTube URL
-      if (trimmed && isValidYouTubeUrl(trimmed)) {
-        const normalized = normalizeYouTubeUrl(trimmed);
-        
-        if (normalized) {
-          hasAutoPastedRef.current = true;
-          
-          // Set valid URL state immediately (turns icon red)
-          setHasValidUrl(true);
-          
-          // Trigger paste icon animation
-          setIsPasteAnimating(true);
-          setTimeout(() => setIsPasteAnimating(false), 500);
-          
-          setEncryptedUrl(normalized);
-          setShowEncrypted(true);
-        }
-      }
-    } catch (error) {
-      // Clipboard access denied or not available
-      console.log("Clipboard access not available");
-    }
-  }, [url]);
+    // Auto-paste removed - manual paste only
+  }, []);
 
   const handleEncryptedComplete = useCallback(() => {
     setShowEncrypted(false);
     setUrl(encryptedUrl);
     setEncryptedUrl("");
   }, [encryptedUrl]);
+
+  useEffect(() => {
+    if (!showEncrypted) {
+      setHasValidUrl(isValidYouTubeUrl(url));
+    }
+  }, [url, showEncrypted]);
 
   const handleClear = useCallback(() => {
     setUrl("");
@@ -355,27 +350,41 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       <header className="flex items-center justify-between px-4 py-2 relative z-10">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[15px] font-bold tracking-tight">
-            <CanvasText
-              text="YT"
-              className="text-[15px] font-bold align-middle"
-              backgroundClassName="bg-[#ed2236]"
-              colors={[
-                "#FF6B8A",
-                "#F0476A",
-                "#E8325A",
-                "#D03D56",
-                "#C32148",
-                "#B5406C",
-                "#FF8FA3",
-                "#F06080",
-                "#E84070",
-                "#FF6B8A",
-              ]}
-              lineGap={1}
-              animationDuration={15}
-            />
+            <a
+              href="https://yt.retakt.cc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center"
+            >
+              <CanvasText
+                text="YT"
+                className="text-[15px] font-bold align-middle"
+                backgroundClassName="bg-[#ed2236]"
+                colors={[
+                  "#FF6B8A",
+                  "#F0476A",
+                  "#E8325A",
+                  "#D03D56",
+                  "#C32148",
+                  "#B5406C",
+                  "#FF8FA3",
+                  "#F06080",
+                  "#E84070",
+                  "#FF6B8A",
+                ]}
+                lineGap={1}
+                animationDuration={15}
+              />
+            </a>
             <span className="dark:text-[#9ca3af] text-[#9ca3af]">.</span>
-            <span className="dark:text-[#9ca3af] text-[#9ca3af]">reTakt</span>
+            <a
+              href="https://retakt.cc/whats-new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dark:text-[#9ca3af] text-[#9ca3af] font-bold underline-offset-2 hover:underline"
+            >
+              reTakt<span className="text-cyan-400 dark:text-cyan-300">.cc</span>
+            </a>
           </div>
         </div>
 

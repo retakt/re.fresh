@@ -52,7 +52,14 @@ function DownloadCard({ download, onRemove }: { download: DownloadItem; onRemove
   const handleDownload = () => {
     if (download.status === "completed") {
       const downloadUrl = getDownloadFileUrl(download.id);
-      window.open(downloadUrl, "_blank");
+      
+      // Create a temporary link element to trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -180,7 +187,7 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
 
   return (
     <>
-      {/* Floating Button - Top Right under Settings */}
+      {/* Floating Button - Top-right position */}
       <div className="fixed top-20 right-6 z-50">
         <NotificationBadge
           variant="count"

@@ -1,0 +1,171 @@
+# Caddy Configuration for Retakt Services
+
+# Global options
+{
+    email retaktmusic@gmail.com
+    admin off
+}
+
+# Main Website - retakt.cc
+retakt.cc, www.retakt.cc {
+    root * /opt/retakt/frontend
+    
+    # SPA routing
+    try_files {path} /index.html
+    file_server
+    
+    # Status API
+    handle /api/status/* {
+        reverse_proxy localhost:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+    
+    # Compression
+    encode gzip zstd
+    
+    # Logging
+    log {
+        output file /var/log/caddy/retakt.log {
+            roll_size 50mb
+            roll_keep 10
+            roll_keep_for 30d
+        }
+        format json
+        level INFO
+    }
+}
+
+# YouTube Downloader - yt.retakt.cc
+yt.retakt.cc {
+    root * /opt/yt-downloader/frontend
+    
+    # SPA routing
+    try_files {path} /index.html
+    file_server
+    
+    # API endpoints
+    handle /api/* {
+        reverse_proxy localhost:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            
+            # Health check
+            health_uri /api/health
+            health_interval 10s
+            health_timeout 5s
+            health_status 200
+            
+            # Timeouts for long downloads
+            transport http {
+                dial_timeout 10s
+                response_header_timeout 120s
+                read_timeout 300s
+                write_timeout 300s
+            }
+        }
+    }
+    
+    # WebSocket support for download progress
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websocket localhost:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+    
+    # Compression
+    encode gzip zstd
+    
+    # Logging
+    log {
+        output file /var/log/caddy/yt.log {
+            roll_size 50mb
+            roll_keep 10
+            roll_keep_for 30d
+        }
+        format json
+        level INFO
+    }
+}
+
+# HTTP to HTTPS redirects
+http://retakt.cc, http://www.retakt.cc {
+    redir https://retakt.cc{uri} permanent
+}
+
+http://yt.retakt.cc {
+    redir https://yt.retakt.cc{uri} permanent
+}
+
+http://shell.retakt.cc {
+    redir https://shell.retakt.cc{uri} permanent
+}
+
+# Terminal Server - shell.retakt.cc
+shell.retakt.cc {
+    reverse_proxy localhost:3003 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        
+        # WebSocket support
+        transport http {
+            dial_timeout 10s
+            response_header_timeout 120s
+            read_timeout 300s
+            write_timeout 300s
+        }
+    }
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/shell.log {
+            roll_size 50mb
+            roll_keep 10
+            roll_keep_for 30d
+        }
+        format json
+        level INFO
+    }
+}

@@ -98,7 +98,7 @@ export default function Settings({
   };
 
   const resetSettings = () => {
-    if (confirm("Reset all settings to defaults?")) {
+    if (confirm("reset all settings to defaults?")) {
       setSettings(defaultSettings);
     }
   };
@@ -120,27 +120,41 @@ export default function Settings({
         </button>
 
         <div className="flex items-center gap-1 text-[15px] font-bold tracking-tight">
-          <CanvasText
-            text="YT"
-            className="text-[15px] font-bold align-middle"
-            backgroundClassName="bg-[#ed2236]"
-            colors={[
-              "#FF6B8A",
-              "#F0476A",
-              "#E8325A",
-              "#D03D56",
-              "#C32148",
-              "#B5406C",
-              "#FF8FA3",
-              "#F06080",
-              "#E84070",
-              "#FF6B8A",
-            ]}
-            lineGap={1}
-            animationDuration={15}
-          />
+          <a
+            href="https://yt.retakt.cc"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center"
+          >
+            <CanvasText
+              text="YT"
+              className="text-[15px] font-bold align-middle"
+              backgroundClassName="bg-[#ed2236]"
+              colors={[
+                "#FF6B8A",
+                "#F0476A",
+                "#E8325A",
+                "#D03D56",
+                "#C32148",
+                "#B5406C",
+                "#FF8FA3",
+                "#F06080",
+                "#E84070",
+                "#FF6B8A",
+              ]}
+              lineGap={1}
+              animationDuration={15}
+            />
+          </a>
           <span className="dark:text-[#9ca3af] text-[#9ca3af]">.</span>
-          <span className="dark:text-[#9ca3af] text-[#9ca3af]">reTakt</span>
+          <a
+            href="https://retakt.cc/whats-new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="dark:text-[#9ca3af] text-[#9ca3af] font-bold underline-offset-2 hover:underline"
+          >
+            reTakt<span className="text-cyan-400 dark:text-cyan-300">.cc</span>
+          </a>
         </div>
 
         <div className="w-16" />
@@ -153,12 +167,12 @@ export default function Settings({
           <button
             onClick={resetSettings}
             className={cn(
-              "text-[11px] font-medium px-3 py-1.5 rounded-[9px] transition-all",
+              "text-[11px] font-bold text-sm px-3 py-1.5 rounded-[9px] transition-all",
               "dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
               "text-[#9ca3af] hover:text-black hover:bg-[#e8e4d9]"
             )}
           >
-            reset to defaults
+            reset
           </button>
         </div>
 
@@ -170,7 +184,7 @@ export default function Settings({
                 appearance
               </h2>
               <p className="text-[12px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
-                choose between light and dark theme.
+                light disabled for the moment.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -179,6 +193,32 @@ export default function Settings({
               </span>
               <ThemeToggle theme={theme} onChange={onThemeChange} />
             </div>
+          </div>
+
+          {/* Filename Pattern */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
+                filename pattern
+              </h2>
+              <AnimatedTooltip content="Use yt-dlp variables to customize filenames">
+                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
+              </AnimatedTooltip>
+            </div>
+            <input
+              type="text"
+              value={settings.filenamePattern}
+              onChange={(e) => updateSetting("filenamePattern", e.target.value)}
+              className={cn(
+                "w-full rounded-[9px] px-3 py-2 text-[13px] font-medium border outline-none transition-all",
+                "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40",
+                "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40"
+              )}
+              placeholder="%(title)s"
+            />
+            <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
+              use <span className="dark:text-[#e1e1e1] text-black">%(title)s</span> for video title, <span className="dark:text-[#e1e1e1] text-black">%(id)s</span> for video id, <span className="dark:text-[#e1e1e1] text-black">%(ext)s</span> for extension.
+            </p>
           </div>
 
           {/* Video Quality */}
@@ -314,32 +354,6 @@ export default function Settings({
             </div>
             <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
               higher bitrate means better audio quality but larger file size.
-            </p>
-          </div>
-
-          {/* Filename Pattern */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-widest dark:text-[#9ca3af] text-[#9ca3af]">
-                filename pattern
-              </h2>
-              <AnimatedTooltip content="Use yt-dlp variables to customize filenames">
-                <Info size={13} className="dark:text-[#9ca3af] text-[#9ca3af] cursor-help" />
-              </AnimatedTooltip>
-            </div>
-            <input
-              type="text"
-              value={settings.filenamePattern}
-              onChange={(e) => updateSetting("filenamePattern", e.target.value)}
-              className={cn(
-                "w-full rounded-[9px] px-3 py-2 text-[13px] font-medium border outline-none transition-all",
-                "dark:bg-[#191919] dark:text-[#e1e1e1] dark:border-white/5 dark:focus:border-[#ed2236]/40",
-                "bg-[#e8e4d9] text-black border-black/5 focus:border-[#ff0000]/40"
-              )}
-              placeholder="%(title)s"
-            />
-            <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
-              use <span className="dark:text-[#e1e1e1] text-black">%(title)s</span> for video title, <span className="dark:text-[#e1e1e1] text-black">%(id)s</span> for video id, <span className="dark:text-[#e1e1e1] text-black">%(ext)s</span> for extension.
             </p>
           </div>
 

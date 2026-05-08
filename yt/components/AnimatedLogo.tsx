@@ -20,29 +20,35 @@ export function AnimatedLogo({
   const [imageError, setImageError] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const triggerAnimation = () => {
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Always restart the animation by changing the key
-    setKey(prev => prev + 1);
-    setIsAnimating(true);
-
-    // Set new timeout to stop animation
-    timeoutRef.current = setTimeout(() => {
-      setIsAnimating(false);
-    }, 2000);
-  };
-
   useEffect(() => {
+    const preloadStatic = new Image();
+    preloadStatic.src = staticSrc;
+    preloadStatic.decoding = 'sync';
+    preloadStatic.loading = 'eager';
+
+    const preloadAnimated = new Image();
+    preloadAnimated.src = animatedSrc;
+    preloadAnimated.decoding = 'sync';
+
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, []);
+  }, [staticSrc, animatedSrc]);
+
+  const triggerAnimation = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    setKey(prev => prev + 1);
+    setIsAnimating(true);
+
+    timeoutRef.current = setTimeout(() => {
+      setIsAnimating(false);
+    }, 2000);
+  };
 
   return (
     <button
@@ -51,22 +57,21 @@ export function AnimatedLogo({
       className={`relative cursor-pointer ${className}`}
       aria-label="Animate logo"
     >
-      {/* Logo container - rounded rectangle */}
       <div 
         className="relative rounded-lg bg-[#dc143c] border border-[#ff6b8a]/30 overflow-hidden shadow-lg shadow-[#dc143c]/20 transition-all active:scale-95"
         style={{ width: `${width}px`, height: `${height}px` }}
       >
-        {/* Static PNG (default state) */}
         {!isAnimating && !imageError && (
           <img
             src={staticSrc}
             alt="YouTube Logo"
             className="w-full h-full object-contain"
+            loading="eager"
+            decoding="sync"
             onError={() => setImageError(true)}
           />
         )}
         
-        {/* Fallback SVG if image fails to load */}
         {!isAnimating && imageError && (
           <div className="w-full h-full flex items-center justify-center">
             <svg 
@@ -81,13 +86,14 @@ export function AnimatedLogo({
           </div>
         )}
         
-        {/* Animated APNG (shown during animation) */}
         {isAnimating && (
           <img
             key={key}
             src={animatedSrc}
             alt="YouTube Logo Animated"
             className="w-full h-full object-contain"
+            loading="eager"
+            decoding="sync"
           />
         )}
       </div>

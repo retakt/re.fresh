@@ -1,0 +1,87 @@
+# Main site - retakt.cc
+retakt.cc, www.retakt.cc {
+    root * /var/www/retakt
+    try_files {path} /index.html
+    file_server
+    
+    # Status API
+    handle /api/status/* {
+        reverse_proxy localhost:3001
+    }
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+    
+    encode gzip zstd
+    
+    log {
+        output file /var/log/caddy/retakt-access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
+
+# YT subdomain - yt.retakt.cc
+yt.retakt.cc {
+    # Frontend
+    root * /var/www/yt-downloader/dist
+    try_files {path} /index.html
+    file_server
+    
+    # Backend API
+    handle /api/* {
+        reverse_proxy localhost:3000 {
+            health_uri /api/health
+            health_interval 10s
+            health_timeout 3s
+            
+            transport http {
+                dial_timeout 5s
+                response_header_timeout 60s
+            }
+        }
+    }
+    
+    # WebSocket support
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websocket localhost:3000
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+    
+    encode gzip zstd
+    
+    log {
+        output file /var/log/caddy/yt-access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
+
+# HTTP redirect
+http://retakt.cc, http://www.retakt.cc {
+    redir https://retakt.cc{uri} permanent
+}
+
+http://yt.retakt.cc {
+    redir https://yt.retakt.cc{uri} permanent
+}
