@@ -1,7 +1,8 @@
-/* ─── xterm.js scrollbar — amber/minimal ─────────────────────────────────── */
+/* ─── xterm.js scrollbar — hidden but functional ─────────────────────────── */
 
 .xterm .xterm-viewport::-webkit-scrollbar {
-  width: 6px;
+  width: 0;
+  display: none;
 }
 
 .xterm .xterm-viewport::-webkit-scrollbar-track {
@@ -9,39 +10,47 @@
 }
 
 .xterm .xterm-viewport::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.35);
-  border-radius: 3px;
+  background: transparent;
 }
 
-.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 191, 36, 0.65);
-}
-
-/* Firefox */
+/* Firefox — hide scrollbar */
 .xterm .xterm-viewport {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(251, 191, 36, 0.35) transparent;
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  -ms-overflow-style: none;
 }
 
 /* ─── Terminal container ──────────────────────────────────────────────────── */
+/* Constrained container that forces xterm's internal scrollbar to be used */
 
 .terminal-container {
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* xterm root element fills the container */
+/* xterm root element fills the container and handles its own scrolling */
 .terminal-container .xterm {
   width: 100%;
   height: 100%;
   padding: 0;
+  margin: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* Force xterm viewport to be transparent so app bg shows through */
+/* xterm viewport — this is what scrolls internally */
 .terminal-container .xterm .xterm-viewport {
   background: transparent !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  flex: 1;
+  min-height: 0;
 }
 
 /* The screen canvas fills the xterm element */
@@ -49,12 +58,13 @@
   width: 100% !important;
 }
 
-/* Cursor color */
-.terminal-container .xterm .xterm-cursor-layer .xterm-cursor {
-  background-color: #fbbf24 !important;
+/* Ensure proper scrolling behavior - scrollbar is hidden but scrolling works */
+.terminal-container .xterm .xterm-viewport::-webkit-scrollbar {
+  width: 0;
+  display: none;
 }
 
-/* Selection */
-.terminal-container .xterm .xterm-selection div {
-  background-color: rgba(120, 53, 15, 0.5) !important;
+.terminal-container .xterm .xterm-viewport {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }

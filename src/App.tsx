@@ -5,6 +5,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import AppLayout from "./pages/layout.tsx";
 import { ChatProvider } from "./components/providers/chat.tsx";
+import { TerminalProvider } from "./contexts/terminal-context.tsx";
 import { NoticePanel } from "./components/notices/NoticePanel.tsx";
 import { startConnectionMonitor } from "./lib/connection-monitor.ts";
 import 'allotment/dist/style.css';
@@ -280,9 +281,11 @@ export default function App() {
   return (
     <DefaultProviders>
       <ErrorBoundary>
-        <ChatProvider>
-          <AppContent />
-        </ChatProvider>
+        <TerminalProvider>
+          <ChatProvider>
+            <AppContent />
+          </ChatProvider>
+        </TerminalProvider>
       </ErrorBoundary>
     </DefaultProviders>
   );

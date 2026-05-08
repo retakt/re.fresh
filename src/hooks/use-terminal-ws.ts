@@ -41,6 +41,56 @@ const WS_BASE_URL = (() => {
 
 const MAX_RETRY_COUNT = 10;
 
+// ─── Persistent session storage ──────────────────────────────────────────────
+
+const TERMINAL_SESSION_KEY = 'terminal_session';
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+interface TerminalSession {
+  password: string;
+  timestamp: number;
+}
+
+function getStoredSession(): TerminalSession | null {
+  try {
+    const stored = sessionStorage.getItem(TERMINAL_SESSION_KEY);
+    if (!stored) return null;
+    
+    const session: TerminalSession = JSON.parse(stored);
+    const now = Date.now();
+    
+    // Check if session has expired
+    if (now - session.timestamp > SESSION_TIMEOUT) {
+      sessionStorage.removeItem(TERMINAL_SESSION_KEY);
+      return null;
+    }
+    
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function storeSession(password: string): void {
+  try {
+    const session: TerminalSession = {
+      password,
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem(TERMINAL_SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function clearStoredSession(): void {
+  try {
+    sessionStorage.removeItem(TERMINAL_SESSION_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useTerminalWs({
@@ -57,6 +107,7 @@ export function useTerminalWs({
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
+  const lastActivityRef = useRef(Date.now());
 
   const connect = useCallback(async (password?: string) => {
     // Clear any pending retry timeout
@@ -159,10 +210,19 @@ export function useTerminalWs({
     };
   }, [terminalRef]);
 
-  // Mount: open the WebSocket connection
+  // Mount: try to restore session or wait for password input
   useEffect(() => {
     isMountedRef.current = true;
-    // Don't auto-connect - wait for password input
+    
+    // Try to restore from stored session
+    const storedSession = getStoredSession();
+    if (storedSession) {
+      console.log("[useTerminalWs] Restoring session from storage");
+      connect(storedSession.password);
+    } else {
+      // No stored session - wait for password input
+      setStatus("disconnected");
+    }
 
     return () => {
       // Cleanup on unmount
@@ -184,15 +244,67 @@ export function useTerminalWs({
         socketRef.current = null;
       }
     };
+  }, [connect]);
+
+  // Activity tracking - update session timestamp on activity
+  const updateActivity = useCallback(() => {
+    lastActivityRef.current = Date.now();
+    // Update stored session timestamp to extend session
+    const storedSession = getStoredSession();
+    if (storedSession) {
+      storeSession(storedSession.password);
+    }
   }, []);
+
+  const logout = useCallback(() => {
+    // Clear stored session
+    clearStoredSession();
+    
+    // Close the WebSocket connection
+    if (socketRef.current) {
+      socketRef.current.onclose = null;
+      socketRef.current.onerror = null;
+      socketRef.current.onmessage = null;
+      socketRef.current.onopen = null;
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+
+    // Reset state
+    setStatus("disconnected");
+    retryCountRef.current = 0;
+
+    if (retryTimeoutRef.current !== null) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Auto-logout after inactivity
+  useEffect(() => {
+    const checkInactivity = () => {
+      const now = Date.now();
+      const inactiveTime = now - lastActivityRef.current;
+      const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 hour
+      
+      if (inactiveTime > INACTIVITY_TIMEOUT && status === "connected") {
+        console.log("[useTerminalWs] Auto-logout due to inactivity");
+        logout();
+      }
+    };
+
+    const interval = setInterval(checkInactivity, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [status, logout]);
 
   // ─── Send helpers ──────────────────────────────────────────────────────────
 
   const sendInput = useCallback((data: string) => {
+    updateActivity(); // Track activity on input
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ type: "input", data }));
     }
-  }, []);
+  }, [updateActivity]);
 
   const sendClear = useCallback(() => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -235,29 +347,10 @@ export function useTerminalWs({
   }, []);
 
   const connectWithPassword = useCallback((password: string) => {
+    // Store password for session persistence
+    storeSession(password);
     connect(password);
   }, [connect]);
-
-  const logout = useCallback(() => {
-    // Close the WebSocket connection
-    if (socketRef.current) {
-      socketRef.current.onclose = null;
-      socketRef.current.onerror = null;
-      socketRef.current.onmessage = null;
-      socketRef.current.onopen = null;
-      socketRef.current.close();
-      socketRef.current = null;
-    }
-
-    // Reset state
-    setStatus("disconnected");
-    retryCountRef.current = 0;
-
-    if (retryTimeoutRef.current !== null) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
-  }, []);
 
   return { status, viewerCount, sendInput, sendClear, sendReset, sendResize, reconnect, connectWithPassword, logout };
 }
