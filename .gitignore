@@ -1,0 +1,16 @@
+node_modules
+.env
+.env.local
+.env.*.local
+.env*.example
+*.bat
+*.md
+.DS_Store
+.vscode
+.idea
+dist
+build
+*.log
+*.tar.gz
+.kiro
+status-api.tar.gz

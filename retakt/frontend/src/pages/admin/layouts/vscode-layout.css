@@ -1,0 +1,13 @@
+/* Override allotment sash color from blue to yellow */
+:root {
+  --focus-border: rgba(202, 138, 4, 0.4);
+  --sash-hover-size: 2px;
+}
+
+/* Shorten the horizontal sash line to 60px centered */
+.sash-module_sash__K-9lB.sash-module_horizontal__kFbiw:before {
+  width: 90% !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}

@@ -1,0 +1,210 @@
+import { Link, useLocation } from "react-router-dom";
+import {
+  Home, BookOpen, Music2, GraduationCap,
+  User, FolderOpen, X, MessageSquare, Sparkles, TerminalSquare,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { cn } from "@/lib/utils";
+import { prefetchRoute } from "@/lib/prefetch";
+import { CanvasText } from "@/components/ui/canvas-text";
+import { useAuthContext } from "@/components/providers/auth";
+
+interface NavLink {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  teal: boolean;
+  authRequired?: boolean;
+}
+
+const NAV_LINKS: NavLink[] = [
+  { href: "/whats-new", icon: Sparkles,       label: "What's New", teal: true  },
+  { href: "/",          icon: Home,           label: "Home",       teal: false },
+  { href: "/blog",      icon: BookOpen,       label: "Blog",       teal: false },
+  { href: "/music",     icon: Music2,         label: "Music",      teal: false },
+  { href: "/tutorials", icon: GraduationCap,  label: "Tutorials",  teal: false },
+  { href: "/about",     icon: User,           label: "About",      teal: false },
+  { href: "/files",     icon: FolderOpen,     label: "Files",      teal: false },
+  { href: "/chat",      icon: MessageSquare,  label: "Chat",       teal: false },
+  { href: "/terminal",  icon: TerminalSquare, label: "Terminal",   teal: false, authRequired: true },
+];
+
+interface SidebarProps {
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ open = false, onClose }: SidebarProps) {
+  const location = useLocation();
+  const { role } = useAuthContext();
+
+  const visibleLinks = NAV_LINKS.filter(
+    (link) => !link.authRequired || role !== "guest"
+  );
+
+  return (
+    <>
+      {/* ΓöÇΓöÇ DESKTOP: lg and above only ΓöÇΓöÇ */}
+      <div className="hidden lg:block w-44 shrink-0 overflow-x-hidden h-full">
+        <aside className="flex flex-col pt-8 h-full overflow-hidden pr-4 border-r border-gray-400/30 shadow-[1px_0_5px_rgba(192,192,192,0.1)] dark:border-gray-400/30 dark:shadow-[1px_0_5px_rgba(192,192,192,0.1)] -ml-8 pl-8">
+        <div className="flex flex-col flex-1 min-h-0 relative h-full">
+          <nav className="flex flex-col gap-0.5 flex-1 pb-16">
+            {visibleLinks.map((link) => {
+              const Icon = link.icon;
+              const active =
+                link.href === "/"
+                  ? location.pathname === "/"
+                  : location.pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  aria-current={active ? "page" : undefined}
+                  onMouseEnter={() => prefetchRoute(link.href)}
+                  onFocus={() => prefetchRoute(link.href)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all",
+                    active
+                      ? link.teal
+                        ? "bg-[#11D8C2]/10 text-[#11D8C2]"
+                        : "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  )}
+                >
+                  <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
+                  <span className={cn("font-medium", active ? "font-semibold" : "")}>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="absolute bottom-1.5 left-0 right-0 px-2">
+            <p className="text-sm flex flex-col gap-0.5">
+              <span className="text-muted-foreground/50 text-[10px]">made by~</span>
+              <span className="font-bold">
+                <CanvasText
+                  text="takt"
+                  className="text-base font-extrabold"
+                  backgroundClassName="bg-[#995BD5]"
+                  colors={[ "#995BD5", "#B88FE8","#995BD5","#cd9bffff","#f556daff", "#96D74C", "#A8E066", "#96D74C", "#f89bfcff","#97e440ff","#fa2dd8ff","#6fa135ff","#a3e25cff","#9efa35ff","#8bfc0bff",]}
+                  lineGap={3}
+                  animationDuration={15}
+                />
+              </span>
+            </p>
+          </div>
+        </div>
+        </aside>
+      </div>
+
+      {/* ΓöÇΓöÇ MOBILE: backdrop ΓöÇΓöÇ */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="lg:hidden fixed inset-0 z-[40] bg-black/50 backdrop-blur-md"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ΓöÇΓöÇ MOBILE: drawer ΓöÇΓöÇ */}
+      <AnimatePresence>
+        {open && (
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 400, 
+              damping: 40, 
+              mass: 1.2,
+              velocity: 2
+            }}
+            style={{ width: "min(240px, 72vw)" }}
+            className="lg:hidden fixed left-0 top-0 bottom-0 z-[45] flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/60 shadow-[8px_0_32px_rgba(0,0,0,0.2)] dark:shadow-[8px_0_32px_rgba(0,0,0,0.6),1px_0_0_0_rgba(255,255,255,0.05)]"
+          >
+            {/* Spacer ΓÇö sits behind navbar which is z-50, visually hides this area */}
+            <div className="h-14 shrink-0 border-b border-border/30" />
+
+            {/* Scrollable nav content ΓÇö ref resets scroll to top on every open */}
+            <div
+              ref={(el) => { if (el) el.scrollTop = 0; }}
+              className="px-4 py-6 flex flex-col flex-1 min-h-0"
+            >
+              <motion.nav
+                className="flex flex-col gap-1"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.05, delayChildren: 0.1 },
+                  },
+                }}
+              >
+                {visibleLinks.map((link) => {
+                  const Icon = link.icon;
+                  const active =
+                    link.href === "/"
+                      ? location.pathname === "/"
+                      : location.pathname.startsWith(link.href);
+                  return (
+                    <motion.div
+                      key={link.href}
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        visible: { opacity: 1, x: 0 },
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    >
+                      <Link
+                        to={link.href}
+                        aria-current={active ? "page" : undefined}
+                        onMouseEnter={() => prefetchRoute(link.href)}
+                        onFocus={() => prefetchRoute(link.href)}
+                        onClick={onClose}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all duration-200",
+                          active
+                            ? link.teal
+                              ? "bg-[#11D8C2]/10 text-[#11D8C2] shadow-sm"
+                              : "bg-primary/10 text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                        )}
+                      >
+                        <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
+                        <span className={cn(active ? "font-semibold" : "font-medium")}>{link.label}</span>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </motion.nav>
+
+              <div className="flex-1"></div>
+              <div className="pt-8 px-1 flex-shrink-0">
+                <p className="text-xs flex flex-col gap-0.5">
+                  <span className="text-muted-foreground/50">made by</span>
+                  <span className="font-semibold">
+                    <CanvasText
+                      text="Takt Akira"
+                      backgroundClassName="bg-muted-foreground"
+                      colors={["#fb7185", "#f43f5e", "#e11d48", "#4ecdc4", "#2dd4bf", "#14b8a6"]}
+                      lineGap={4}
+                      animationDuration={15}
+                    />
+                  </span>
+                </p>
+              </div>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en" suppressHydrationWarning>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <!-- Performance optimizations -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <!-- Supabase — shaves 100-300ms off first query on mobile -->
+    <link rel="preconnect" href="https://yroedxnorqfndcajlmpu.supabase.co" />
+    <link rel="dns-prefetch" href="https://yroedxnorqfndcajlmpu.supabase.co" />
+    
+    <!-- Font preloads are injected by Vite at build time -->
+
+    <!-- SEO Meta Tags -->
+    <title>re.Takt</title>
+    <meta name="description" content="Launching soon with curated content and creative resources." />
+    <meta name="author" content="Takt Akira" />
+    <meta name="keywords" content="blog, music, tutorials, tools, creative, personal website" />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="re.Takt" />
+    <meta property="og:description" content="Launching soon with curated content and creative resources." />
+    <meta property="og:site_name" content="re.Takt" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="re.Takt" />
+    <meta name="twitter:description" content="Launching soon with curated content and creative resources." />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+      
+    <!-- Apple / iOS -->
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="re.Takt" />
+      
+    <!-- Android / Chrome -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+    <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8f7f4" media="(prefers-color-scheme: light)" />
+    
+    <!-- Theme flash prevention - must run before render -->
+    <script>
+      (function () {
+        try {
+          // next-themes stores under 'theme' key by default
+          var stored = localStorage.getItem("theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var isDark =
+            stored === "dark" ||
+            (!stored && prefersDark) ||
+            (stored === "system" && prefersDark);
+
+          // Apply immediately before paint - remove opposite class first
+          var html = document.documentElement;
+          html.classList.remove(isDark ? "light" : "dark");
+          html.classList.add(isDark ? "dark" : "light");
+          
+          // Set color-scheme so browser native UI matches
+          html.style.colorScheme = isDark ? "dark" : "light";
+          
+          // Store resolved theme for React components to read synchronously
+          html.setAttribute("data-theme", isDark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link href="/src/index.css" rel="stylesheet" />
+    <!-- Umami Analytics — privacy-first, no cookies -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="28f6a353-b9da-46c5-a8ae-fc48fd00a79f"></script>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Initial loading shell - prevents black screen -->
+      <div id="initial-loader" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0a0a0f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        flex-direction: column;
+        gap: 16px;
+      ">
+        <!-- Spinner with gradient border -->
+        <div style="
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: conic-gradient(from 0deg, transparent, #e11d48);
+          animation: spin 0.8s linear infinite;
+          padding: 3px;
+        ">
+          <div style="
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #0a0a0f;
+          "></div>
+        </div>
+        <!-- Logo -->
+        <span style="
+          font-family: ui-sans-serif, system-ui, sans-serif;
+          font-size: 18px;
+          letter-spacing: -0.02em;
+          font-weight: 700;
+          color: #e5e5e5;
+        ">
+          <span style="color: #38bdf8;">re</span><span style="color: #e11d48;">.</span>
+        </span>
+      </div>
+    </div>
+    <style>
+      /* Force dark background immediately */
+      html, body {
+        background-color: #0a0a0f !important;
+        color: #e5e5e5 !important;
+      }
+      
+      /* Ensure root div also has dark background */
+      #root {
+        background-color: #0a0a0f !important;
+        min-height: 100vh;
+      }
+      
+      /* Spinner animation */
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Hide initial loader when React is ready */
+      .react-loaded #initial-loader {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease-out;
+      }
+    </style>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

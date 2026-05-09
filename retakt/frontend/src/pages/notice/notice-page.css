@@ -1,0 +1,87 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   Notice Page Styles - Centered, Clean (TermsDialog Style)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.notice-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  
+  /* Clean background */
+  background: #fafafa;
+}
+
+/* Dark mode background */
+@media (prefers-color-scheme: dark) {
+  .notice-page {
+    background: #0a0a0a;
+  }
+}
+
+/* Card - Similar to TermsDialog */
+.notice-card-large {
+  position: relative;
+  
+  /* Clean card style */
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  
+  /* Shadow */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  
+  /* Layout */
+  padding: 32px;
+  max-width: 520px;
+  width: 100%;
+  
+  /* Animation */
+  animation: cardFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Dark mode card */
+@media (prefers-color-scheme: dark) {
+  .notice-card-large {
+    background: rgba(0, 0, 0, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .notice-page {
+    padding: 16px;
+  }
+  
+  .notice-card-large {
+    padding: 24px 20px;
+    border-radius: 12px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) and (min-width: 641px) {
+  .notice-card-large {
+    padding: 28px 24px;
+    max-width: 480px;
+  }
+}

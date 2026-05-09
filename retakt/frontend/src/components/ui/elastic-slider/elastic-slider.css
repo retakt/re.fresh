@@ -1,0 +1,92 @@
+.elastic-slider-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.elastic-slider-wrapper {
+  display: flex;
+  width: 100%;
+  touch-action: none;
+  user-select: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.elastic-slider-root {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-grow: 1;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  align-items: center;
+  padding: 0.75rem 0;
+  overflow: visible;
+}
+
+.elastic-slider-root:active {
+  cursor: grabbing;
+}
+
+.elastic-slider-track-wrapper {
+  display: flex;
+  flex-grow: 1;
+  overflow: visible;
+}
+
+.elastic-slider-track {
+  position: relative;
+  height: 100%;
+  flex-grow: 1;
+  overflow: visible;
+  border-radius: 9999px;
+  background-color: rgba(128, 128, 128, 0.25);
+}
+
+.elastic-slider-range {
+  position: absolute;
+  height: 100%;
+  /* Use the CSS variable directly — theme uses oklch not hsl */
+  background-color: var(--primary);
+  border-radius: 9999px;
+  opacity: 0.9;
+}
+
+.elastic-slider-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background-color: var(--primary);
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.elastic-slider-root:hover .elastic-slider-thumb {
+  opacity: 1;
+}
+
+.elastic-value-indicator {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.elastic-icon {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  line-height: 1;
+}
