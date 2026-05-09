@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/layout/page-header.tsx";
 import { TOOLS } from "@/features/tools";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { ContentCardSkeleton } from "@/components/ui/skeleton.tsx";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 type FilterType = "all" | "blog" | "tutorial" | "music";
 
@@ -161,13 +162,21 @@ export default function Index() {
   };
 
   return (
-    <div className="w-full max-w-2xl space-y-4 pb-4">
+    <div className="w-full space-y-4 pb-4">
 
       {/* ── HERO ── */}
-      <PageHeader
-        title="Home"
-        subtitle="Stash and everything! Launching soon..."
-      />
+      <div className="space-y-1">
+        <div className="pb-2">
+          <CanvasText
+            text="home"
+            backgroundClassName="bg-[#FF2E9B]"
+            className="text-2xl font-bold"
+            colors={["#FF2E9B","#F01B8A","#E10879","#FF2E9B","#F01B8A","#E10879","#FF2E9B","#F01B8A"]}
+            animationDuration={12}
+          />
+        </div>
+        <p className="text-sm text-muted-foreground">Stash and everything! Launching soon...</p>
+      </div>
 
       {/* ── QUOTE ── */}
       <AnimatePresence mode="wait">
@@ -251,7 +260,7 @@ export default function Index() {
             ) : (
               <AnimatePresence mode="popLayout">
                 {filtered.map((item) => {
-                  const palette = getCardPalette(item.id);
+                  const palette = getCardPalette(item.id, 'home');
                   const Icon = typeIcon(item.type);
                   return (
                     <motion.div
@@ -274,7 +283,7 @@ export default function Index() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <span
-                              className="font-semibold text-foreground group-hover:text-primary transition-colors truncate leading-tight"
+                              className="font-semibold text-foreground transition-colors truncate leading-tight"
                               style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
                             >
                               {item.title}

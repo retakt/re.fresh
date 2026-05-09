@@ -1,123 +1,77 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "@/components/providers/theme.tsx";
 import UserMenu from "@/components/account/user-menu.tsx";
 import AnimatedMenuIcon from "@/components/ui/animated-menu-icon.tsx";
 import { CommandPalette } from "@/components/ui/command-palette.tsx";
 
 interface NavbarProps {
   onMenuToggle: () => void;
-  isSidebarOpen?: boolean;
+  isNavOpen: boolean;
 }
 
-// Entrance animation — stagger children from top
-const containerVariants = {
-  hidden: { opacity: 0, y: -20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, staggerChildren: 0.08 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: -10 },
-  visible: { opacity: 1, y: 0 },
-};
-
-export default function Navbar({ onMenuToggle, isSidebarOpen = false }: NavbarProps) {
-  const { theme, toggleTheme } = useTheme();
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
+export default function Navbar({ onMenuToggle, isNavOpen }: NavbarProps) {
   return (
     <>
-      {/* Skip to content — screen readers */}
       <a
         href="#main-content"
-        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:top-2 focus-visible:left-2 focus-visible:z-[100] bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm font-medium"
+        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:top-2 focus-visible:left-2 focus-visible:z-[100] bg-primary text-primary-foreground px-3 py-2 rounded text-sm font-medium"
       >
         Skip to main content
       </a>
 
-      <motion.header
-        className={`sticky top-0 z-50 w-full transition-all duration-500 ${
-          isScrolled
-            ? "border-b border-gray-400/30 bg-background/95 backdrop-blur-md shadow-[0_1px_5px_rgba(192,192,192,0.1)] dark:shadow-[0_1px_5px_rgba(192,192,192,0.1)]"
-            : "border-b border-gray-400/30 shadow-[0_1px_5px_rgba(192,192,192,0.1)] dark:shadow-[0_1px_5px_rgba(192,192,192,0.1)] bg-background/95 backdrop-blur-md"
-        }`}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:px-4 lg:px-6">
+      <header className="w-full z-50 relative bg-background border-b border-border/20">
+        {/* Top neon accent line */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-          {/* Left: hamburger — mobile only */}
-          <motion.div
-            className="md:hidden"
-            variants={itemVariants}
-            whileTap={{ scale: 0.92 }}
-          >
-            <AnimatedMenuIcon 
-              isOpen={isSidebarOpen} 
-              onClick={onMenuToggle}
-              size={24}
-            />
-          </motion.div>
+        <div className="flex h-14 w-full items-center gap-3 px-4 lg:px-8">
 
-          {/* Desktop left slot — placeholder for logo animation */}
-          <motion.div
-            className="hidden md:block w-9 shrink-0"
-            variants={itemVariants}
+          {/* LEFT: Animated hamburger — larger hit area */}
+          <AnimatedMenuIcon
+            isOpen={isNavOpen}
+            onClick={onMenuToggle}
+            size={28}
           />
 
-          {/* Wordmark */}
-          <motion.div variants={itemVariants} whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 400, damping: 25 }}>
-            <Link
-              to="/"
-              className="font-bold text-lg tracking-tight shrink-0 select-none rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              aria-label="re.Takt — Go to homepage"
+          {/* TITLE — left aligned, next to hamburger */}
+          <Link
+            to="/"
+            className="flex items-baseline gap-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary select-none"
+            aria-label="re.Takt — homepage"
+          >
+            <motion.span
+              className={[
+                /* mobile: heavier weight, same size */
+                "font-black tracking-tight",
+                /* desktop: bigger size + weight */
+                "text-lg md:text-xl md:font-black",
+              ].join(" ")}
+              whileHover={{ scale: 1.05, rotate: [0, -3, 3, -2, 2, 0] }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.4 }}
             >
-              <span className="text-sky-400 dark:text-sky-300">re</span>
-              <span className="text-primary">.</span>
-              <span className="text-foreground">Takt</span>
-            </Link>
-          </motion.div>
+              <span style={{ color: 'var(--neon-lime)' }}>re</span>
+              <span style={{ color: 'var(--neon-pink)' }}>.</span>Takt
+            </motion.span>
+            {/* JP label — desktop only, bigger */}
+            <span className="hidden md:block text-[11px] font-mono tracking-[0.35em]" style={{ color: 'var(--neon-yellow)' }}>
+              再生
+            </span>
+          </Link>
 
-          {/* Spacer */}
+          {/* SPACER */}
           <div className="flex-1" />
 
-          {/* Right actions */}
-          <motion.div className="flex items-center gap-1" variants={itemVariants}>
+          {/* RIGHT: Actions */}
+          <div className="flex items-center gap-0.5">
             <CommandPalette />
-
-            <div className="relative group">
-              <motion.div
-                className="relative rounded-lg p-2.5 text-muted-foreground cursor-not-allowed"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Moon size={17} strokeWidth={2} />
-              </motion.div>
-              <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border whitespace-nowrap opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity pointer-events-none z-50">
-                needs fix
-              </div>
-            </div>
-
-            <div className="ml-0.5">
-              <UserMenu />
-            </div>
-          </motion.div>
+            <UserMenu />
+          </div>
 
         </div>
-      </motion.header>
+
+        {/* Bottom border */}
+        <div className="h-px w-full bg-border/15" />
+      </header>
     </>
   );
 }

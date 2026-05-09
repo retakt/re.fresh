@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 const VERSION_COLORS: Record<string, { bg: string; lines: string[] }> = {
   "v1.6":   { bg: "bg-[#dc143c]", lines: ["#8B0000","#A52A2A","#B22222","#DC143C","#FF0000","#8B0000","#A52A2A","#DC143C"] },
   "v1.6-major": { bg: "bg-[#F5F5DC]", lines: ["#8B8B9E","#9FA0C3","#D3D3D3","#E8E4D9","#F5F5DC","#8B8B9E","#9FA0C3","#E8E4D9"] },
-  "v1.5.5": { bg: "bg-[#0ecfba]", lines: ["#11D8C2","#0a9e8f","#07c4b0","#059080","#0bbfab","#07a08e","#11D8C2","#059080"] },
+  "v1.5.5": { bg: "bg-[#37EBF3]", lines: ["#37EBF3","#1AC5E0","#2DD4E5","#1AC5E0","#37EBF3","#2DD4E5","#37EBF3","#1AC5E0"] },
   "v1.5":   { bg: "bg-[#38bdf8]", lines: ["#0ea5e9","#0284c7","#38bdf8","#0369a1","#0ea5e9","#0284c7","#38bdf8","#0369a1"] },
   "v1.4":   { bg: "bg-[#ff80b5]", lines: ["#ec4899","#f472b6","#db2777","#be185d","#ec4899","#db2777","#f472b6","#ec4899"] },
   "v1.3.5": { bg: "bg-[#ff6b8a]", lines: ["#FF6B8A","#F0476A","#E8325A","#D03D56","#C32148","#B5406C","#FF8FA3","#F06080"] },
@@ -184,10 +184,10 @@ export default function WhatsNewPage() {
       <div>
         <div className="pb-2">
           <CanvasText
-            text="Changelog: "
+            text="changelog: "
             className="text-2xl font-bold"
-            backgroundClassName="bg-[#11D8C2]"
-            colors={["#11D8C2","#0ecfba","#0bbfab","#09af9c","#07a08e","#059080","#11D8C2","#0ecfba"]}
+            backgroundClassName="bg-[#39FF14]"
+            colors={["#39FF14","#2EE010","#23CC0C","#39FF14","#2EE010","#23CC0C","#39FF14","#2EE010"]}
             animationDuration={12}
           />
         </div>
@@ -206,8 +206,8 @@ export default function WhatsNewPage() {
           <div 
             className="absolute left-[0.6875rem] top-2 bottom-2 w-[0.5px] -translate-x-1/2" 
             style={{ 
-              backgroundColor: "#11D8C2", 
-              opacity: 1,
+              backgroundColor: "#39FF14", 
+              opacity: 0.3,
             }}
           />
           
@@ -215,11 +215,11 @@ export default function WhatsNewPage() {
           <div className="absolute left-0 top-0 bottom-0 w-full overflow-hidden pointer-events-none" style={{ isolation: "isolate" }}>
             {/* Animated glowing line segment - short bright segment around active section */}
             <motion.div
-              className="absolute left-[0.6875rem] w-[0.5px] -translate-x-1/2"
+              className="absolute left-[0.6875rem] w-[1px] -translate-x-1/2"
               style={{ 
-                backgroundColor: "#11D8C2",
+                backgroundColor: "#39FF14",
                 opacity: 1,
-                boxShadow: "0 0 12px rgba(17, 216, 194, 0.9), 0 0 6px rgba(17, 216, 194, 0.7), 0 0 3px rgba(17, 216, 194, 0.9), 0 0 1px #11D8C2"
+                boxShadow: "0 0 4px rgba(57, 255, 20, 0.4), 0 0 2px rgba(57, 255, 20, 0.25)"
               }}
               animate={{ 
                 top: linePosition.top + 8,
@@ -251,7 +251,7 @@ export default function WhatsNewPage() {
                     <motion.div
                       className="size-2.5 rounded-full border-2 transition-colors duration-300"
                       style={{
-                        borderColor: isActive ? "#11D8C2" : "#0ecfba",
+                        borderColor: isActive ? "#39FF14" : "#23CC0C",
                         backgroundColor: "var(--background)",
                       }}
                       animate={{
@@ -312,7 +312,7 @@ export default function WhatsNewPage() {
                     <ul className="space-y-1">
                       {entry.items.map((item, i) => (
                         <li key={i} className="text-[13px] text-muted-foreground leading-relaxed flex gap-2">
-                          <span className="shrink-0 mt-[0.45rem] size-1 rounded-full" style={{ backgroundColor: "#11D8C2" }} />
+                          <span className="shrink-0 mt-[0.45rem] size-1 rounded-full" style={{ backgroundColor: "#39FF14" }} />
                           <span className="min-w-0">
                             {entry.version === "v1.6" && i === 0 ? (
                               // Special handling for YouTube Downloader link
@@ -366,7 +366,7 @@ export default function WhatsNewPage() {
         <ul className="space-y-1.5">
           {UPCOMING.map((item, i) => (
             <li key={i} className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70">
-              <span className="shrink-0 mt-0.5 text-[10px] font-bold" style={{ color: "#11D8C2", opacity: 0.6 }}>○</span>
+              <span className="shrink-0 mt-0.5 text-[10px] font-bold" style={{ color: "#39FF14", opacity: 0.6 }}>○</span>
               {item}
             </li>
           ))}

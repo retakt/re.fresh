@@ -5,10 +5,10 @@ export const bgRemoverConfig: ToolConfig = {
   id: "bg-remover",
   label: "BG Remover",
   icon: Scissors,
-  gradient: "from-rose-400/20 to-pink-400/10",
-  iconBg: "bg-rose-100/80 dark:bg-rose-900/20",
-  iconColor: "text-rose-400 dark:text-rose-300",
-  border: "border-rose-600/30",
+  gradient: "from-[#00FFFF]/20 to-[#00FFFF]/10", // Aqua/Cyan
+  iconBg: "bg-[#00FFFF]/10 dark:bg-[#00FFFF]/15",
+  iconColor: "text-[#00FFFF]",
+  border: "border-[#00FFFF]/40",
   enabled: false, // Set to true when ready
   href: "/tools/bg-remover", // Future route
 };

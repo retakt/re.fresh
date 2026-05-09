@@ -245,7 +245,7 @@ export function CommandPalette() {
       {/* Trigger Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="rounded-lg p-2.5 text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
+        className="rounded-lg p-2.5 text-[#37EBF3]/70 outline-none transition-all hover:bg-secondary hover:text-[#37EBF3] hover:shadow-[0_0_8px_rgba(55,235,243,0.2)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
         aria-label="Search (⌘K)"
       >
         <motion.div
@@ -253,7 +253,7 @@ export function CommandPalette() {
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.4 }}
         >
-          <Search size={17} strokeWidth={2} />
+          <Search size={22} strokeWidth={2} />
         </motion.div>
       </button>
 

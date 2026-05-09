@@ -71,7 +71,7 @@ export default function SongPage() {
     );
   }
 
-  const palette = getCardPalette(track.id);
+  const palette = getCardPalette(track.id, 'music');
   const isPlaying = isTrackPlaying(track.id);
   const isLoaded = currentTrack?.id === track.id;
 

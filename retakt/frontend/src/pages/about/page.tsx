@@ -5,6 +5,7 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { FaGithub, FaSpotify, FaTelegram } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
 import { ContributionGraph, type ContributionData } from "@/components/ui/smoothui/contribution-graph";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 /* ---------------- SOCIAL LINKS ---------------- */
 
@@ -106,10 +107,18 @@ export default function AboutPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="space-y-2"
+        className="space-y-1"
       >
-        <h1 className="font-bold tracking-tight" style={{ fontSize: "clamp(18px, 5vw, 24px)" }}>About</h1>
-        <p className="text-muted-foreground leading-relaxed" style={{ fontSize: "clamp(12px, 3vw, 14px)" }}>
+        <div className="pb-2">
+          <CanvasText
+            text="about"
+            backgroundClassName="bg-[#39FF14]"
+            className="text-2xl font-bold"
+            colors={["#39FF14","#2EE010","#23CC0C","#39FF14","#2EE010","#23CC0C","#39FF14","#2EE010"]}
+            animationDuration={12}
+          />
+        </div>
+        <p className="text-sm text-muted-foreground">
           Coming soon...
         </p>
       </motion.div>

@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import type { FileItem } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { MarqueeText } from "@/components/ui/marquee-text";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 function fileIcon(type?: string | null) {
   if (!type) return File;
@@ -102,17 +103,27 @@ export default function FilesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Files"
-        subtitle="Downloads & resources"
-        action={isAdmin ? (
-          <Link to="/admin/files">
-            <Button size="sm" className="gap-1.5">
-              <Plus size={14} /> Add file
-            </Button>
-          </Link>
-        ) : undefined}
-      />
+      <div className="space-y-1">
+        <div className="pb-2">
+          <CanvasText
+            text="files"
+            backgroundClassName="bg-[#CD00FF]"
+            className="text-2xl font-bold"
+            colors={["#CD00FF","#B800E6","#A300CC","#CD00FF","#B800E6","#A300CC","#CD00FF","#B800E6"]}
+            animationDuration={12}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Downloads & resources</p>
+          {isAdmin && (
+            <Link to="/admin/files">
+              <Button size="sm" className="gap-1.5">
+                <Plus size={14} /> Add file
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="space-y-3">

@@ -206,7 +206,7 @@ export function ScrollSpyTimelineNav({ children, className }: ScrollSpyTimelineN
       <motion.div
         className="absolute left-[0.6875rem] size-2.5 rounded-full border-2 -translate-x-1/2 z-10"
         style={{
-          borderColor: "#11D8C2",
+          borderColor: "#37EBF3",
           backgroundColor: "var(--background)",
         }}
         animate={{ y: dotPosition }}

@@ -18,6 +18,7 @@ import { prefetchPostData } from "@/lib/prefetch";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 import { MarqueeText } from "@/components/ui/marquee-text";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 type EnrichedPost = Post & { _tags: string[] };
 
@@ -106,17 +107,27 @@ export default function BlogPage() {
   return (
     <div className="space-y-4">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} isTriggered={isTriggered} />
-      <PageHeader
-        title="Blog"
-        subtitle="Articles & thoughts..."
-        action={canManageEditorial ? (
-          <Link to="/admin/posts/new">
-            <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
-              <PenLine size={14} /> New post
-            </MagneticButton>
-          </Link>
-        ) : undefined}
-      />
+      <div className="space-y-1">
+        <div className="pb-2">
+          <CanvasText
+            text="blog"
+            backgroundClassName="bg-[#00FFFF]"
+            className="text-2xl font-bold"
+            colors={["#00FFFF","#00E5E5","#00CCCC","#00FFFF","#00E5E5","#00CCCC","#00FFFF","#00E5E5"]}
+            animationDuration={12}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Articles & thoughts...</p>
+          {canManageEditorial && (
+            <Link to="/admin/posts/new">
+              <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
+                <PenLine size={14} /> New post
+              </MagneticButton>
+            </Link>
+          )}
+        </div>
+      </div>
 
       {allTags.length > 0 && (
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by tag">
@@ -172,7 +183,7 @@ export default function BlogPage() {
       ) : (
         <div className="space-y-1.5">
           {filtered.map((post) => {
-            const palette = getCardPalette(post.id);
+            const palette = getCardPalette(post.id, 'blog');
             const tags: string[] = post._tags;
             const dateStr = (() => {
               try { return format(new Date(post.created_at), "MMM d, yyyy"); }
@@ -199,7 +210,7 @@ export default function BlogPage() {
                     )}
                     <MarqueeText
                       text={post.title}
-                      className="font-semibold text-foreground group-hover:text-primary transition-colors leading-tight"
+                      className={`font-semibold text-foreground leading-tight transition-colors`}
                       style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
                     />
                   </div>

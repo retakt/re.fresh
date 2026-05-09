@@ -129,7 +129,7 @@ export default function SignupPage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 disabled={loading}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-3 pl-11 text-base shadow-xs text-foreground placeholder:text-muted-foreground outline-none transition-[color,box-shadow,border-color] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                className="w-full rounded-md border border-border bg-background px-3 py-3 pl-11 text-base text-foreground placeholder:text-muted-foreground outline-none transition-all duration-200 focus-visible:border-[var(--neon-lime)] focus-visible:ring-0 focus-visible:shadow-[0_0_8px_rgba(55,235,243,0.15),0_0_20px_rgba(55,235,243,0.08)] disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                 rows={3}
                 placeholder="Tell us a bit about yourself..."
               />

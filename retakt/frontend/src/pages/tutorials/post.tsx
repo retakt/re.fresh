@@ -68,7 +68,7 @@ export default function TutorialPostPage() {
         {tutorial ? (
           // Show content with loading background
           <article>
-            <div className={`relative mb-8 overflow-hidden rounded-lg border border-border/60 px-5 py-7 shadow-sm sm:px-7 sm:py-8 bg-gradient-to-b ${getCardPalette(tutorial.id).headerGradient}`}>
+            <div className={`relative mb-8 overflow-hidden rounded-lg border border-border/60 px-5 py-7 shadow-sm sm:px-7 sm:py-8 bg-gradient-to-b ${getCardPalette(tutorial.id, 'tutorials').headerGradient}`}>
               {/* Background image skeleton */}
               {tutorial.cover_image && (
                 <div className="absolute inset-0 animate-pulse bg-muted/50" />
@@ -132,7 +132,7 @@ export default function TutorialPostPage() {
     );
   }
 
-  const palette = getCardPalette(tutorial.id);
+  const palette = getCardPalette(tutorial.id, 'tutorials');
 
   return (
     <article className="w-full max-w-3xl">

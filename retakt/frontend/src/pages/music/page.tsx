@@ -22,6 +22,7 @@ import { getCardPalette } from "@/lib/cardColors";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
 import { MarqueeText } from "@/components/ui/marquee-text";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 type FilterType = "all" | "album" | "single" | "ep";
 
@@ -59,7 +60,7 @@ function TrackRow({
 }) {
   const navigate = useNavigate();
   const { play, pause, isTrackPlaying, currentTrack } = usePlayer();
-  const palette = getCardPalette(track.id);
+  const palette = getCardPalette(track.id, 'music');
   const pointerStartX = useRef(0);
   const pointerStartY = useRef(0);
 
@@ -136,7 +137,7 @@ function TrackRow({
           <div className="flex-1 min-w-0 text-left">
             <MarqueeText
               text={track.title}
-              className={`font-semibold transition-colors leading-tight ${isLoaded ? "text-primary" : "text-foreground group-hover:text-primary"}`}
+              className={`font-semibold transition-colors leading-tight ${isLoaded ? "" : "text-foreground"}`}
               style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
             />
             {track.artist && (
@@ -353,17 +354,27 @@ export default function MusicPage() {
     <div className="space-y-6">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} isTriggered={isTriggered} />
       {/* Header */}
-      <PageHeader
-        title="Music"
-        subtitle="Some musical works..."
-        action={isAdmin ? (
-          <Link to="/admin/music">
-            <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
-              <Plus size={14} /> Add track
-            </MagneticButton>
-          </Link>
-        ) : undefined}
-      />
+      <div className="space-y-1">
+        <div className="pb-2">
+          <CanvasText
+            text="music"
+            backgroundClassName="bg-[#FF6B35]"
+            className="text-2xl font-bold"
+            colors={["#FF6B35","#F55A24","#EB4913","#FF6B35","#F55A24","#EB4913","#FF6B35","#F55A24"]}
+            animationDuration={12}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Some musical works...</p>
+          {isAdmin && (
+            <Link to="/admin/music">
+              <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
+                <Plus size={14} /> Add track
+              </MagneticButton>
+            </Link>
+          )}
+        </div>
+      </div>
 
       {/* Filter tabs — single scrollable row on mobile */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5"

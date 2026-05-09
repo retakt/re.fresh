@@ -27,7 +27,7 @@ export function PublishToggle({
       <span className={cn(
         "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 transition-all duration-200",
         published
-          ? "border-transparent bg-[#11D8C2] shadow-[0_0_8px_rgba(17,216,194,0.5)]"
+          ? "border-transparent bg-[#37EBF3] shadow-[0_0_8px_rgba(55,235,243,0.5)]"
           : "border-border/60 bg-muted/60 dark:bg-white/10 dark:border-white/20"
       )}>
         <span className={cn(

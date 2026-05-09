@@ -72,7 +72,7 @@ export default function BlogPostPage() {
         {post ? (
           // Show content with loading background
           <article className="flex flex-col">
-            <div className={`relative mb-8 overflow-hidden rounded-lg border border-border/60 px-5 py-7 shadow-sm sm:px-7 sm:py-8 bg-gradient-to-b ${getCardPalette(post.id).headerGradient}`}>
+            <div className={`relative mb-8 overflow-hidden rounded-lg border border-border/60 px-5 py-7 shadow-sm sm:px-7 sm:py-8 bg-gradient-to-b ${getCardPalette(post.id, 'blog').headerGradient}`}>
               {/* Background image skeleton */}
               {post.cover_image && (
                 <div className="absolute inset-0 animate-pulse bg-muted/50" />
@@ -207,7 +207,7 @@ export default function BlogPostPage() {
         )}
         
         {/* Gradient overlay for glass effect */}
-        <div className={`absolute inset-0 bg-gradient-to-b ${getCardPalette(post.id).headerGradient} backdrop-blur-[2px]`} />
+        <div className={`absolute inset-0 bg-gradient-to-b ${getCardPalette(post.id, 'blog').headerGradient} backdrop-blur-[2px]`} />
 
         {/* Content on top */}
         <div className="relative z-10">

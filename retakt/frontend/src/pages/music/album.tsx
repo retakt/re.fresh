@@ -40,7 +40,7 @@ export default function AlbumPage() {
 
   const decodedAlbum = decodeURIComponent(albumName || "");
   const albumInfo = tracks[0];
-  const palette = getCardPalette(albumInfo?.id ?? decodedAlbum);
+  const palette = getCardPalette(albumInfo?.id ?? decodedAlbum, 'music');
   const isAlbumPlaying = playing && tracks.some((t) => t.id === currentTrack?.id);
   const hasAnyAudio = tracks.some((t) => t.audio_url);
 

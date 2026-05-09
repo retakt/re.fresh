@@ -16,6 +16,7 @@ import { prefetchPostData } from "@/lib/prefetch";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { MarqueeText } from "@/components/ui/marquee-text";
 import MagneticButton from "@/components/ui/smoothui/magnetic-button";
+import { CanvasText } from "@/components/ui/canvas-text";
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
@@ -135,17 +136,27 @@ export default function TutorialsPage() {
   return (
     <div className="space-y-4">
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} isTriggered={isTriggered} />
-      <PageHeader
-        title="Tutorials"
-        subtitle="Guides, Tricks and some Lessons..."
-        action={canManageEditorial ? (
-          <Link to="/admin/tutorials/new">
-            <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
-              <Plus size={14} /> Add tutorial
-            </MagneticButton>
-          </Link>
-        ) : undefined}
-      />
+      <div className="space-y-1">
+        <div className="pb-2">
+          <CanvasText
+            text="tutorials"
+            backgroundClassName="bg-[#FDF500]"
+            className="text-2xl font-bold"
+            colors={["#FDF500","#E8E000","#D4CC00","#FDF500","#E8E000","#D4CC00","#FDF500","#E8E000"]}
+            animationDuration={12}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Guides, Tricks and some Lessons...</p>
+          {canManageEditorial && (
+            <Link to="/admin/tutorials/new">
+              <MagneticButton size="sm" className="gap-1.5" strength={0.3} radius={130}>
+                <Plus size={14} /> Add tutorial
+              </MagneticButton>
+            </Link>
+          )}
+        </div>
+      </div>
 
       {tagFilter.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -193,7 +204,7 @@ export default function TutorialsPage() {
       ) : (
         <div className="space-y-1.5">
           {filtered.map((item) => {
-            const palette = getCardPalette(item.id);
+            const palette = getCardPalette(item.id, 'tutorials');
             return (
               <Link
                 key={item.id}
@@ -211,7 +222,7 @@ export default function TutorialsPage() {
                 <div className="flex-1 min-w-0">
                   <MarqueeText
                     text={item.title}
-                    className="font-semibold text-foreground group-hover:text-primary transition-colors leading-tight"
+                    className="font-semibold text-foreground transition-colors leading-tight"
                     style={{ fontSize: "clamp(12px, 3vw, 14px)" }}
                   />
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">

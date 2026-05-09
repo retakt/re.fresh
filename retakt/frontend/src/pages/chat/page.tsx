@@ -1,7 +1,6 @@
 import { Thread } from "@/components/thread-custom";
 import { useChatContext } from "@/components/providers/chat";
 import { PageMeta } from "@/components/seo/page-meta";
-import { AnimatedGrainyBg } from "@/components/ui/animated-grainy-bg";
 
 export type AttachedFile =
   | { type: "text"; name: string; content: string }
@@ -23,23 +22,7 @@ export default function ChatPage() {
         type="website"
       />
       
-      {/* Animated Grainy Background - Chat specific with pulse animation */}
-      <AnimatedGrainyBg
-        animationType="pulse"
-        grainType="paper"
-        grainIntensity={30}
-        grainSize={100}
-        colors={["#000000", "#1a1a1a", "#0d0d0d", "#151515"]}
-        speed={0.8}
-        darkMode={true}
-        position="absolute"
-        zIndex={0}
-        size="full"
-        grainBlendMode="overlay"
-        className="pointer-events-none"
-      />
-      
-      {/* Chat Content */}
+      {/* Chat Content - grayscale hole background is now global in layout */}
       <div className="relative z-10 flex flex-col flex-1 min-h-0 max-h-full w-full">
         <Thread
           sessionId={sessionId}

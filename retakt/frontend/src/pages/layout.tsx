@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, LayoutGroup } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import Navbar from "@/components/layout/navbar.tsx";
-import Sidebar from "@/components/layout/sidebar.tsx";
+import NavOverlay from "@/components/layout/nav-overlay.tsx";
 import Footer from "@/components/layout/footer.tsx";
 import FloatingPlayer from "@/components/player/FloatingPlayer.tsx";
 import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
-import { AnimatedGrainyBg } from "@/components/ui/animated-grainy-bg";
+import { StarsBackground } from "@/components/animate-ui/components/backgrounds/stars.tsx";
 import { cn } from "@/lib/utils";
 
 function PageFallback() {
@@ -15,23 +15,21 @@ function PageFallback() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-5 text-center px-4">
       <div className="space-y-1.5">
-        <p className="text-sm font-semibold text-foreground">This page ran into a problem</p>
-        <p className="text-xs text-muted-foreground max-w-xs">
-          Something crashed. You can go back or reload the page.
-        </p>
+        <p className="text-sm font-semibold text-foreground">Something crashed</p>
+        <p className="text-xs text-muted-foreground max-w-xs">You can go back or reload.</p>
       </div>
       <div className="flex items-center gap-2">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft size={13} /> Go back
+          <ArrowLeft size={12} /> Back
         </button>
         <button
           onClick={() => window.location.reload()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-medium hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-1.5 rounded bg-primary text-primary-foreground px-3 py-2 text-xs font-medium"
         >
-          <RefreshCw size={13} /> Reload
+          <RefreshCw size={12} /> Reload
         </button>
       </div>
     </div>
@@ -40,98 +38,77 @@ function PageFallback() {
 
 export default function AppLayout() {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
-  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const openNav = useCallback(() => setNavOpen(true), []);
+  const closeNav = useCallback(() => setNavOpen(false), []);
+  const toggleNav = useCallback(() => setNavOpen(prev => !prev), []);
 
-  // Check if current page is chat or terminal (full-height, no padding)
-  const isChatPage = location.pathname === '/chat' || location.pathname === '/terminal';
+  const isChatPage = location.pathname === "/chat" || location.pathname === "/terminal";
 
-  // Lock body scroll when sidebar is open on mobile
+  // Auto-close nav after 4s of no mouse movement when open — DISABLED
+  // useEffect(() => { ... }, [navOpen]);
+
+  // Close nav on route change
   useEffect(() => {
-    // Remove body scroll lock - backdrop prevents interaction
-    // if (sidebarOpen) {
-    //   document.body.style.overflow = 'hidden';
-    // } else {
-    //   document.body.style.overflow = '';
-    // }
-    
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [sidebarOpen]);
+    closeNav();
+  }, [location.pathname, closeNav]);
 
   return (
-    <div className="flex h-[var(--app-height)] w-full max-w-full flex-col bg-background text-foreground overflow-hidden relative">
-      {/* Global Paper Grain Background */}
-      <AnimatedGrainyBg
-        animationType="pulse"
-        grainType="paper"
-        grainIntensity={30}
-        grainSize={100}
-        colors={["#000000", "#0d0d0d", "#060606", "#0a0a0a"]}
-        speed={0.5}
-        darkMode={true}
-        position="fixed"
-        zIndex={0}
-        size="full"
-        grainBlendMode="overlay"
-        className="pointer-events-none"
-        animate={false}
-      />
-      
-      <div className="relative z-10 flex h-full w-full flex-col">
-        <Navbar onMenuToggle={toggleSidebar} isSidebarOpen={sidebarOpen} />
+    <div className="flex h-[var(--app-height)] w-full flex-col bg-background text-foreground overflow-hidden relative">
 
-      {/* Mobile drawer — fixed, outside flex row, only rendered on mobile */}
-      <div className="md:hidden">
-        <Sidebar open={sidebarOpen} onClose={closeSidebar} />
+      {/* ── STARS BACKGROUND — fixed, full viewport, behind everything ── */}
+      <div className="fixed inset-0 z-0 w-full h-full">
+        <StarsBackground 
+          className="w-full h-full" 
+          starColor="#525252"
+          factor={0.05}
+          transition={{ stiffness: 50, damping: 20 }}
+        />
       </div>
 
-      {/* ── DESKTOP layout — constrained viewport ── */}
-      <div className="flex-1 mx-auto flex w-full max-w-6xl gap-0 px-3 sm:px-4 lg:px-6 min-h-0 overflow-hidden">
-        {/* Desktop sidebar */}
-        <div className="hidden md:block w-44 shrink-0 h-full overflow-x-hidden">
-          <Sidebar />
-        </div>
+      {/* ── NAVBAR — full width, above everything except nav overlay ── */}
+      <div className="relative z-[60]">
+        <Navbar onMenuToggle={toggleNav} isNavOpen={navOpen} />
+      </div>
 
-        <main
-          id="main-content"
-          className={cn(
-            "flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden",
-            isChatPage ? "py-0" : "py-5 sm:py-8 md:pl-6 lg:pl-8"
-          )}
-        >
+      {/* ── NAV OVERLAY — floats over everything ── */}
+      <div className="relative z-[70]">
+        <NavOverlay open={navOpen} onClose={closeNav} />
+      </div>
+
+      {/* ── MAIN CONTENT — compact with side margins ── */}
+      <main
+        id="main-content"
+        className={cn(
+          "flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden w-full relative z-10",
+          isChatPage ? "" : "overflow-y-auto"
+        )}
+      >
+        {/* Content wrapper — compact, centered, but not for chat/terminal */}
+        <div className={cn(
+          "flex-1 min-h-0 flex flex-col",
+          isChatPage ? "w-full" : "mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-6"
+        )}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ 
-                duration: 0.25, 
-                ease: [0.22, 1, 0.36, 1] // easeOutExpo for snappier feel
-              }}
-              className="flex-1 min-h-0 flex flex-col overflow-hidden"
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1 min-h-0 flex flex-col"
             >
               <ErrorBoundary key={location.pathname} fallback={<PageFallback />}>
-                <div className={cn(
-                  "flex-1 flex flex-col min-h-0 overflow-hidden",
-                  isChatPage ? "" : "overflow-y-auto"
-                )}>
-                  <Outlet />
-                </div>
+                <Outlet />
               </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
-        </main>
-      </div>
+        </div>
+      </main>
 
       <Footer />
       <FloatingPlayer />
-      </div>
     </div>
   );
 }

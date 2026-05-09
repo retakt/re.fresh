@@ -69,8 +69,8 @@ export default function AnimatedInput({
       return {
         y: -24,
         scale: 0.85,
-        color: "var(--color-primary)",
-        borderColor: "var(--color-primary)",
+        color: "var(--neon-lime)",
+        borderColor: "var(--neon-lime)",
       };
     }
     return { y: 0, scale: 1, color: "var(--color-muted-foreground)" };
@@ -83,8 +83,8 @@ export default function AnimatedInput({
     if (isFloating) {
       return {
         transform: "translateY(-24px) scale(0.85)",
-        color: "var(--color-primary)",
-        borderColor: "var(--color-primary)",
+        color: "var(--neon-lime)",
+        borderColor: "var(--neon-lime)",
       };
     }
     return {
@@ -106,7 +106,16 @@ export default function AnimatedInput({
       <input
         aria-label={label}
         className={cn(
-          "peer w-full rounded-md border bg-background px-3 py-3 text-base outline-none transition focus-visible:border-primary focus-visible:ring-0",
+          "peer w-full rounded-md border border-border bg-background px-3 py-3 text-base outline-none transition-all duration-200",
+          "focus-visible:border-[var(--neon-lime)] focus-visible:ring-0",
+          "focus-visible:shadow-[0_0_8px_rgba(55,235,243,0.15),0_0_20px_rgba(55,235,243,0.08)]",
+          // Override browser autofill styles
+          "autofill:bg-background autofill:text-foreground",
+          "[&:-webkit-autofill]:bg-background [&:-webkit-autofill]:text-foreground",
+          "[&:-webkit-autofill]:[-webkit-text-fill-color:var(--color-foreground)]",
+          "[&:-webkit-autofill]:[-webkit-box-shadow:0_0_0_1000px_var(--color-background)_inset]",
+          "[&:-webkit-autofill:hover]:[-webkit-box-shadow:0_0_0_1000px_var(--color-background)_inset]",
+          "[&:-webkit-autofill:focus]:[-webkit-box-shadow:0_0_0_1000px_var(--color-background)_inset]",
           icon ? "pl-10" : "",
           inputClassName
         )}

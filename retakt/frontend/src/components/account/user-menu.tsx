@@ -55,12 +55,12 @@ export default function UserMenu() {
           className="rounded-full border border-border/70 bg-card/70 p-1 text-foreground outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
           aria-label="Open account menu"
         >
-          <Avatar className="size-7 border border-border/70">
+          <Avatar className="size-9 border border-border/70">
             {isAuthenticated && avatarUrl && (
               <AvatarImage src={avatarUrl} alt={displayName} loading="lazy" />
             )}
-            <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-semibold">
-              {isAuthenticated ? initials : <UserCircle2 size={16} strokeWidth={2} />}
+            <AvatarFallback className="bg-primary/10 text-primary text-[12px] font-semibold">
+              {isAuthenticated ? initials : <UserCircle2 size={20} strokeWidth={2} />}
             </AvatarFallback>
           </Avatar>
         </Menu.Trigger>

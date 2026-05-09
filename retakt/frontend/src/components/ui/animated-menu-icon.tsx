@@ -23,7 +23,9 @@ export default function AnimatedMenuIcon({
       aria-label="Toggle navigation menu"
       aria-expanded={isOpen}
       className={cn(
-        "bg-transparent border-none cursor-pointer flex p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0",
+        "bg-transparent border-none cursor-pointer flex p-2 rounded-lg transition-all shrink-0",
+        "text-[var(--neon-lime)] hover:text-[var(--neon-lime)] hover:bg-secondary",
+        "hover:shadow-[0_0_12px_var(--cyber-glow)]",
         className
       )}
     >
