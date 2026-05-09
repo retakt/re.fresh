@@ -382,14 +382,22 @@ function spawnPty() {
   const shell = isWindows ? "powershell.exe" : "bash";
 
   // On Windows: -NoLogo suppresses the banner, -NoProfile skips user customizations.
-  // We also send a prompt override immediately after spawn via PTY input.
-  const shellArgs = isWindows ? ["-NoLogo", "-NoProfile"] : [];
+  // On Unix: --rcfile loads our custom .bashrc with color configurations
+  const bashrcPath = path.join(__dirname, ".bashrc");
+  const shellArgs = isWindows ? ["-NoLogo", "-NoProfile"] : ["--rcfile", bashrcPath];
 
   ptyProcess = pty.spawn(shell, shellArgs, {
     name: "xterm-256color",
     cols: 80,
     rows: 24,
-    env: { ...process.env, TERM: "xterm-256color" },
+    env: { 
+      ...process.env, 
+      TERM: "xterm-256color",
+      COLORTERM: "truecolor",
+      FORCE_COLOR: "1",
+      CLICOLOR: "1",
+      CLICOLOR_FORCE: "1",
+    },
   });
 
   // On Windows, override the prompt to be plain left-aligned (no cursor positioning)
