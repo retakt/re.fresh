@@ -12,7 +12,7 @@ const { readWorkerIP } = require('../utils/warp-ip');
 // Your main admin panel should send the token in Authorization header
 const adminAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  const adminTokens = (process.env.ADMIN_TOKEN || 'change-me-in-production').split(',').map(t => t.trim());
+  const adminTokens = (process.env.ADMIN_TOKEN || 're.takt').split(',').map(t => t.trim());
   
   // Debug logging
   logger.info('Admin auth attempt', {
@@ -86,7 +86,7 @@ router.get('/status', async (req, res) => {
     let warpConnected = false;
     
     try {
-      const ipFilePath = '/app/logs/worker-ip.json';
+      const ipFilePath = path.join(__dirname, '../../logs/worker-ip.json');
       const ipFileExists = await fs.access(ipFilePath).then(() => true).catch(() => false);
       
       if (ipFileExists) {

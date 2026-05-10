@@ -30,6 +30,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* Prevent touch events from bubbling to the page on mobile */
+  touch-action: none;
 }
 
 /* xterm root element fills the container and handles its own scrolling */
@@ -51,6 +53,11 @@
   overflow-x: hidden !important;
   flex: 1;
   min-height: 0;
+  /* Allow vertical touch-pan inside the viewport only */
+  touch-action: pan-y;
+  /* Prevent scroll chaining to the page */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* The screen canvas fills the xterm element */
@@ -67,4 +74,17 @@
 .terminal-container .xterm .xterm-viewport {
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+/* ─── Terminal page — full viewport, no page scroll ──────────────────────── */
+/* Applied when the terminal page is active via data attribute on the wrapper  */
+
+[data-terminal-page="true"] {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+  overflow: hidden;
 }

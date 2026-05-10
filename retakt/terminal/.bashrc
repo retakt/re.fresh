@@ -1,15 +1,21 @@
-# Terminal color configuration
+# Terminal server .bashrc
+# Loaded by the PTY on every new session
+
 export TERM=xterm-256color
 export COLORTERM=truecolor
-export FORCE_COLOR=1
-export CLICOLOR=1
-export CLICOLOR_FORCE=1
 
-# Force colors for common commands
-alias docker='docker --color=always'
-alias ls='ls --color=always'
-alias grep='grep --color=always'
-alias diff='diff --color=always'
+# Source the real root bashrc so all env vars, aliases, and PATH are loaded
+if [ -f /root/.bashrc ]; then
+  source /root/.bashrc
+fi
 
-# Enable color prompt
-PS1='\[\e[32m\]\u@\h\[\e[0m\]:\[\e[34m\]\w\[\e[0m\]\$ '
+# Start in home directory — not the terminal server directory
+cd ~
+
+# Standard color aliases
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+alias diff='diff --color=auto'
+
+# Prompt: cyan user@host, white path, $ 
+PS1='\[\e[36m\]\u@\h\[\e[0m\]:\[\e[1m\]\w\[\e[0m\]\$ '

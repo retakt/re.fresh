@@ -19,7 +19,7 @@ const AlbumPage        = lazy(() => import("./pages/music/album.tsx"));
 const SongPage         = lazy(() => import("./pages/music/song.tsx"));
 const TutorialsPage    = lazy(() => import("./pages/tutorials/page.tsx"));
 const TutorialPostPage = lazy(() => import("./pages/tutorials/post.tsx"));
-const AboutPage        = lazy(() => import("./pages/about/page.tsx"));
+const AboutPage        = lazy(() => import("./pages/about/page.tsx") as Promise<{ default: React.ComponentType<any> }>);
 const AccountPage      = lazy(() => import("./pages/account/page.tsx"));
 const FilesPage        = lazy(() => import("./pages/files/page.tsx"));
 const LoginPage        = lazy(() => import("./pages/login.tsx"));

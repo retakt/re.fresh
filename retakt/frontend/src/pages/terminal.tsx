@@ -11,8 +11,13 @@ export default function TerminalPage() {
         url="https://retakt.com/terminal"
         type="website"
       />
-      {/* Terminal fills available space with proper overflow constraint */}
-      <SharedTerminal className="w-full h-full flex-1 min-h-0" />
+      {/* Fixed-height container — mirrors chat page pattern, no page scroll */}
+      <div
+        data-terminal-page="true"
+        className="flex flex-col flex-1 min-h-0 max-h-full w-full overflow-hidden"
+      >
+        <SharedTerminal className="flex-1 min-h-0 w-full" />
+      </div>
     </ProtectedRoute>
   );
 }

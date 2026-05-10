@@ -54,26 +54,19 @@ const NOTIFICATIONS_KEY = "re.takt.notifications.enabled";
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * 3.1 Session Validation Helper
+ * Session Validation Helper
  * 
- * Validates if a session is still valid by checking:
- * - Session is not null
- * - access_token exists
- * - user object exists and has required properties (id)
- * - expires_at is not missing
- * - expires_at is in the future (with 10 second buffer for clock skew)
+ * Validates if a session is still valid by checking basic requirements.
+ * Note: We let Supabase handle token expiration and refresh automatically.
  */
 function isSessionValid(session: Session | null): boolean {
   if (!session) return false;
   if (!session.access_token || !session.user) return false;
   if (!session.user.id) return false; // User must have an id
-  if (!session.expires_at) return false;
-
-  const expiresAt = session.expires_at * 1000; // Convert to milliseconds
-  const now = Date.now();
-  const buffer = 10000; // 10 second buffer to account for clock skew
-
-  return expiresAt > now + buffer;
+  
+  // Don't validate expires_at here - let Supabase handle token refresh
+  // The expires_at check was causing valid sessions to be cleared prematurely
+  return true;
 }
 
 function getDisplayName(user: User | null, profile: Profile | null) {
@@ -152,33 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
       if (!mounted) return;
 
-      // 3.2 Validate session after loading from storage
-      const validSession = isSessionValid(initialSession) ? initialSession : null;
+      // Use the session as-is if it exists - let Supabase handle validation
+      const validSession = initialSession;
       const initialUser = validSession?.user ?? null;
-
-      // 3.3 & 3.4 Clear invalid session from storage and log
-      if (initialSession && !isSessionValid(initialSession)) {
-        // 3.4 Add logging for invalid session detection
-        console.warn("[auth] Invalid session detected on load, clearing auth state", {
-          expiresAt: initialSession.expires_at,
-          now: Math.floor(Date.now() / 1000),
-          hasAccessToken: !!initialSession.access_token,
-          hasUser: !!initialSession.user,
-        });
-
-        // 3.3 Clear invalid session from storage
-        try {
-          localStorage.removeItem("retakt-auth");
-          // Clear all Supabase-managed keys
-          Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith("sb-") || key.startsWith("supabase")) {
-              localStorage.removeItem(key);
-            }
-          });
-        } catch (e) {
-          console.error("[auth] Failed to clear invalid session from storage", e);
-        }
-      }
 
       setSession(validSession);
       setUser(initialUser);
@@ -292,39 +261,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { data, error: error ?? null };
       },
       signOut: async () => {
-        // Best-effort Supabase signOut — ignore errors
-        try {
-          await supabase.auth.signOut();
-        } catch (_) {
-          // ignore
+        // Properly sign out from Supabase first
+        const { error } = await supabase.auth.signOut();
+        
+        // Only clear storage if signOut was successful or if we need to force clear
+        if (!error) {
+          return { error: null };
         }
-
-        // Force-clear all auth storage regardless of Supabase result
+        
+        // If signOut failed, force clear local storage as fallback
         try {
-          // Clear the specific Supabase session key
           localStorage.removeItem("retakt-auth");
-          // Wipe any other Supabase-related keys
+          // Clear Supabase-managed keys only
           Object.keys(localStorage).forEach((key) => {
-            if (
-              key.startsWith("sb-") ||
-              key.startsWith("supabase") ||
-              key.includes("retakt-auth")
-            ) {
+            if (key.startsWith("sb-") && key.includes(import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] || 'supabase')) {
               localStorage.removeItem(key);
             }
-          });
-          sessionStorage.clear();
-          // Clear all cookies for this domain
-          document.cookie.split(";").forEach((cookie) => {
-            const name = cookie.split("=")[0].trim();
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
           });
         } catch (_) {
           // ignore storage errors
         }
 
-        return { error: null };
+        return { error };
       },
       refreshProfile: async () => {
         if (!user) return;

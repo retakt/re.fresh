@@ -4,6 +4,9 @@ import type { ChatModelAdapter, ChatModelRunOptions } from "@assistant-ui/react"
 import { PauseDictationAdapter } from "@/lib/pause-dictation-adapter";
 import { ImageAttachmentAdapter } from "@/lib/image-attachment-adapter";
 import type { AttachedFile } from "@/pages/chat/page";
+import { TOOLS } from "@/lib/ai-tools";
+import { executeTool } from "@/lib/ai-executors";
+import { SYSTEM_PROMPT } from "@/lib/ai-prompt";
 
 // ── Ollama config ─────────────────────────────────────────────────────────────
 const OLLAMA_URL = import.meta.env.VITE_OLLAMA_URL ?? "http://localhost:11434";
@@ -26,505 +29,6 @@ function getMalaysiaTime(): string {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Tool definitions (sent to Ollama so model knows what it can call) ─────────
-const TOOLS = [
-  {
-    type: "function",
-    function: {
-      name: "get_weather",
-      description: "Get current weather conditions and temperature for any city. Use this when the user asks about weather, temperature, rain, humidity, or conditions in any location.",
-      parameters: {
-        type: "object",
-        required: ["city"],
-        properties: {
-          city: { type: "string", description: "City name, e.g. 'Kuala Lumpur', 'Tokyo', 'London'" },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_exchange_rate",
-      description: "Get live currency exchange rates. Use this when the user asks about currency conversion, exchange rates, or how much something costs in another currency.",
-      parameters: {
-        type: "object",
-        required: ["from", "to"],
-        properties: {
-          from: { type: "string", description: "Source currency code, e.g. 'MYR', 'USD', 'EUR'" },
-          to: { type: "string", description: "Target currency code, e.g. 'USD', 'JPY', 'GBP'. Use 'ALL' to get all rates." },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_time",
-      description: "Get the current time in any city or timezone. Use this when the user asks what time it is somewhere, or wants to compare times between cities.",
-      parameters: {
-        type: "object",
-        required: ["timezone"],
-        properties: {
-          timezone: { type: "string", description: "IANA timezone name e.g. 'Asia/Kuala_Lumpur', 'America/New_York', 'Europe/London', 'Asia/Tokyo'" },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "search_web",
-      description: "Search the web for current information. Choose the mode based on what is needed: 'factcheck' for quick 2-result verification when you are uncertain (fast, use proactively), 'general' for user-requested searches (5 results), 'news' for current events and recent news (3 results), 'reddit' for opinions, discussions, recommendations and community experiences (3 results), 'wiki' for factual definitions and encyclopedic information (2 results), 'code' for programming questions, libraries, and technical issues (3 results). Always use factcheck mode proactively when you are not confident about a fact or after 2-3 turns where accuracy matters.",
-      parameters: {
-        type: "object",
-        required: ["query", "mode"],
-        properties: {
-          query: { type: "string", description: "The search query. Be specific and concise." },
-          mode: {
-            type: "string",
-            description: "Search mode: 'factcheck' (quick verify, 2 results), 'general' (5 results), 'news' (current events, 3 results), 'reddit' (opinions/discussions, 3 results), 'wiki' (encyclopedia, 2 results), 'code' (programming, 3 results)"
-          },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_system_status",
-      description: "Get real-time status of all AI system services including Ollama, SearXNG, Weather API, and Exchange Rate API. Use this when user asks about system health, service status, or if something isn't working properly.",
-      parameters: {
-        type: "object",
-        properties: {
-          detailed: { type: "boolean", description: "Whether to include detailed response times and error messages", default: false },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_ai_tools_status",
-      description: "Get real-time status and performance metrics of all AI tools. Returns service health (READY/SLOW/DOWN) and response times in milliseconds. Use when user asks about: tool availability, service status, response times, performance, which tool is fastest/slowest, or if tools are working. Can check all tools or a specific tool by name.",
-      parameters: {
-        type: "object",
-        properties: {
-          tool_name: { type: "string", description: "Optional: specific tool to check (AI Model, Web Search, Weather API, Exchange Rate API, YouTube Backend). Leave empty for all tools." },
-        },
-      },
-    },
-  },
-];
-
-// ── Tool executor functions ───────────────────────────────────────────────────
-
-async function toolGetWeather(city: string): Promise<string> {
-  try {
-    const res = await fetch(
-      `https://wttr.in/${encodeURIComponent(city)}?format=j1`,
-      { headers: { "Accept": "application/json" } }
-    );
-    if (!res.ok) return `Could not fetch weather for ${city}.`;
-    const data = await res.json();
-    const current = data.current_condition?.[0];
-    if (!current) return `No weather data available for ${city}.`;
-    const desc = current.weatherDesc?.[0]?.value ?? "Unknown";
-    const tempC = current.temp_C;
-    const feelsC = current.FeelsLikeC;
-    const humidity = current.humidity;
-    const windKmph = current.windspeedKmph;
-    const visibility = current.visibility;
-    // 3-day forecast summary
-    const forecast = (data.weather ?? []).slice(0, 3).map((day: any) => {
-      const date = day.date;
-      const maxC = day.maxtempC;
-      const minC = day.mintempC;
-      const dayDesc = day.hourly?.[4]?.weatherDesc?.[0]?.value ?? "";
-      return `${date}: ${dayDesc}, ${minC}°C–${maxC}°C`;
-    }).join(" | ");
-    return `Weather in ${city}: ${desc}, ${tempC}°C (feels like ${feelsC}°C), humidity ${humidity}%, wind ${windKmph} km/h, visibility ${visibility} km. 3-day forecast: ${forecast}`;
-  } catch {
-    return `Failed to fetch weather for ${city}. Network error.`;
-  }
-}
-
-async function toolGetExchangeRate(from: string, to: string): Promise<string> {
-  try {
-    const base = from.toUpperCase();
-    const target = to.toUpperCase();
-    const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
-    if (!res.ok) return `Could not fetch exchange rates for ${base}.`;
-    const data = await res.json();
-    if (data.result !== "success") return `Exchange rate API error for ${base}.`;
-    const rates = data.rates;
-    const updated = data.time_last_update_utc ?? "";
-    if (target === "ALL") {
-      // Return top common currencies
-      const common = ["USD", "EUR", "GBP", "JPY", "SGD", "AUD", "CNY", "KRW", "THB", "IDR"];
-      const lines = common
-        .filter((c) => rates[c])
-        .map((c) => `${c}: ${rates[c].toFixed(4)}`);
-      return `Exchange rates for 1 ${base} (updated ${updated}): ${lines.join(", ")}`;
-    }
-    const rate = rates[target];
-    if (!rate) return `Currency code ${target} not found.`;
-    return `1 ${base} = ${rate.toFixed(4)} ${target} (updated ${updated})`;
-  } catch {
-    return `Failed to fetch exchange rate. Network error.`;
-  }
-}
-
-function toolGetTime(timezone: string): string {
-  try {
-    const now = new Date();
-    const formatted = new Intl.DateTimeFormat("en-US", {
-      timeZone: timezone,
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-      timeZoneName: "short",
-    }).format(now);
-    return `Current time in ${timezone}: ${formatted}`;
-  } catch {
-    return `Unknown timezone: ${timezone}. Use IANA format like 'Asia/Tokyo'.`;
-  }
-}
-
-// ── SearXNG web search ────────────────────────────────────────────────────────
-// SearXNG aggregates google + duckduckgo + wikipedia (confirmed active engines).
-// Engine forcing via &engines= param is unreliable — SearXNG decides dynamically.
-// Instead we shape the query per mode to influence what gets returned,
-// then filter by score to keep only high-signal results.
-
-const SEARXNG_URL = import.meta.env.VITE_SEARXNG_URL ?? "http://localhost:8080";
-
-// Score threshold — results below this are noise. From real response data:
-// score 4.0 = top result, 2.0+ = strong, 0.5+ = relevant, below = noise
-const SCORE_THRESHOLD = 0.4;
-
-const RESULT_LIMITS: Record<string, number> = {
-  general:   5,
-  factcheck: 3,
-  news:      3,
-  reddit:    3,
-  wiki:      2,
-  code:      3,
-};
-
-// Query shaping — appended to the raw query to influence SearXNG results
-// without relying on engine forcing (which doesn't work reliably)
-const QUERY_SUFFIXES: Record<string, string> = {
-  general:   "",
-  factcheck: "site:wikipedia.org OR site:reuters.com OR site:bbc.com OR site:apnews.com",
-  news:      "news",
-  reddit:    "site:reddit.com",
-  wiki:      "wikipedia",
-  code:      "site:stackoverflow.com OR site:github.com",
-};
-
-interface SearXNGResult {
-  title: string;
-  url: string;
-  content: string;
-  score: number;
-  engine: string;
-}
-
-async function toolSearchWeb(query: string, mode: string): Promise<string> {
-  if (!query.trim()) return "No search query provided.";
-
-  const modeKey = RESULT_LIMITS[mode] ? mode : "general";
-  const maxResults = RESULT_LIMITS[modeKey];
-  const suffix = QUERY_SUFFIXES[modeKey];
-  const shapedQuery = suffix ? `${query.trim()} ${suffix}` : query.trim();
-
-  try {
-    const params = new URLSearchParams({
-      q: shapedQuery,
-      format: "json",
-      pageno: "1",
-      language: "en",
-    });
-
-    // Reduced timeout for faster failure
-    const res = await fetch(`${SEARXNG_URL}/search?${params.toString()}`, {
-      signal: AbortSignal.timeout(3000), // Reduced from 5000ms to 3000ms
-    });
-
-    if (!res.ok) return "Search unavailable. Answering from training data.";
-
-    const data = await res.json();
-    const raw: SearXNGResult[] = (data.results ?? [])
-      .filter((r: any) => r.title && r.url && r.content && (r.score ?? 0) >= SCORE_THRESHOLD)
-      .map((r: any) => ({
-        title: String(r.title).trim(),
-        url: String(r.url).trim(),
-        content: String(r.content).trim().slice(0, 400),
-        score: r.score ?? 0,
-        engine: r.engine ?? "unknown",
-      }));
-
-    // Deduplicate by domain — keep highest-scoring result per domain
-    const seenDomains = new Set<string>();
-    const deduped = raw.filter((r) => {
-      try {
-        const domain = new URL(r.url).hostname.replace(/^www\./, "");
-        if (seenDomains.has(domain)) return false;
-        seenDomains.add(domain);
-        return true;
-      } catch { return true; }
-    });
-
-    const top = deduped.slice(0, maxResults);
-
-    if (top.length === 0) return "Search returned no relevant results. Answering from training data.";
-
-    const label = modeKey === "factcheck" ? "Fact-check" : `Search (${modeKey})`;
-    const lines = top.map((r, i) => `[${i + 1}] ${r.title} — ${r.content} (${r.url})`);
-    return `${label}:\n${lines.join("\n")}`;
-
-  } catch (error) {
-    // More specific error handling
-    if (error instanceof Error && error.name === 'AbortError') {
-      return "Search timed out. Answering from training data.";
-    }
-    return "Search failed. Answering from training data.";
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── System Status Tool ────────────────────────────────────────────────────────
-const MONITORED_SERVICES = [
-  {
-    name: 'AI Model (Ollama)',
-    url: import.meta.env.VITE_OLLAMA_URL ?? 'http://localhost:11434',
-    endpoint: '/api/tags',
-    timeout: 3000,
-  },
-  {
-    name: 'Web Search (SearXNG)',
-    url: import.meta.env.VITE_SEARXNG_URL ?? 'http://localhost:8080',
-    endpoint: '/search?q=test&format=json&pageno=1',
-    timeout: 3000,
-  },
-  {
-    name: 'Weather API',
-    url: 'https://wttr.in',
-    endpoint: '/test?format=j1',
-    timeout: 5000,
-  },
-  {
-    name: 'Exchange Rate API',
-    url: 'https://open.er-api.com',
-    endpoint: '/v6/latest/USD',
-    timeout: 5000,
-  },
-];
-
-async function checkService(service: typeof MONITORED_SERVICES[0]) {
-  const startTime = Date.now();
-  
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), service.timeout);
-
-    const response = await fetch(`${service.url}${service.endpoint}`, {
-      signal: controller.signal,
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-    });
-
-    clearTimeout(timeoutId);
-    const responseTime = Date.now() - startTime;
-
-    if (response.ok) {
-      const status = responseTime > 2000 ? 'SLOW' : 'READY';
-      return {
-        name: service.name,
-        status,
-        responseTime,
-        healthy: status === 'READY',
-      };
-    } else {
-      return {
-        name: service.name,
-        status: 'OFFLINE',
-        responseTime,
-        healthy: false,
-        error: `HTTP ${response.status}`,
-      };
-    }
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    
-    if (error instanceof Error && error.name === 'AbortError') {
-      return {
-        name: service.name,
-        status: 'TIMEOUT',
-        responseTime: service.timeout,
-        healthy: false,
-        error: 'Request timeout',
-      };
-    }
-    
-    return {
-      name: service.name,
-      status: 'ERROR',
-      responseTime,
-      healthy: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-async function toolGetSystemStatus(detailed: boolean = false): Promise<string> {
-  try {
-    const results = await Promise.all(
-      MONITORED_SERVICES.map(service => checkService(service))
-    );
-    
-    const operational = results.filter(r => r.healthy).length;
-    const total = results.length;
-    
-    if (detailed) {
-      const statusLines = results.map(r => 
-        `${r.name}: ${r.status} (${r.responseTime}ms)${r.error ? ` - ${r.error}` : ''}`
-      );
-      return `System Status Report:\n${statusLines.join('\n')}\n\nOverall Health: ${operational}/${total} services operational`;
-    } else {
-      const statusLines = results.map(r => `${r.name}: ${r.status}`);
-      return `System Status:\n${statusLines.join('\n')}\n\nHealth: ${operational}/${total} services operational`;
-    }
-  } catch (error) {
-    return `Failed to check system status: ${error instanceof Error ? error.message : 'Unknown error'}`;
-  }
-}
-
-// ── AI Tools Status Tool (via local API) ──────────────────────────────────────
-async function toolGetAIToolsStatus(toolName?: string): Promise<string> {
-  try {
-    const baseUrl = 'http://localhost:3002';
-    
-    if (toolName) {
-      // Check specific tool
-      const response = await fetch(`${baseUrl}/status/${encodeURIComponent(toolName)}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(5000), // 5 second timeout
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          const errorData = await response.json();
-          return `Tool "${toolName}" not found. Available tools: ${errorData.available.join(', ')}`;
-        }
-        throw new Error(`AI Status API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      const status = data.healthy ? '✅ Operational' : '🔴 Down';
-      const time = data.responseTime ? ` (${data.responseTime}ms)` : '';
-      
-      return `${data.name}: ${data.status}${time}\nStatus: ${status}`;
-    } else {
-      // Check all tools - this is FAST via local API
-      const response = await fetch(`${baseUrl}/status`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(5000), // 5 second timeout
-      });
-      
-      if (!response.ok) {
-        throw new Error(`AI Status API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      const statusLines = data.services.map((service: any) => 
-        `• ${service.name}: ${service.status}${service.responseTime ? ` (${service.responseTime}ms)` : ''}`
-      );
-      
-      const healthStatus = data.healthy === data.total ? '✅ All systems operational' : 
-                          data.healthy === 0 ? '🔴 All systems down' : 
-                          '⚠️ Some services experiencing issues';
-      
-      return `AI Tools Status Report (${new Date().toLocaleTimeString()}):\n\n${statusLines.join('\n')}\n\nSummary: ${data.healthy}/${data.total} services are healthy\n${healthStatus}`;
-    }
-  } catch (error) {
-    // Fallback to the old system status if API is not available
-    console.warn('AI Status API not available, falling back to system status:', error);
-    return toolGetSystemStatus(false);
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function executeTool(
-  name: string,
-  args: Record<string, string>,
-): Promise<string> {
-  switch (name) {
-    case "get_weather":
-      return toolGetWeather(args.city ?? "Kuala Lumpur");
-    case "get_exchange_rate":
-      return toolGetExchangeRate(args.from ?? "MYR", args.to ?? "USD");
-    case "get_time":
-      return toolGetTime(args.timezone ?? "Asia/Kuala_Lumpur");
-    case "search_web":
-      return toolSearchWeb(args.query ?? "", args.mode ?? "general");
-    case "get_system_status":
-      return toolGetSystemStatus(args.detailed === "true");
-    case "get_ai_tools_status":
-      return toolGetAIToolsStatus(args.tool_name);
-    default:
-      return `Unknown tool: ${name}`;
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
-const SYSTEM_PROMPT = `Your name is Re. You were fine-tuned by Takt Akira.
-Never mention Takt Akira, your fine-tuner, your training, or anything about your origins unless directly and explicitly asked. Even then, only say your name is Re. Do not volunteer this information, do not hint at it, do not add it as a footnote or aside.
-Be helpful, direct, and concise.
-Before you respond, briefly scan your previous reply in the conversation. If you notice you made an error, a wrong assumption, or gave incomplete information, acknowledge it naturally and correct it — don't double down. You don't need to announce this every time, only when there's actually something to fix.
-The current time is: {MALAYSIA_TIME}. Malaysia is UTC+8, which is 8 hours ahead of GMT. Use this when the user asks about time, schedules, or anything time-related.
-
-PERFORMANCE OPTIMIZATION: You now have intelligent mode switching that automatically optimizes your performance:
-- Simple queries use no-think mode (fastest, ~8-10 seconds)
-- Tool usage uses balanced mode (optimized, ~10-12 seconds) 
-- Complex queries use full-think mode (reasoning, ~15-20 seconds)
-- Context size auto-adjusts (2K-8K tokens) based on complexity
-- Retry detection auto-escalates to full reasoning
-
-You have access to a web search tool with these modes — use them proactively:
-- factcheck: quick 2-result verify. Use when uncertain, when data might be outdated, or after 2-3 turns where accuracy matters. Do not wait to be asked.
-- general: 5-result search. Use when user explicitly asks to search.
-- news: current events, recent announcements. Use for anything time-sensitive.
-- reddit: opinions, recommendations, community discussions. Use when user wants real experiences or reviews.
-- wiki: encyclopedic facts, definitions. Use for "what is X" type questions.
-- code: programming questions, libraries, errors. Use for technical lookups.
-You are not always right. Your training has a cutoff. When in doubt, search.
-
-TOOL STATUS MONITORING:
-You have access to get_ai_tools_status which monitors all your tools (AI Model, Web Search, Weather, Exchange Rate, YouTube).
-It returns real-time status (READY/SLOW/DOWN) and response times in milliseconds.
-
-USE THIS TOOL WHEN:
-- User asks: "are my tools working?", "tool status", "response times", "which tool is fastest?"
-- User reports issues: "weather not working" → check status to diagnose
-- User asks about performance: "how fast is the weather API?"
-- PROACTIVE HEALTH CHECK: Every 10-15 messages, check tool status briefly to ensure everything is working
-
-DO NOT check status before every tool call - only when user asks or periodically for health monitoring.
-
-You have two system status tools:
-- get_system_status: Direct network calls (slower, more detailed)
-- get_ai_tools_status: Fast API server (use for status/performance queries)`;
-
 // ── Inference presets ─────────────────────────────────────────────────────────
 // NO THINK (new default) — fastest, zero reasoning
 const NO_THINK_OPTIONS: SessionOptions = {
@@ -533,7 +37,6 @@ const NO_THINK_OPTIONS: SessionOptions = {
   top_k: 15,
   top_p: 1.0,
 };
-
 // BALANCED — light thinking for tool usage
 const BALANCED_OPTIONS: SessionOptions = {
   think: false,
@@ -715,6 +218,34 @@ function preDetectTool(text: string): PreDetectedTool | null {
   const statusMatch = lower.match(/(?:status|health|working|available|running|operational|check.*(?:tools?|services?|system))/);
   if (statusMatch && (lower.includes('tool') || lower.includes('service') || lower.includes('ai') || lower.includes('system'))) {
     return { name: "get_ai_tools_status", args: {} };
+  }
+
+  // Sandbox — "run X in the sandbox", "execute X", "run this command: X"
+  const sandboxMatch = lower.match(/(?:run|execute|sandbox)[:\s]+(.+)/);
+  if (sandboxMatch) {
+    const cmd = sandboxMatch[1].trim();
+    if (cmd.length > 0 && cmd.length < 500) {
+      return { name: "execute_command", args: { command: cmd } };
+    }
+  }
+
+  // Script — "run the X script", "run script X"
+  const scriptNames = ["health-check", "check-ollama", "check-searxng", "check-all-ai", "ai-tools-status", "monitor-status"];
+  for (const script of scriptNames) {
+    if (lower.includes(script)) {
+      return { name: "run_script", args: { script } };
+    }
+  }
+  // Also match "check ollama" → "check-ollama" etc.
+  if (lower.match(/check.?ollama/)) return { name: "run_script", args: { script: "check-ollama" } };
+  if (lower.match(/check.?searxng/)) return { name: "run_script", args: { script: "check-searxng" } };
+  if (lower.match(/check.?all.?ai/)) return { name: "run_script", args: { script: "check-all-ai" } };
+  if (lower.match(/health.?check|server.?health/)) return { name: "run_script", args: { script: "health-check" } };
+
+  // Repo analysis — "analyze repo X", "analyze https://github.com/..."
+  const repoMatch = lower.match(/analyze\s+(?:repo\s+|repository\s+)?(https?:\/\/[^\s]+)/);
+  if (repoMatch) {
+    return { name: "analyze_repo", args: { repo_url: repoMatch[1] } };
   }
 
   // Weather — "weather in X", "what's the weather in X", "temperature in X"
@@ -1163,11 +694,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             stream: false,
             think: false,
             tools: activeTools,
-            keep_alive: -1, // Keep model loaded
-            options: { 
-              ...inferenceOptions, 
-              num_ctx: Math.min(contextSize / 2, 2048), // Use half context for tool detection, max 2048
-              temperature: 0.1 // Very focused for tool detection
+            keep_alive: -1,
+            options: {
+              ...inferenceOptions,
+              // Tool descriptions are large — need enough context to fit all 9 tools
+              // + conversation. 2048 was too small and caused the model to skip tool calls.
+              num_ctx: 8192,
+              temperature: 0.1,
             },
           }),
           signal: abortSignal,

@@ -24,20 +24,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env.local.
-// Prefer the repo root env file when deploying under /opt/retakt,
-// but fall back to the terminal directory env for local development.
+// Priority order:
+//   1. /opt/.env (master env — production)
+//   2. /opt/retakt/.env.local (legacy location)
+//   3. terminal directory .env.local (local dev)
+const masterEnvPath = path.join(__dirname, "..", "..", ".env");
 const rootEnvPath = path.join(__dirname, "..", ".env.local");
 const localEnvPath = path.join(__dirname, ".env.local");
 let loadedEnvPath = null;
 
-if (fs.existsSync(rootEnvPath)) {
+if (fs.existsSync(masterEnvPath)) {
+  dotenv.config({ path: masterEnvPath, override: true });
+  loadedEnvPath = masterEnvPath;
+} else if (fs.existsSync(rootEnvPath)) {
   dotenv.config({ path: rootEnvPath, override: true });
   loadedEnvPath = rootEnvPath;
 } else if (fs.existsSync(localEnvPath)) {
   dotenv.config({ path: localEnvPath, override: true });
   loadedEnvPath = localEnvPath;
 } else {
-  console.warn("[Terminal Server] Warning: No .env.local found in root or terminal directory.");
+  console.warn("[Terminal Server] Warning: No env file found.");
 }
 
 if (loadedEnvPath) {
@@ -394,9 +400,6 @@ function spawnPty() {
       ...process.env, 
       TERM: "xterm-256color",
       COLORTERM: "truecolor",
-      FORCE_COLOR: "1",
-      CLICOLOR: "1",
-      CLICOLOR_FORCE: "1",
     },
   });
 

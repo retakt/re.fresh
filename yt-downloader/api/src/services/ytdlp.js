@@ -93,9 +93,6 @@ function settingsToArgs(settings, mode) {
     args.push('--embed-subs');
   }
 
-  // File size limit
-  args.push('--max-filesize', config.maxFileSize);
-
   // Progress reporting
   args.push('--newline');
   args.push('--no-warnings');
@@ -108,8 +105,10 @@ function settingsToArgs(settings, mode) {
   args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
   
   // Use cookie file if available
-  const cookiePath = '/app/youtube_cookies.txt';
-  args.push('--cookies', cookiePath);
+  const cookiePath = process.env.COOKIES_PATH || '/app/youtube_cookies.txt';
+  if (require('fs').existsSync(cookiePath)) {
+    args.push('--cookies', cookiePath);
+  }
   
   // Use Node.js as JavaScript runtime for signature solving
   args.push('--extractor-args', 'youtube:js_runtime=node');
@@ -149,9 +148,9 @@ async function downloadVideo(url, settings, mode, onProgress) {
     let videoInfo = null;
     let downloadPath = null;
 
-    // Spawn yt-dlp process
+    // Spawn yt-dlp — Docker handles WARP routing via network_mode: service:gluetun
     const proc = spawn('yt-dlp', [...args, url], {
-      detached: false, // Don't create process group (easier to kill)
+      detached: false,
     });
 
     // Timeout enforcement
@@ -209,11 +208,20 @@ async function downloadVideo(url, settings, mode, onProgress) {
       }
 
       if (code === 0) {
-        logger.info('Download completed', { url, path: downloadPath });
+        // Get file size if we have the path
+        let fileSizeMB = null;
+        if (downloadPath) {
+          try {
+            const stat = require('fs').statSync(downloadPath);
+            fileSizeMB = Math.round(stat.size / 1024 / 1024 * 10) / 10;
+          } catch {}
+        }
+        logger.info('Download completed', { url, path: downloadPath, fileSizeMB });
         resolve({
           success: true,
           path: downloadPath,
           videoId: extractVideoId(url),
+          fileSizeMB,
         });
       } else {
         const error = `yt-dlp exited with code ${code}${signal ? ` (signal: ${signal})` : ''}`;
@@ -238,14 +246,17 @@ async function getVideoInfo(url) {
   return new Promise((resolve, reject) => {
     logger.info('Fetching video info', { url });
     
-    const cookiePath = '/app/youtube_cookies.txt';
+    const cookiePath = process.env.COOKIES_PATH || '/app/youtube_cookies.txt';
     const args = [
       '--dump-single-json',
       '--no-warnings',
-      '--cookies', cookiePath,
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       '--extractor-args', 'youtube:js_runtime=node',
     ];
+
+    if (require('fs').existsSync(cookiePath)) {
+      args.push('--cookies', cookiePath);
+    }
     
     // Add po-token if available
     const poToken = process.env.YOUTUBE_PO_TOKEN;
@@ -255,7 +266,8 @@ async function getVideoInfo(url) {
     }
     
     args.push(url);
-    
+
+    // Route through gluetun network namespace (WARP) if enabled
     const proc = spawn('yt-dlp', args);
 
     let stdout = '';

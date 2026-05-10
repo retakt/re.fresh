@@ -137,7 +137,7 @@ const defaultComponents = {
       <table className={cn("aui-md-table my-2 w-full border-separate border-spacing-0 overflow-y-auto", className)} {...props} />
     ),
     th: ({ className, ...props }) => (
-      <th className={cn("aui-md-th bg-muted px-2 py-1 text-start font-medium first:rounded-ss-lg last:rounded-se-lg [[align=center]]:text-center [[align=right]]:text-right", className)} {...props} />
+      <th className={cn("aui-md-th bg-primary/15 text-foreground px-2 py-1 text-start font-semibold first:rounded-ss-lg last:rounded-se-lg [[align=center]]:text-center [[align=right]]:text-right", className)} {...props} />
     ),
     td: ({ className, ...props }) => (
       <td className={cn("aui-md-td border-muted-foreground/20 border-s border-b px-2 py-1 text-start last:border-e [[align=center]]:text-center [[align=right]]:text-right", className)} {...props} />

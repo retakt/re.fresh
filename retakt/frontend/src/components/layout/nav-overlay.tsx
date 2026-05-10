@@ -20,14 +20,14 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/whats-new", icon: Sparkles,       label: "What's New", labelJP: "新着",     color: "#39FF14" },  // Lime green
+  { href: "/whats-new", icon: Sparkles,       label: "What's New", labelJP: "新着",     color: "#1de9b6" },  // Turquoise (primary brand color)
   { href: "/",          icon: Home,           label: "Home",       labelJP: "ホーム",   color: "#FF2E9B" },  // Neon pink
   { href: "/blog",      icon: BookOpen,       label: "Blog",       labelJP: "記事",     color: "#00FFFF" },  // Cyan
   { href: "/music",     icon: Music2,         label: "Music",      labelJP: "音楽",     color: "#FF6B35" },  // Orange
   { href: "/tutorials", icon: GraduationCap,  label: "Tutorials",  labelJP: "学習",     color: "#FDF500" }, // Yellow
-  { href: "/about",     icon: User,           label: "About",      labelJP: "概要",     color: "#39FF14" },  // Lime green
+  { href: "/about",     icon: User,           label: "About",      labelJP: "概要",     color: "#1de9b6" },  // Turquoise (primary brand color)
   { href: "/files",     icon: FolderOpen,     label: "Files",      labelJP: "ファイル", color: "#CD00FF" },  // Purple
-  { href: "/chat",      icon: MessageSquare,  label: "Chat",       labelJP: "チャット", color: "#39FF14" },  // Lime green
+  { href: "/chat",      icon: MessageSquare,  label: "Chat",       labelJP: "チャット", color: "#1de9b6" },  // Turquoise (primary brand color)
   { href: "/terminal",  icon: TerminalSquare, label: "Terminal",   labelJP: "端末",     color: "#CD00FF", authRequired: true },  // Vibrant purple
 ];
 
@@ -164,7 +164,7 @@ export default function NavOverlay({ open, onClose }: NavOverlayProps) {
                             strokeWidth={active ? 2.5 : 1.8}
                             style={{ color: active ? link.color : undefined }}
                             className={cn(
-                              "shrink-0 transition-colors duration-150",
+                              "shrink-0 transition-colors duration-150 hidden",
                               !active && "text-muted-foreground group-hover:text-foreground"
                             )}
                           />
@@ -185,7 +185,7 @@ export default function NavOverlay({ open, onClose }: NavOverlayProps) {
                           {/* JP label — yellow, always visible */}
                           <span
                             className={cn(
-                              "text-[11px] font-mono tracking-wider transition-opacity duration-150 text-yellow-400",
+                              "text-[13px] font-mono tracking-wider transition-opacity duration-150 text-yellow-400",
                               active ? "opacity-80" : "opacity-40 group-hover:opacity-60"
                             )}
                           >
@@ -199,15 +199,15 @@ export default function NavOverlay({ open, onClose }: NavOverlayProps) {
               </div>
 
               {/* Footer brand with CanvasText */}
-              <div className="px-4 py-2 border-t border-white/[0.06]">
-                <div className="flex flex-col gap-0.5">
+              <div className="px-4 py-2 pb-4 border-t border-white/[0.06]">
+                <div className="flex flex-col">
                   <span className="text-[14px] text-pink-400/70">made by~</span>
                   <CanvasText
                     text="takt"
                     className="text-xl font-extrabold leading-none"
                     backgroundClassName="bg-[#CD00FF]"
                     colors={["#37EBF3","#1AC5E0","#FDF500","#CD00FF","#E4556A","#CE1DCD","#37EBF3","#1AC5E0","#CD00FF","#FDF500","#E4556A","#CE1DCD","#37EBF3","#1AC5E0","#CD00FF"]}
-                    lineGap={3}
+                    lineGap={1}
                     animationDuration={15}
                   />
                 </div>

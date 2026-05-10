@@ -52,8 +52,8 @@
 .elastic-slider-range {
   position: absolute;
   height: 100%;
-  /* Use the CSS variable directly — theme uses oklch not hsl */
-  background-color: var(--primary);
+  /* Use sapphire color directly */
+  background-color: #25c059;
   border-radius: 9999px;
   opacity: 0.9;
 }
@@ -64,7 +64,7 @@
   transform: translate(-50%, -50%);
   width: 16px;
   height: 16px;
-  background-color: var(--primary);
+  background-color: #25c059;
   border: 2px solid white;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);

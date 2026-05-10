@@ -31,14 +31,14 @@ const TYPE_COLOR = {
   post: "text-sky-500",
   tutorial: "text-amber-500",
   music: "text-cyan-500",
-  page: "text-green-500",
+  page: "text-[#FDF500]",
 } as const;
 
 const TYPE_BG = {
   post: "bg-sky-500/10",
   tutorial: "bg-amber-500/10",
   music: "bg-cyan-500/10",
-  page: "bg-green-500/10",
+  page: "bg-[#1de9b6]/10",
 } as const;
 
 // Navigation pages that can be searched
@@ -245,7 +245,7 @@ export function CommandPalette() {
       {/* Trigger Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="rounded-lg p-2.5 text-[#37EBF3]/70 outline-none transition-all hover:bg-secondary hover:text-[#37EBF3] hover:shadow-[0_0_8px_rgba(55,235,243,0.2)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
+        className="rounded-lg p-2.5 text-[#FDF500]/70 outline-none transition-all hover:bg-secondary hover:text-[#FDF500] hover:shadow-[0_0_8px_rgba(253,245,0,0.2)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative z-[9999]"
         aria-label="Search (⌘K)"
       >
         <motion.div
@@ -290,7 +290,7 @@ export function CommandPalette() {
               >
               {/* Header */}
               <div className="flex items-center gap-3 px-4 py-3 border-b">
-                <Search size={16} className="text-muted-foreground shrink-0" />
+                <Search size={16} className="text-[#FDF500]/70 shrink-0" />
                 <input
                   ref={inputRef}
                   value={query}
@@ -310,7 +310,11 @@ export function CommandPalette() {
                   inputMode="search"
                 />
                 {/* Animated X close icon for all devices */}
-                <AnimatedCloseIcon onClick={() => setOpen(false)} size={28} />
+                <AnimatedCloseIcon 
+                  onClick={() => setOpen(false)} 
+                  size={28} 
+                  className="text-[#FDF500]/60 hover:text-[#FDF500]"
+                />
               </div>
 
               {/* Content */}
@@ -392,7 +396,7 @@ export function CommandPalette() {
                                       to={result.href}
                                       onClick={() => setOpen(false)}
                                       className={`flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors text-sm ${
-                                        isChildSelected ? "bg-accent" : "hover:bg-accent/50"
+                                        isChildSelected ? "bg-[#1de9b6]/10 text-[#1de9b6]" : "hover:bg-[#1de9b6]/5"
                                       }`}
                                       onMouseEnter={() => setSelectedIndex(childIndex)}
                                     >

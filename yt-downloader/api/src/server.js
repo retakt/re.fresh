@@ -6,6 +6,7 @@ const config = require('./config');
 const logger = require('./utils/logger');
 const downloadRoutes = require('./routes/download');
 const adminRoutes = require('./routes/admin');
+const storageRoutes = require('./routes/storage');
 const { initWebSocketServer } = require('./websocket/progress');
 const { startCleanupSchedule } = require('./services/cleanup');
 
@@ -48,6 +49,9 @@ app.get('/api/health', (req, res) => {
 
 // Admin routes (before rate limiting)
 app.use('/api/admin', adminRoutes);
+
+// Storage management routes
+app.use('/api/storage', storageRoutes);
 
 // Rate limiting - TEMPORARILY DISABLED FOR DEBUGGING
 // const limiter = rateLimit({

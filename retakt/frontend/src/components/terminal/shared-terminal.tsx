@@ -22,38 +22,50 @@ export interface SharedTerminalProps {
   className?: string;
 }
 
-// ─── Terminal theme ───────────────────────────────────────────────────────────
+// ─── Terminal theme — soft muted Dracula ─────────────────────────────────────
 
 const TERMINAL_THEME = {
-  background: "#00000000",
-  foreground: "#5eead4",
-  cursor: "#fbbf24",
-  cursorAccent: "#1a0f0a",
-  selectionBackground: "#78350f80",
-  black: "#21222c",
-  red: "#f87171",
-  green: "#34d399",
-  yellow: "#fbbf24",
-  blue: "#60a5fa",
-  magenta: "#f472b6",
-  cyan: "#22d3ee",
-  white: "#f8f8f2",
-  brightBlack: "#6272a4",
-  brightRed: "#fca5a5",
-  brightGreen: "#6ee7b7",
-  brightYellow: "#fcd34d",
-  brightBlue: "#93c5fd",
-  brightMagenta: "#f9a8d4",
-  brightCyan: "#67e8f9",
-  brightWhite: "#ffffff",
+  background:          "#00000000",
+  foreground:          "#a8a8a8",   // soft grey — not pure white
+  cursor:              "#a8a8a8",
+  cursorAccent:        "#282a36",
+  selectionBackground: "#44475a",
+  black:               "#21222c",
+  red:                 "#c45a5a",   // muted red
+  green:               "#45c46a",   // muted green
+  yellow:              "#c4c45a",   // muted yellow
+  blue:                "#7b7fc4",   // muted blue/purple
+  magenta:             "#c47ba8",   // muted magenta
+  cyan:                "#5ab8c4",   // muted cyan for directories
+  white:               "#a8a8a8",   // same as foreground — soft grey
+  brightBlack:         "#555555",
+  brightRed:           "#d97070",
+  brightGreen:         "#5ad97a",
+  brightYellow:        "#d9d970",
+  brightBlue:          "#9090d9",
+  brightMagenta:       "#d990c0",
+  brightCyan:          "#70ccd9",
+  brightWhite:         "#c8c8c8",   // slightly brighter but still not pure white
 };
 
+// Editor shortcuts that should pass through to nano/vim
+// These are NOT blocked so they can be handled by the terminal editor
+const EDITOR_SHORTCUTS = new Set([
+  "KeyX",  // nano: exit (Ctrl+X)
+  "KeyO",  // nano: write out/save (Ctrl+O)
+  "KeyS",  // nano: save (alternative), vim: save in some configs
+  "KeyW",  // nano: search (Ctrl+W), vim: window commands (Ctrl+W)
+  "KeyK",  // nano: cut line (Ctrl+K)
+  "KeyG",  // nano: go to line (Ctrl+G), vim: file info (Ctrl+G)
+]);
+
 // Browser Ctrl+key shortcuts to block when terminal is focused
+// Note: Editor shortcuts (KeyX, KeyO, KeyS, KeyW, KeyK, KeyG) are excluded
 const BROWSER_CTRL_SHORTCUTS = new Set([
-  "KeyT", "KeyW", "KeyN", "KeyR", "KeyL", "KeyF",
-  "KeyH", "KeyJ", "KeyK", "KeyU", "KeyP", "KeyB",
-  "KeyE", "KeyG", "KeyI", "KeyO", "KeyQ",
-  "KeyS", "KeyX", "KeyY",
+  "KeyT", "KeyN", "KeyR", "KeyL", "KeyF",
+  "KeyH", "KeyJ", "KeyU", "KeyP", "KeyB",
+  "KeyE", "KeyI", "KeyQ",
+  "KeyY",
   "Digit1", "Digit2", "Digit3", "Digit4", "Digit5",
   "Digit6", "Digit7", "Digit8", "Digit9", "Digit0",
   "Minus", "Equal",
@@ -115,22 +127,71 @@ export function SharedTerminal({ className }: SharedTerminalProps) {
   const sendInputRef = useRef(sendInput);
   useEffect(() => { sendInputRef.current = sendInput; }, [sendInput]);
 
+  // ── Touch scroll — route swipe gestures into xterm viewport ──────────────
+  // On mobile, touch events on the xterm canvas don't automatically scroll
+  // the xterm-viewport. We intercept touchmove on the container and manually
+  // scroll the viewport, preventing the event from bubbling to the page.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let touchStartY = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const viewport = container.querySelector<HTMLElement>(".xterm-viewport");
+      if (!viewport) return;
+
+      const deltaY = touchStartY - e.touches[0].clientY;
+      touchStartY = e.touches[0].clientY;
+
+      // Only prevent default (page scroll) when the viewport can absorb the scroll
+      const atTop = viewport.scrollTop === 0 && deltaY < 0;
+      const atBottom =
+        viewport.scrollTop + viewport.clientHeight >= viewport.scrollHeight - 1 &&
+        deltaY > 0;
+
+      if (!atTop && !atBottom) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      viewport.scrollTop += deltaY;
+    };
+
+    container.addEventListener("touchstart", onTouchStart, { passive: true });
+    container.addEventListener("touchmove", onTouchMove, { passive: false });
+
+    return () => {
+      container.removeEventListener("touchstart", onTouchStart);
+      container.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
+
   // ── Mount xterm.js ─────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Responsive font size based on screen width
+    // Small phones (<380px) → 12, normal phones → 13, tablets/desktop → 14
+    const w = window.innerWidth;
+    const responsiveFontSize = w < 380 ? 12 : w < 768 ? 13 : 14;
+
     const terminal = new Terminal({
       cursorBlink: true,
       cursorStyle: "block",
-      fontSize: 12,
-      lineHeight: 1.25,
+      fontSize: responsiveFontSize,
+      lineHeight: 1.0,
       letterSpacing: 0,
-      fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Mono", monospace',
+      fontFamily: 'ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono", monospace',
       theme: TERMINAL_THEME,
       scrollback: 10000,
       convertEol: true,
-      allowProposedApi: false,
+      allowProposedApi: true,
       allowTransparency: true,
       disableStdin: false,
     });
@@ -153,6 +214,12 @@ export function SharedTerminal({ className }: SharedTerminalProps) {
       setIsReady(true);
       registerTerminal(terminal);
       terminal.focus();
+
+      // Only show password prompt if there's no active/restoring session
+      // If status is "reconnecting" or "connected", the session effect handles display
+      if (status === "disconnected" && !isAuthenticated) {
+        showPasswordPrompt();
+      }
     }, 80);
 
     // ── onData: forward all input raw to PTY ──────────────────────────────
@@ -226,6 +293,12 @@ export function SharedTerminal({ className }: SharedTerminalProps) {
         return;
       }
 
+      // Allow editor shortcuts to pass through to PTY (nano/vim)
+      if (EDITOR_SHORTCUTS.has(e.code)) {
+        // Do NOT call preventDefault - let the event pass through to xterm
+        return;
+      }
+
       // Block common Ctrl+key browser shortcuts
       if (BROWSER_CTRL_SHORTCUTS.has(e.code)) {
         e.preventDefault();
@@ -268,7 +341,7 @@ export function SharedTerminal({ className }: SharedTerminalProps) {
       setIsReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registerTerminal, unregisterTerminal, sendResize]);
+  }, [registerTerminal, unregisterTerminal, sendResize, status, isAuthenticated, showPasswordPrompt]);
 
   // ── Activity timer ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -286,6 +359,7 @@ export function SharedTerminal({ className }: SharedTerminalProps) {
     const t = terminalRef.current;
 
     if (isAuthenticated && !isAuthenticatedLocalRef.current) {
+      // Auth succeeded (either fresh login or session restore)
       isAuthenticatedLocalRef.current = true;
       if (t) {
         t.options.cursorBlink = true;
@@ -297,12 +371,15 @@ export function SharedTerminal({ className }: SharedTerminalProps) {
         t.focus();
       }
     } else if (!isAuthenticated && isAuthenticatedLocalRef.current) {
+      // Lost auth — show password prompt
       isAuthenticatedLocalRef.current = false;
       if (t && isReady) showPasswordPrompt();
     } else if (status === "disconnected" && prev !== "disconnected" && !isAuthenticated) {
+      // Disconnected with no session — show password prompt
       if (t && isReady) showPasswordPrompt();
-    } else if (status === "reconnecting" && prev === "disconnected") {
-      if (t && isReady) {
+    } else if (status === "reconnecting") {
+      // Session restore in progress — show "Restoring..." instead of password prompt
+      if (t && isReady && prev === "disconnected") {
         t.clear();
         t.writeln("\x1b[1;32mre.Terminal\x1b[0m");
         t.writeln("");

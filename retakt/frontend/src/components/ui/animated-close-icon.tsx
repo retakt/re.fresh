@@ -25,7 +25,7 @@ export default function AnimatedCloseIcon({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "bg-transparent border-none cursor-pointer flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground transition-colors shrink-0 relative",
+        "bg-transparent border-none cursor-pointer flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground transition-colors shrink-0 relative outline-none focus:outline-none focus-visible:outline-none",
         className
       )}
       style={{ width: size, height: size }}

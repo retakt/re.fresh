@@ -20,9 +20,9 @@ const RELEASED: { version: string; date: string; title: string; items: string[] 
   {
     version: "v1.6",
     date: "4th May, 2026",
-    title: "y0uTube Downloader",
+    title: "y0uTube tool",
     items: [
-      "y0uTube Downloader - yt.retakt.cc (yt-dlp backend)",
+      "video Downloader - yt.retakt.cc (yt-dlp backend)",
       "auto/audio/mute modes, quality settings (max to 2160p)",
       "codec selection (h264, av1, vp9)",
       "auto-detect clipboard",
@@ -186,9 +186,10 @@ export default function WhatsNewPage() {
           <CanvasText
             text="changelog: "
             className="text-2xl font-bold"
-            backgroundClassName="bg-[#39FF14]"
-            colors={["#39FF14","#2EE010","#23CC0C","#39FF14","#2EE010","#23CC0C","#39FF14","#2EE010"]}
-            animationDuration={12}
+            backgroundClassName="bg-[#25c059]"
+            colors={["#25c059","#29d563","#1bc587","#14ccab","#00babd","#25c059","#29d563","#1bc587"]}
+            lineGap={1}
+            animationDuration={15}
           />
         </div>
         <p className="mt-1.5 text-sm text-muted-foreground">
@@ -283,7 +284,7 @@ export default function WhatsNewPage() {
                       {entry.version === "v1.6" ? (
                         <div className="flex items-center gap-2 flex-wrap">
                           <CanvasText
-                            text="y0uTube Downloader"
+                            text="y0uTube tool"
                             backgroundClassName={bg}
                             colors={lines}
                             lineGap={1}
@@ -317,7 +318,7 @@ export default function WhatsNewPage() {
                             {entry.version === "v1.6" && i === 0 ? (
                               // Special handling for YouTube Downloader link
                               <span>
-                                y0uTube Downloader - 
+                                video Downloader - 
                                 <a 
                                   href="https://yt.retakt.cc" 
                                   target="_blank" 

@@ -22,7 +22,9 @@ async function updateWorkerIP() {
         timestamp: new Date().toISOString()
       };
       
-      await fs.writeFile('/app/logs/worker-ip.json', JSON.stringify(ipData, null, 2));
+      const logsDir = path.join(__dirname, '../../logs');
+      await fs.mkdir(logsDir, { recursive: true });
+      await fs.writeFile(path.join(logsDir, 'worker-ip.json'), JSON.stringify(ipData, null, 2));
       logger.info('Worker IP updated', { ip });
       return ip;
     }
@@ -37,7 +39,9 @@ async function updateWorkerIP() {
       error: error.message
     };
     
-    await fs.writeFile('/app/logs/worker-ip.json', JSON.stringify(ipData, null, 2)).catch(() => {});
+    const logsDir = path.join(__dirname, '../../logs');
+    await fs.mkdir(logsDir, { recursive: true }).catch(() => {});
+    await fs.writeFile(path.join(logsDir, 'worker-ip.json'), JSON.stringify(ipData, null, 2)).catch(() => {});
   }
   return null;
 }
@@ -65,8 +69,22 @@ setInterval(() => {
 async function processDownloadJob(job) {
   const { url, mode, settings } = job.data;
   const jobId = job.id;
+  const startTime = Date.now();
 
-  logger.info('Processing download job', { jobId, url, mode });
+  // RAM snapshot at job start
+  const memStart = process.memoryUsage();
+
+  logger.info('Job started', {
+    jobId,
+    url,
+    mode,
+    format: settings?.videoQuality
+      ? `${mode === 'audio' ? 'audio' : settings.videoQuality + 'p'} / ${settings?.audioFormat || 'aac'} / ${settings?.fileContainer || 'auto'}`
+      : mode,
+    codec: settings?.videoCodec || 'auto',
+    container: settings?.fileContainer || 'auto',
+    ramUsedMB: Math.round(memStart.rss / 1024 / 1024),
+  });
 
   try {
     // Update job progress
@@ -123,7 +141,14 @@ async function processDownloadJob(job) {
       thumbnail: videoInfo.thumbnail,
     });
 
-    logger.info('Download job completed', { jobId, videoId });
+    logger.info('Job completed', {
+      jobId,
+      videoId,
+      title: videoInfo.title,
+      durationSec: Math.round((Date.now() - startTime) / 1000),
+      ramUsedMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      ramDeltaMB: Math.round((process.memoryUsage().rss - memStart.rss) / 1024 / 1024),
+    });
 
     return {
       success: true,
