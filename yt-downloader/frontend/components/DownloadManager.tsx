@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { getDownloadFileUrl } from "../lib/api";
 import AnimatedCloseIcon from "./AnimatedCloseIcon";
 import NotificationBadge from "./smoothui/notification-badge";
+import { GlassContainer } from "./ui/apple-glass-effect";
 
 export interface DownloadItem {
   id: string;
@@ -251,77 +252,94 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
               exit={{ opacity: 0, x: 20, y: -10 }}
               className={cn(
                 "fixed top-36 right-6 z-40",
-                "w-[400px] max-w-[calc(100vw-3rem)]",
-                "rounded-[15px] border shadow-2xl",
-                "dark:border-white/10 dark:bg-[#0a0a0a]",
-                "border-black/10 bg-white",
-                "overflow-hidden"
+                "w-[400px] max-w-[calc(100vw-3rem)]"
               )}
             >
-              {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b dark:border-white/5 border-black/5">
-              <div className="flex items-center gap-2">
-                <ArrowDown size={16} className="dark:text-[#ed2236] text-[#ff0000]" />
-                <h3 className="text-[14px] font-bold dark:text-[#e1e1e1] text-black">
-                  Downloads {hasDownloads && `(${downloads.length})`}
-                </h3>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                {downloads.length > 0 && (
-                  <button
-                    onClick={onClear}
-                    className="text-[11px] font-medium px-2 py-1 rounded-[7px] dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919] text-[#9ca3af] hover:text-black hover:bg-[#e8e4d9] transition-all"
-                  >
-                    clear all
-                  </button>
+              <GlassContainer
+                variant="thin"
+                tint="neutral"
+                distortion="none"
+                blur={3}
+                opacity={0.01}
+                className={cn(
+                  "rounded-[15px] shadow-2xl overflow-hidden",
+                  "border-white/5"
                 )}
-                <AnimatedCloseIcon
-                  onClick={() => setIsOpen(false)}
-                  size={20}
-                  className="dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] text-[#9ca3af] hover:text-black"
-                />
-              </div>
-            </div>
-
-            {/* Downloads List or Empty State */}
-            <div className="max-h-[400px] overflow-y-auto p-3">
-              {hasDownloads ? (
-                <div className="space-y-2">
-                  <AnimatePresence mode="popLayout">
-                    {downloads.map((download) => (
-                      <DownloadCard
-                        key={download.id}
-                        download={download}
-                        onRemove={() => onRemove(download.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 px-4">
-                  <div className="w-16 h-16 rounded-full dark:bg-[#191919] bg-[#e8e4d9] flex items-center justify-center mb-3">
-                    <ArrowDown size={24} className="dark:text-[#9ca3af] text-[#9ca3af]" />
+                hover={false}
+                glassOverlay={true}
+                highlightOpacity={0.1}
+                innerGlowOpacity={0.05}
+                specularIntensity={0.1}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <ArrowDown size={16} className="text-[#ed2236]" />
+                    <h3 className="text-[14px] font-bold text-white">
+                      Downloads {hasDownloads && `(${downloads.length})`}
+                    </h3>
                   </div>
-                  <p className="text-[12px] font-medium dark:text-[#e1e1e1] text-black mb-1">
-                    its quiet here heh.
-                  </p>
-                  <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af]">
-                    try downloading!
-                  </p>
+                  
+                  <div className="flex items-center gap-1">
+                    {downloads.length > 0 && (
+                      <button
+                        onClick={onClear}
+                        className="text-[11px] font-medium px-2 py-1 rounded-[7px] text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                      >
+                        clear all
+                      </button>
+                    )}
+                    <AnimatedCloseIcon
+                      onClick={() => setIsOpen(false)}
+                      size={20}
+                      className="text-white/70 hover:text-white"
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Footer */}
-            {completedDownloads.length > 0 && (
-              <div className="px-4 py-2 border-t dark:border-white/5 border-black/5">
-                <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] text-center">
-                  {completedDownloads.length} download{completedDownloads.length !== 1 ? "s" : ""} ready
-                </p>
-              </div>
-            )}
-          </motion.div>
+                {/* Downloads List or Empty State */}
+                <div className="max-h-[400px] overflow-y-auto p-3">
+                  {hasDownloads ? (
+                    <div className="space-y-2">
+                      <AnimatePresence mode="popLayout">
+                        {downloads.map((download) => (
+                          <DownloadCard
+                            key={download.id}
+                            download={download}
+                            onRemove={() => onRemove(download.id)}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-5 px-4">
+                      <div className="w-48 h-48 flex items-center justify-center">
+                        <img 
+                          src="/ytmascot.svg" 
+                          alt="YT Mascot" 
+                          className="w-full h-full object-contain opacity-40"
+                        />
+                      </div>
+                      <p className="text-[12px] font-medium text-white leading-tight">
+                        its quiet here heh.
+                      </p>
+                      <p className="text-[11px] text-white/70 leading-tight">
+                        try downloading!
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                {completedDownloads.length > 0 && (
+                  <div className="px-4 py-2 border-t border-white/10">
+                    <p className="text-[11px] text-white/70 text-center">
+                      {completedDownloads.length} download{completedDownloads.length !== 1 ? "s" : ""} ready
+                    </p>
+                  </div>
+                )}
+              </GlassContainer>
+            </motion.div>
           </>
         )}
       </AnimatePresence>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Home from "./pages/Home";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
+import { StarsBackground } from "./components/backgrounds/stars";
 
 export default function YTPage() {
   const [currentPage, setCurrentPage] = useState<"home" | "settings" | "admin">(() => {
@@ -46,19 +47,32 @@ export default function YTPage() {
   }, []);
 
   return (
-    <div 
-      className="min-h-dvh transition-colors bg-black text-[#e1e1e1]"
-      style={{ fontFamily: "'Commit Mono', monospace" }}
-    >
-      {currentPage === "home" && <Home onNavigate={setCurrentPage} />}
-      {currentPage === "settings" && (
-        <Settings 
-          onNavigate={setCurrentPage} 
-          theme={theme}
-          onThemeChange={setTheme}
+    <div className="min-h-dvh w-full overflow-hidden relative">
+      {/* ── STARS BACKGROUND — fixed, full viewport, behind everything ── */}
+      <div className="fixed inset-0 z-0 w-full h-full">
+        <StarsBackground 
+          className="w-full h-full" 
+          starColor="#525252"
+          factor={0.05}
+          transition={{ stiffness: 50, damping: 20 }}
         />
-      )}
-      {currentPage === "admin" && <Admin />}
+      </div>
+
+      {/* ── MAIN CONTENT — above stars background ── */}
+      <div 
+        className="relative z-10 min-h-dvh transition-colors bg-transparent text-[#e1e1e1]"
+        style={{ fontFamily: "'Commit Mono', monospace" }}
+      >
+        {currentPage === "home" && <Home onNavigate={setCurrentPage} />}
+        {currentPage === "settings" && (
+          <Settings 
+            onNavigate={setCurrentPage} 
+            theme={theme}
+            onThemeChange={setTheme}
+          />
+        )}
+        {currentPage === "admin" && <Admin />}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface AnimatedLogoProps {
   staticSrc: string;
@@ -15,40 +15,39 @@ export function AnimatedLogo({
   height = 64,
   className = '' 
 }: AnimatedLogoProps) {
-  const [key, setKey] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageError, setImageError] = useState(false);
+  
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Animation duration - single cycle
+  const ANIMATION_DURATION = 2000; // 2 seconds
+  
   useEffect(() => {
-    const preloadStatic = new Image();
-    preloadStatic.src = staticSrc;
-    preloadStatic.decoding = 'sync';
-    preloadStatic.loading = 'eager';
-
+    // Preload animated image (static loads immediately)
     const preloadAnimated = new Image();
     preloadAnimated.src = animatedSrc;
-    preloadAnimated.decoding = 'sync';
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [staticSrc, animatedSrc]);
+  }, [animatedSrc]);
 
-  const triggerAnimation = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+  const triggerAnimation = useCallback(() => {
+    // If already animating, ignore clicks
+    if (isAnimating) {
+      return;
     }
 
-    setKey(prev => prev + 1);
     setIsAnimating(true);
 
+    // Complete one animation cycle
     timeoutRef.current = setTimeout(() => {
       setIsAnimating(false);
-    }, 2000);
-  };
+    }, ANIMATION_DURATION);
+  }, [isAnimating]);
 
   return (
     <button
@@ -61,7 +60,8 @@ export function AnimatedLogo({
         className="relative rounded-lg bg-[#dc143c] border border-[#ff6b8a]/30 overflow-hidden shadow-lg shadow-[#dc143c]/20 transition-all active:scale-95"
         style={{ width: `${width}px`, height: `${height}px` }}
       >
-        {!isAnimating && !imageError && (
+        {/* Static PNG - only visible when NOT animating */}
+        {!isAnimating && (
           <img
             src={staticSrc}
             alt="YouTube Logo"
@@ -72,8 +72,9 @@ export function AnimatedLogo({
           />
         )}
         
-        {!isAnimating && imageError && (
-          <div className="w-full h-full flex items-center justify-center">
+        {/* Fallback SVG if static image fails - only when NOT animating */}
+        {imageError && !isAnimating && (
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center">
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               viewBox="0 0 24 24" 
@@ -86,9 +87,9 @@ export function AnimatedLogo({
           </div>
         )}
         
+        {/* Animated GIF/APNG - only visible when animating */}
         {isAnimating && (
           <img
-            key={key}
             src={animatedSrc}
             alt="YouTube Logo Animated"
             className="w-full h-full object-contain"
