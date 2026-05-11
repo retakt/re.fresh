@@ -45,10 +45,31 @@ remote() {
   ssh "$SERVER" bash -s <<< "$1"
 }
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+upload_env() {
+  if [ -f ".env" ]; then
+    echo "    uploading .env to /opt/.env"
+    scp ".env" "$SERVER:/tmp/retakt-env"
+    remote '
+      if [ -f /tmp/retakt-env ]; then
+        mkdir -p /opt
+        mv /tmp/retakt-env /opt/.env
+        chmod 600 /opt/.env
+        echo "    .env deployed to /opt/.env"
+      fi
+    '
+  else
+    echo "    .env not found, skipping"
+  fi
+}
+
 # ── Targets ───────────────────────────────────────────────────────────────────
 
 deploy_frontend() {
   echo "--- frontend"
+
+  upload_env
 
   cd retakt/frontend
   npm install --silent
@@ -101,22 +122,10 @@ deploy_terminal() {
 
   upload terminal-server
 
-  # Deploy root .env.local for terminal password
-  if [ -f ".env.local" ]; then
-    scp ".env.local" "$SERVER:/tmp/retakt-env-local"
-  fi
-
   remote '
     mkdir -p /opt/retakt/terminal
     tar -xzf /tmp/terminal-server.tar.gz -C /opt/retakt/terminal
     rm /tmp/terminal-server.tar.gz
-
-    # Deploy env if uploaded
-    if [ -f /tmp/retakt-env-local ]; then
-      mkdir -p /opt/retakt
-      mv /tmp/retakt-env-local /opt/retakt/.env.local
-      chmod 600 /opt/retakt/.env.local
-    fi
 
     # Make scripts executable
     find /opt/retakt/terminal/scripts -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
@@ -151,11 +160,6 @@ deploy_yt() {
   upload yt-frontend
   upload y0utubed-system
 
-  # Upload master .env for token values
-  if [ -f ".env" ]; then
-    scp ".env" "$SERVER:/tmp/yt-master-env"
-  fi
-
   remote '
     # Deploy yt-frontend — Caddy serves from /opt/yt-downloader/frontend
     mkdir -p /opt/yt-downloader/frontend
@@ -170,16 +174,6 @@ deploy_yt() {
     mkdir -p /opt/yt-downloads
     tar -xzf /tmp/y0utubed-system.tar.gz -C /opt/yt-downloader/y0utubed/system
     rm /tmp/y0utubed-system.tar.gz
-
-    # Write .env for docker-compose
-    if [ -f /tmp/yt-master-env ]; then
-      source /tmp/yt-master-env 2>/dev/null || true
-      rm /tmp/yt-master-env
-    fi
-
-    cat > /opt/yt-downloader/y0utubed/system/.env << ENVEOF
-YT_ADMIN_TOKEN=${YT_ADMIN_TOKEN:-re.takt}
-ENVEOF
 
     # Rebuild and restart Docker containers with bgutil integration
     cd /opt/yt-downloader/y0utubed/system
@@ -225,11 +219,6 @@ deploy_services() {
   upload services
   upload warmup-service
 
-  # Upload master env
-  if [ -f ".env" ]; then
-    scp ".env" "$SERVER:/tmp/master-env"
-  fi
-
   remote '
     mkdir -p /opt/services/logs
     mkdir -p /opt/retakt/backend/services
@@ -240,11 +229,6 @@ deploy_services() {
 
     tar -xzf /tmp/warmup-service.tar.gz -C /opt/retakt/backend/services
     rm /tmp/warmup-service.tar.gz
-
-    if [ -f /tmp/master-env ]; then
-      mv /tmp/master-env /opt/.env
-      chmod 600 /opt/.env
-    fi
 
     # Reload PM2 from master config
     pm2 stop all 2>/dev/null || true

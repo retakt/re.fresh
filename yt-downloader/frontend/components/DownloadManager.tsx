@@ -189,7 +189,7 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
   return (
     <>
       {/* Floating Button - Top-right position */}
-      <div className="fixed top-20 right-6 z-50">
+      <div className="fixed top-20 right-1 xl:right-16 z-50">
         <NotificationBadge
           variant="count"
           count={activeDownloads.length > 0 ? activeDownloads.length : completedDownloads.length}
@@ -208,7 +208,7 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
             animate={{ scale: 1, opacity: 1 }}
             onClick={() => setIsOpen(!isOpen)}
             className={cn(
-              "w-10 h-10 rounded-full shadow-lg",
+              "w-7 h-7 xl:w-9 xl:h-9 rounded-full shadow-lg",
               "flex items-center justify-center",
               "transition-all border-2",
               hasDownloads 
@@ -225,9 +225,9 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
             }}
           >
             <ArrowDown 
-              size={14} 
+              size={12}
               className={cn(
-                "transition-colors",
+                "xl:w-[14px] xl:h-[14px] transition-colors",
                 hasDownloads ? "text-white" : "dark:text-[#ed2236] text-[#ff0000]"
               )} 
             />
@@ -251,8 +251,8 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
               animate={{ opacity: 1, x: 0, y: 0 }}
               exit={{ opacity: 0, x: 20, y: -10 }}
               className={cn(
-                "fixed top-36 right-6 z-40",
-                "w-[400px] max-w-[calc(100vw-3rem)]"
+                "fixed top-36 right-1 xl:right-16 z-40",
+                "w-[calc(100vw-1rem)] xl:w-[400px]"
               )}
             >
               <GlassContainer
@@ -272,15 +272,15 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
                 specularIntensity={0.1}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <ArrowDown size={16} className="text-[#ed2236]" />
-                    <h3 className="text-[14px] font-bold text-white">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 -mx-0">
+                  <div className="flex items-center gap-1.5">
+                    <ArrowDown size={13} className="text-[#ed2236]" />
+                    <h3 className="text-[13px] font-bold text-white">
                       Downloads {hasDownloads && `(${downloads.length})`}
                     </h3>
                   </div>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 ml-auto pr-1">
                     {downloads.length > 0 && (
                       <button
                         onClick={onClear}
@@ -291,14 +291,14 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
                     )}
                     <AnimatedCloseIcon
                       onClick={() => setIsOpen(false)}
-                      size={20}
-                      className="text-white/70 hover:text-white"
+                      size={18}
+                      className="text-white/70 hover:text-white cursor-pointer"
                     />
                   </div>
                 </div>
 
                 {/* Downloads List or Empty State */}
-                <div className="max-h-[400px] overflow-y-auto p-3">
+                <div className="max-h-[320px] overflow-y-auto p-3 scrollbar-hide">
                   {hasDownloads ? (
                     <div className="space-y-2">
                       <AnimatePresence mode="popLayout">
@@ -312,20 +312,23 @@ export default function DownloadManager({ downloads, onRemove, onClear }: Downlo
                       </AnimatePresence>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-5 px-4">
-                      <div className="w-48 h-48 flex items-center justify-center">
+                    <div className="flex flex-row items-center gap-3 py-2 px-2">
+                      <div className="w-20 h-20 shrink-0 flex items-center justify-center overflow-hidden">
                         <img 
                           src="/ytmascot.svg" 
                           alt="YT Mascot" 
                           className="w-full h-full object-contain opacity-40"
+                          style={{ filter: 'brightness(0.8)' }}
                         />
                       </div>
-                      <p className="text-[12px] font-medium text-white leading-tight">
-                        its quiet here heh.
-                      </p>
-                      <p className="text-[11px] text-white/70 leading-tight">
-                        try downloading!
-                      </p>
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-[12px] font-medium text-white leading-tight">
+                          its quiet here heh.
+                        </p>
+                        <p className="text-[11px] text-white/50 leading-tight">
+                          try downloading!
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>

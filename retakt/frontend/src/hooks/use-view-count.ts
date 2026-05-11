@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { ensureValidSession } from '@/lib/auth-guard'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
-type ContentTable = 'posts' | 'tutorials' | 'music'
+type ContentTable = 'posts' | 'projects' | 'tutorials' | 'music'
 
-/**
- * Increments view_count once per browser session, then returns the live count.
- * Uses sessionStorage so refreshing the same page doesn't spam the counter.
- */
 export function useViewCount(id: string | undefined, table: ContentTable, initialCount: number = 0) {
   const [count, setCount] = useState(initialCount)
 
@@ -18,25 +13,21 @@ export function useViewCount(id: string | undefined, table: ContentTable, initia
   useEffect(() => {
     if (!id) return
     
-    // Ensure session is valid before querying
     const run = async () => {
-      const isValid = await ensureValidSession();
-      if (!isValid) {
-        console.error('[useViewCount] Session invalid, bailing');
-        return;
-      }
-
       const key = `viewed_${table}_${id}`
-
       if (sessionStorage.getItem(key)) return
       sessionStorage.setItem(key, '1')
 
-      const { error } = await supabase
-        .rpc('increment_view_count', { p_table: table, p_id: id })
+      // Try to increment. If auth fails, the global listener in main.tsx 
+      // will handle the logout automatically.
+      const { error } = await supabase.rpc('increment_view_count', { p_table: table, p_id: id })
       
+      // Silently ignore RPC errors (user might be offline or permission denied)
+      // We don't stop the app, we just don't count the view.
       if (error) { 
-        console.error('[viewCount] rpc error', error); 
-        return; 
+        // Optional: uncomment next line to see errors in console
+        // console.warn('[viewCount] rpc skipped', error.message)
+        return
       }
       
       const { data, error: e2 } = await supabase
@@ -45,11 +36,7 @@ export function useViewCount(id: string | undefined, table: ContentTable, initia
         .eq('id', id)
         .single()
       
-      if (e2) { 
-        console.error('[viewCount] select error', e2); 
-        return; 
-      }
-      
+      if (e2) return
       if (data) setCount(data.view_count)
     };
     
@@ -59,9 +46,12 @@ export function useViewCount(id: string | undefined, table: ContentTable, initia
   return count
 }
 
-/** Format a raw number into a compact display string: 1200 → "1.2k" */
-export function formatViewCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}k`
-  return String(n)
+export function formatViewCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`
+  }
+  return count.toString()
 }

@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, useAnimation } from "motion/react";
 import {
   Music,
   Sparkles,
   VolumeX,
   ArrowRight,
-  Settings as SettingsIcon,
   Clipboard,
 } from "lucide-react";
+import { SettingsIcon, SettingsIconControlled } from "@/components/animate-ui/icons/settings";
 import { cn } from "@/lib/utils";
 import { NoticeBox } from "../components/NoticeBox";
 import { CanvasText } from "../components/CanvasText";
@@ -19,7 +19,7 @@ import AnimatedCloseIcon from "../components/AnimatedCloseIcon";
 import { AnimatedLogo } from "../components/AnimatedLogo";
 import { getStoredSettings, type DownloadMode } from "../lib/settings";
 import { startDownload, getDownloadStatus, cancelDownload, APIError } from "../lib/api";
-import { isValidYouTubeUrl, normalizeYouTubeUrl } from "../lib/youtube";
+import { isValidYouTubeUrl, normalizeYouTubeUrl, extractYouTubeVideoId, extractYouTubePlaylistId } from "../lib/youtube";
 import DownloadManager, { type DownloadItem } from "../components/DownloadManager";
 
 const YouTubeSVG = `<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 24 24" id="youtube" width="40" height="40">
@@ -46,13 +46,13 @@ function ModeButton({
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-1.5 rounded-[9px] px-3.5 py-2 text-[13px] font-medium transition-all",
+        "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium transition-all",
         active
           ? "text-[#18181b] bg-[#18181b]/8 dark:text-white dark:bg-[#e1e1e1]/10"
           : "text-[#a1a1aa] hover:bg-[#f4f4f5] dark:text-[#9ca3af] dark:hover:bg-[#191919]"
       )}
     >
-      <Icon size={14} className="shrink-0" />
+      <Icon size={13} className="shrink-0" />
       <span>{label}</span>
     </button>
   );
@@ -81,11 +81,14 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [showEncrypted, setShowEncrypted] = useState(false);
   const [encryptedUrl, setEncryptedUrl] = useState("");
+  const [encryptedDisplayText, setEncryptedDisplayText] = useState("");
   const [isPasteAnimating, setIsPasteAnimating] = useState(false);
   const [hasValidUrl, setHasValidUrl] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const pollIntervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const hasAutoPastedRef = useRef(false);
+  // Holds the full normalized URL for submission — url state only holds display value
+  const submitUrlRef = useRef<string>("");
 
   // Persist URL to localStorage whenever it changes
   useEffect(() => {
@@ -206,6 +209,11 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
           setIsPasteAnimating(true);
           setTimeout(() => setIsPasteAnimating(false), 500);
           setEncryptedUrl(normalized);
+          submitUrlRef.current = normalized;
+          // Show short ID in the animation, not the full URL
+          const videoId = extractYouTubeVideoId(text);
+          const playlistId = extractYouTubePlaylistId(text);
+          setEncryptedDisplayText(videoId ?? playlistId ?? normalized);
           setShowEncrypted(true);
           return;
         }
@@ -230,14 +238,15 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       const normalized = normalizeYouTubeUrl(trimmed);
       
       if (normalized) {
-        // Set valid URL state immediately (turns icon red)
         setHasValidUrl(true);
-        
-        // Trigger paste icon animation
         setIsPasteAnimating(true);
         setTimeout(() => setIsPasteAnimating(false), 500);
-        
         setEncryptedUrl(normalized);
+        submitUrlRef.current = normalized;
+        // Show short ID in the animation, not the full URL
+        const videoId = extractYouTubeVideoId(trimmed);
+        const playlistId = extractYouTubePlaylistId(trimmed);
+        setEncryptedDisplayText(videoId ?? playlistId ?? normalized);
         setShowEncrypted(true);
         return;
       }
@@ -255,19 +264,24 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
 
   const handleEncryptedComplete = useCallback(() => {
     setShowEncrypted(false);
-    setUrl(encryptedUrl);
+    // Display only the short ID in the input — full URL is kept in encryptedUrl for submission
+    const videoId = extractYouTubeVideoId(encryptedUrl);
+    const playlistId = extractYouTubePlaylistId(encryptedUrl);
+    setUrl(videoId ?? playlistId ?? encryptedUrl);
     setEncryptedUrl("");
+    setEncryptedDisplayText("");
   }, [encryptedUrl]);
 
   useEffect(() => {
     if (!showEncrypted) {
-      setHasValidUrl(isValidYouTubeUrl(url));
+      setHasValidUrl(!!submitUrlRef.current || isValidYouTubeUrl(url));
     }
   }, [url, showEncrypted]);
 
   const handleClear = useCallback(() => {
     setUrl("");
     setHasValidUrl(false);
+    submitUrlRef.current = "";
     inputRef.current?.focus();
   }, []);
 
@@ -279,14 +293,18 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       if (!trimmed) {
         return;
       }
+
+      // Use the stored full URL if available (set when user pasted a YT link),
+      // otherwise treat the input value as a raw URL (manual typing)
+      const rawUrl = submitUrlRef.current || trimmed;
       
-      if (!isValidYouTubeUrl(trimmed)) {
+      if (!isValidYouTubeUrl(rawUrl)) {
         alert("Invalid YouTube URL");
         return;
       }
 
       // Normalize the URL to standard format
-      const normalizedUrl = normalizeYouTubeUrl(trimmed);
+      const normalizedUrl = normalizeYouTubeUrl(rawUrl);
       
       if (!normalizedUrl) {
         alert("Could not parse YouTube URL");
@@ -323,6 +341,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
         
         // Clear input
         setUrl("");
+        submitUrlRef.current = "";
         
       } catch (error) {
         console.error("Download error:", error);
@@ -379,12 +398,16 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
     setDownloads([]);
   }, [downloads]);
 
-  const isYT = isValidYouTubeUrl(url);
+  const isYT = !!submitUrlRef.current || isValidYouTubeUrl(url);
+
+  // Settings button animation controls
+  const settingsControls = useAnimation();
+  const settingsTouchActive = useRef(false);
 
   return (
-    <div className="flex min-h-dvh flex-col relative">
+    <div className="flex h-dvh flex-col relative overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2 relative z-10">
+      <header className="flex items-center justify-between px-2 xl:px-16 py-2 relative z-10">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[15px] font-bold tracking-tight">
             <a
@@ -432,13 +455,13 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
             "text-white hover:text-black hover:bg-[#d1d5db]"
           )}
         >
-          <SettingsIcon size={13} />
-          <span>settings</span>
+          <SettingsIcon size={20} className="xl:w-[13px] xl:h-[13px]" />
+          <span className="hidden xl:inline">settings</span>
         </button>
       </header>
 
       {/* Main */}
-      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-16 relative z-10">
+      <main className="flex flex-1 flex-col items-center justify-center px-2 xl:px-16 pb-16 relative z-10">
         <div className="w-full max-w-[640px] space-y-4 relative z-10">
           
           {/* Logo - Animated on Hover/Click */}
@@ -478,7 +501,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
               <div className="relative flex-1">
                 <input
                   ref={inputRef}
-                  type="url"
+                  type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   onFocus={handleInputFocus}
@@ -486,7 +509,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                   placeholder="paste your link!"
                   className={cn(
-                    "w-full bg-transparent py-3.5 text-[14px] font-medium outline-none",
+                    "w-full bg-transparent py-3.5 pl-1 text-[14px] font-medium outline-none",
                     "text-[#18181b]",
                     "dark:text-[#e1e1e1]",
                     "placeholder:text-[#a1a1aa]",
@@ -500,11 +523,11 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                 />
                 
                 {/* Encrypted Text Overlay */}
-                {showEncrypted && encryptedUrl && (
-                  <div className="absolute inset-0 flex items-center pointer-events-none">
+                {showEncrypted && encryptedDisplayText && (
+                  <div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none">
                     <EncryptedText
-                      text={encryptedUrl}
-                      className="text-[14px] font-medium dark:text-[#e1e1e1] text-[#18181b]"
+                      text={encryptedDisplayText}
+                      className="text-[14px] font-medium dark:text-[#e1e1e1] text-[#18181b] truncate"
                       revealDelayMs={20}
                       flipDelayMs={20}
                       onComplete={handleEncryptedComplete}
@@ -526,7 +549,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                   type="submit"
                   disabled={loading || !isYT}
                   className={cn(
-                    "flex items-center justify-center rounded-[10px] w-10 h-10 transition-all",
+                    "flex items-center justify-center rounded-[9px] w-8 h-8 transition-all shrink-0",
                     isYT
                       ? "bg-[#ff0000] hover:bg-[#cc0000] text-white dark:bg-[#ed2236] dark:hover:bg-[#d61c2e]"
                       : "bg-[#e8e4d9] text-[#adadb7] cursor-not-allowed dark:bg-[#191919] dark:text-[#383838]"
@@ -547,8 +570,8 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
             </div>
 
             {/* Mode + Paste */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1 rounded-[11px] p-1">
+            <div className="flex items-center justify-between gap-1 min-w-0">
+              <div className="flex items-center gap-0.5 rounded-[13px] p-0.5 min-w-0 overflow-hidden">
                 <ModeButton
                   active={mode === "auto"}
                   onClick={() => setMode("auto")}
@@ -573,12 +596,12 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
                 type="button"
                 onClick={handlePaste}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-[11px] px-3.5 py-2 text-[13px] font-medium transition-all",
+                  "flex items-center gap-1 rounded-[9px] px-2.5 py-1.5 text-[12px] font-medium transition-all shrink-0",
                   "dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
                   "text-[#71717a] hover:text-[#3f3f46] hover:bg-[#f4f4f5]"
                 )}
               >
-                <Clipboard size={14} />
+                <Clipboard size={12} />
                 <span>paste</span>
               </button>
             </div>
@@ -617,7 +640,7 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
       </div>
 
       {/* Footer */}
-      <footer className="px-5 py-3 text-center relative z-10">
+      <footer className="px-2 xl:px-16 py-3 text-center relative z-10">
         <p className="text-[11px] dark:text-[#9ca3af] text-[#9ca3af] font-medium">
           by downloading, you agree to{" "}
           <button 

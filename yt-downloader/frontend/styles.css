@@ -10,17 +10,64 @@
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-family: "Commit Mono", ui-monospace, monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* Replace browser default focus outline with light red glow */
+  *:focus-visible {
+    outline: 1.5px solid rgba(237, 34, 54, 0.7);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(237, 34, 54, 0.2), 0 0 8px rgba(237, 34, 54, 0.15);
+    border-radius: 6px;
+  }
+
+  /* Kill the ugly default outline entirely */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Force kill native input/textarea outlines — browser specificity override */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: none !important;
+    box-shadow: none !important;
   }
 }
 
 /* Prevent overscroll bounce on iOS */
 html {
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+  overflow: hidden;
+  font-size: 24px;
+  height: 100%;
+  width: 100%;
 }
 
 body {
-  overscroll-behavior-y: none;
-  min-height: 100dvh;
+  overscroll-behavior: none;
+  overflow: hidden;
+  overflow-x: hidden;
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  /* Fixes iOS rubber-band scroll */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Hide scrollbar but keep scroll functional */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Red pulse animation for download button */

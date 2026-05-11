@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Info } from "lucide-react";
+import { Info } from "lucide-react";
+import { ChevronLeftIcon } from "../components/animate-ui/icons/chevron-left";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { AnimatedTooltip } from "../components/AnimatedTooltip";
@@ -105,18 +106,17 @@ export default function Settings({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex items-center justify-between px-4 py-2 border-b dark:border-white/5 border-black/5">
+      <header className="flex items-center justify-between px-2 xl:px-16 py-2 border-b dark:border-white/5 border-black/5">
         <button
           onClick={() => onNavigate("home")}
           className={cn(
-            "flex items-center gap-1.5 text-[13px] font-medium transition-all",
-            "dark:text-[#9ca3af] dark:hover:text-[#e1e1e1] dark:hover:bg-[#191919]",
-            "text-[#9ca3af] hover:text-black hover:bg-[#e8e4d9]",
-            "rounded-[9px] px-1.5 py-1.5 -ml-1"
+            "flex items-center gap-1.5 transition-all",
+            "text-white hover:text-white/70",
+            "rounded-[7px] p-1 -ml-1"
           )}
         >
-          <ArrowLeft size={16} />
-          <span>back</span>
+          <ChevronLeftIcon size={24} className="xl:w-[18px] xl:h-[18px]" />
+          <span className="hidden xl:inline text-[12px] font-medium">back</span>
         </button>
 
         <div className="flex items-center gap-1 text-[15px] font-bold tracking-tight">
@@ -160,9 +160,9 @@ export default function Settings({
         <div className="w-16" />
       </header>
 
-      <main className="flex-1 px-4 py-4 max-w-2xl mx-auto w-full">
+      <main className="flex-1 px-2 xl:px-16 py-4 max-w-2xl xl:max-w-4xl mx-auto w-full">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-[20px] font-bold dark:text-[#e1e1e1] text-black">settings</h1>
+          <h1 className="text-[26px] font-bold dark:text-[#e1e1e1] text-black">settings</h1>
           
           <button
             onClick={resetSettings}
@@ -184,7 +184,7 @@ export default function Settings({
                 appearance
               </h2>
               <p className="text-[12px] dark:text-[#9ca3af] text-[#9ca3af] leading-relaxed">
-                light disabled for the moment.
+                light is off for the moment.
               </p>
             </div>
             <div className="flex items-center gap-3">

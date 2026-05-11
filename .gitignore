@@ -31,6 +31,10 @@ __pycache__/
 *.swp
 *.swo
 
+.kiro
+.vscode
+
+
 # OS specific
 .DS_Store
 Thumbs.db
