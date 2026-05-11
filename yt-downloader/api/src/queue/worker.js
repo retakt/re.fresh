@@ -5,6 +5,7 @@ const config = require('../config');
 const logger = require('../utils/logger');
 const { downloadVideo, getVideoInfo, extractVideoId } = require('../services/ytdlp');
 const { broadcastProgress } = require('../websocket/progress');
+const { getCookiePool } = require('../services/cookie-pool');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
@@ -55,6 +56,17 @@ updateWorkerIP()
   .catch(error => {
     logger.error('Initial worker IP check failed', { error: error.message, stack: error.stack });
   });
+
+// Initialize cookie pool
+(async () => {
+  try {
+    const cookiePool = getCookiePool();
+    await cookiePool.initialize();
+    logger.info('Worker: Cookie pool initialized successfully');
+  } catch (error) {
+    logger.error('Worker: Failed to initialize cookie pool', { error: error.message });
+  }
+})();
 
 // Refresh IP every 5 minutes
 setInterval(() => {

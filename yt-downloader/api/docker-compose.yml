@@ -2,10 +2,12 @@ version: '3.8'
 
 # ── YT Downloader services ────────────────────────────────────────────────────
 # Redis and Gluetun are shared with the main retakt stack.
-# This compose only manages yt-api and yt-worker.
+# This compose only manages yt-api, yt-worker, and yt-bgutil.
 # Run from /opt/yt-downloader/api/
 
 services:
+
+
 
   # API Server — handles HTTP requests, queues jobs
   yt-api:
@@ -27,9 +29,16 @@ services:
       - JOB_TIMEOUT_MS=21600000
       - JOB_MAX_RETRIES=1
       - LOG_LEVEL=info
+      # Cookie pool settings
+      - COOKIES_DIR=/app/cookies
+      - COOKIE_COOLDOWN_MS=60000
+      - COOKIE_FAILURE_THRESHOLD=0.3
+      # Metadata cache settings
+      - METADATA_CACHE_TTL=3600
     volumes:
       - /opt/yt-downloads:/app/downloads
       - /opt/yt-downloader/api/logs:/app/logs
+      - /opt/yt-downloader/api/cookies:/app/cookies
       - /opt/yt-downloader/api/youtube_cookies.txt:/app/youtube_cookies.txt:rw
     mem_limit: 512m
     mem_reservation: 256m
@@ -41,6 +50,24 @@ services:
     networks:
       - retakt-net
 
+  # bgutil POT provider — generates per-video po_token for yt-dlp
+  # Shares gluetun network so tokens are generated from the WARP IP,
+  # which is required — tokens must be generated on the same IP that downloads
+  yt-bgutil:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    container_name: retakt-yt-bgutil
+    restart: unless-stopped
+    # Must share gluetun network — po_token is bound to the IP it was generated on
+    # Worker reaches bgutil at localhost:4416 since they share the same network namespace
+    network_mode: "container:retakt-gluetun"
+    mem_limit: 512m
+    mem_reservation: 128m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   # BullMQ Worker — processes download jobs through WARP (gluetun)
   yt-worker:
     build: .
@@ -51,6 +78,7 @@ services:
     network_mode: "container:retakt-gluetun"
     depends_on:
       - yt-api
+      - yt-bgutil
     command: node src/queue/worker.js
     environment:
       - NODE_ENV=production
@@ -60,9 +88,20 @@ services:
       - JOB_TIMEOUT_MS=21600000
       - JOB_MAX_RETRIES=1
       - LOG_LEVEL=info
+      # bgutil is on localhost because worker shares gluetun's network namespace
+      - BGUTIL_URL=http://127.0.0.1:4416
+      # Force yt-dlp to use Node.js for JS challenges
+      - PATH=/usr/local/bin:/usr/bin:/bin
+      # Cookie pool settings
+      - COOKIES_DIR=/app/cookies
+      - COOKIE_COOLDOWN_MS=60000
+      - COOKIE_FAILURE_THRESHOLD=0.3
+      # Metadata cache settings
+      - METADATA_CACHE_TTL=3600
     volumes:
       - /opt/yt-downloads:/app/downloads
       - /opt/yt-downloader/api/logs:/app/logs
+      - /opt/yt-downloader/api/cookies:/app/cookies
       - /opt/yt-downloader/api/youtube_cookies.txt:/app/youtube_cookies.txt:rw
     mem_limit: 512m
     mem_reservation: 256m

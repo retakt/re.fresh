@@ -128,7 +128,7 @@ deploy_terminal() {
 }
 
 deploy_yt() {
-  echo "--- yt-api + yt-worker + yt-frontend"
+  echo "--- y0utubed v1.0.3 (yt-api + yt-worker + yt-frontend)"
 
   # Build yt-downloader frontend
   echo "    building yt-frontend..."
@@ -140,16 +140,16 @@ deploy_yt() {
   # Pack yt-frontend
   pack yt-frontend -C yt-downloader/frontend/dist .
 
-  # Pack yt-api (source + docker files)
-  pack yt-api \
+  # Pack y0utubed system (backend API with cookie pool)
+  pack y0utubed-system \
     --exclude="node_modules" \
     --exclude="downloads/*" \
     --exclude="logs/*" \
     --exclude="*.log" \
-    -C yt-downloader/api .
+    -C yt-downloader/y0utubed/system .
 
   upload yt-frontend
-  upload yt-api
+  upload y0utubed-system
 
   # Upload master .env for token values
   if [ -f ".env" ]; then
@@ -164,11 +164,12 @@ deploy_yt() {
     rm /tmp/yt-frontend.tar.gz
     echo "    yt-frontend files deployed to /opt/yt-downloader/frontend"
 
-    # Deploy yt-api source
-    mkdir -p /opt/yt-downloader/api
+    # Deploy y0utubed system (backend API)
+    mkdir -p /opt/yt-downloader/y0utubed/system
+    mkdir -p /opt/yt-downloader/y0utubed/system/cookies
     mkdir -p /opt/yt-downloads
-    tar -xzf /tmp/yt-api.tar.gz -C /opt/yt-downloader/api
-    rm /tmp/yt-api.tar.gz
+    tar -xzf /tmp/y0utubed-system.tar.gz -C /opt/yt-downloader/y0utubed/system
+    rm /tmp/y0utubed-system.tar.gz
 
     # Write .env for docker-compose
     if [ -f /tmp/yt-master-env ]; then
@@ -176,19 +177,37 @@ deploy_yt() {
       rm /tmp/yt-master-env
     fi
 
-    cat > /opt/yt-downloader/api/.env << ENVEOF
+    cat > /opt/yt-downloader/y0utubed/system/.env << ENVEOF
 YT_ADMIN_TOKEN=${YT_ADMIN_TOKEN:-re.takt}
 ENVEOF
 
-    # Rebuild and restart Docker containers
-    cd /opt/yt-downloader/api
-    docker compose down 2>/dev/null || true
-    docker compose build --no-cache
+    # Rebuild and restart Docker containers with bgutil integration
+    cd /opt/yt-downloader/y0utubed/system
+    
+    # Stop and remove old containers completely
+    docker compose down --remove-orphans 2>/dev/null || true
+    docker rm -f retakt-yt-api retakt-yt-worker retakt-yt-bgutil 2>/dev/null || true
+    
+    # Remove old images to force clean rebuild
+    docker rmi -f yt-api yt-worker 2>/dev/null || true
+    
+    # Build fresh images
+    docker compose build --no-cache yt-worker yt-api
+    
+    # Start all services
     docker compose up -d
-    echo "    yt-api + yt-worker Docker containers started"
+    
+    # Verify bgutil integration
+    echo "    verifying bgutil integration..."
+    sleep 3
+    docker exec retakt-yt-worker node --version 2>/dev/null && echo "    ✓ Node.js installed" || echo "    ✗ Node.js missing"
+    docker exec retakt-yt-worker pip3 list | grep -q bgutil && echo "    ✓ bgutil plugin installed" || echo "    ✗ bgutil plugin missing"
+    docker ps --filter "name=retakt-yt-bgutil" --format "{{.Names}}: {{.Status}}" | head -1
+    
+    echo "    y0utubed v1.0.3 containers started"
   '
 
-  echo "    yt-frontend + yt-api + yt-worker deployed"
+  echo "    y0utubed v1.0.3 deployed successfully"
 }
 
 deploy_services() {

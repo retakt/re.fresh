@@ -1,0 +1,120 @@
+
+# ── YT Downloader services ────────────────────────────────────────────────────
+# Redis and Gluetun are shared with the main retakt stack.
+# This compose only manages yt-api, yt-worker, and yt-bgutil.
+# Run from /opt/yt-downloader/api/
+
+services:
+
+
+
+  # API Server — handles HTTP requests, queues jobs
+  yt-api:
+    build: .
+    image: yt-api
+    container_name: retakt-yt-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=retakt-redis
+      - REDIS_PORT=6379
+      - PORT=3000
+      - ADMIN_TOKEN=${YT_ADMIN_TOKEN:-re.takt}
+      - DOWNLOAD_DIR=/app/downloads
+      - FILE_RETENTION_HOURS=1
+      - MAX_CONCURRENT_DOWNLOADS=3
+      - JOB_TIMEOUT_MS=21600000
+      - JOB_MAX_RETRIES=1
+      - LOG_LEVEL=info
+      # Cookie pool settings
+      - COOKIES_DIR=/app/cookies
+      - COOKIE_COOLDOWN_MS=60000
+      - COOKIE_FAILURE_THRESHOLD=0.3
+      # Metadata cache settings
+      - METADATA_CACHE_TTL=3600
+    volumes:
+      - /opt/yt-downloads:/app/downloads
+      - /opt/yt-downloader/y0utubed/system/logs:/app/logs
+      - /opt/yt-downloader/y0utubed/system/cookies:/app/cookies
+    mem_limit: 512m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - retakt-net
+
+  # bgutil POT provider — generates per-video po_token for yt-dlp
+  # Shares gluetun network so tokens are generated from the WARP IP,
+  # which is required — tokens must be generated on the same IP that downloads
+  yt-bgutil:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    container_name: retakt-yt-bgutil
+    restart: unless-stopped
+    # Must share gluetun network — po_token is bound to the IP it was generated on
+    # Worker reaches bgutil at localhost:4416 since they share the same network namespace
+    network_mode: "container:retakt-gluetun"
+    mem_limit: 512m
+    mem_reservation: 128m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # BullMQ Worker — processes download jobs through WARP (gluetun)
+  yt-worker:
+    build: .
+    image: yt-worker
+    container_name: retakt-yt-worker
+    restart: unless-stopped
+    # Share gluetun's network — all traffic goes through WARP automatically
+    network_mode: "container:retakt-gluetun"
+    depends_on:
+      - yt-api
+      - yt-bgutil
+    command: node src/queue/worker.js
+    healthcheck:
+      test: ["CMD", "node", "-e", "const Redis = require('ioredis'); const redis = new Redis({host: '172.18.0.3', port: 6379, lazyConnect: true, connectTimeout: 2000}); redis.connect().then(() => {redis.disconnect(); process.exit(0);}).catch(() => process.exit(1));"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=172.18.0.3
+      - REDIS_PORT=6379
+      - DOWNLOAD_DIR=/app/downloads
+      - JOB_TIMEOUT_MS=21600000
+      - JOB_MAX_RETRIES=1
+      - LOG_LEVEL=info
+      # bgutil is on localhost because worker shares gluetun's network namespace
+      - BGUTIL_URL=http://127.0.0.1:4416
+      # Force yt-dlp to use Node.js for JS challenges
+      - PATH=/usr/local/bin:/usr/bin:/bin
+      # Cookie pool settings
+      - COOKIES_DIR=/app/cookies
+      - COOKIE_COOLDOWN_MS=60000
+      - COOKIE_FAILURE_THRESHOLD=0.3
+      # Metadata cache settings
+      - METADATA_CACHE_TTL=3600
+    volumes:
+      - /opt/yt-downloads:/app/downloads
+      - /opt/yt-downloader/y0utubed/system/logs:/app/logs
+      - /opt/yt-downloader/y0utubed/system/cookies:/app/cookies
+    mem_limit: 512m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  retakt-net:
+    external: true
+    name: retakt-network

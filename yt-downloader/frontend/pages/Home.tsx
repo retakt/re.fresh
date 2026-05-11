@@ -59,8 +59,23 @@ function ModeButton({
 }
 
 export default function Home({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const [url, setUrl] = useState("");
-  const [mode, setMode] = useState<DownloadMode>("auto");
+  const [url, setUrl] = useState(() => {
+    // Restore URL from localStorage on mount
+    try {
+      return localStorage.getItem('yt-downloader-url') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [mode, setMode] = useState<DownloadMode>(() => {
+    // Restore mode from localStorage on mount
+    try {
+      const saved = localStorage.getItem('yt-downloader-mode');
+      return (saved as DownloadMode) || 'auto';
+    } catch {
+      return 'auto';
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
@@ -71,6 +86,28 @@ export default function Home({ onNavigate }: { onNavigate: (page: string) => voi
   const inputRef = useRef<HTMLInputElement>(null);
   const pollIntervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const hasAutoPastedRef = useRef(false);
+
+  // Persist URL to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (url) {
+        localStorage.setItem('yt-downloader-url', url);
+      } else {
+        localStorage.removeItem('yt-downloader-url');
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [url]);
+
+  // Persist mode to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('yt-downloader-mode', mode);
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [mode]);
 
   // ANONYMOUS MODE: No persistence
   // Downloads are cleared on page refresh/close

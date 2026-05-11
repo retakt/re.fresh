@@ -202,10 +202,16 @@ router.get('/download/:id/file', async (req, res) => {
     // Get file stats
     const stats = await fs.stat(filePath);
     const fileName = path.basename(filePath);
+    
+    // Sanitize filename for HTTP header (remove invalid characters)
+    const safeFileName = fileName
+      .replace(/[\u0000-\u001f\u007f-\u009f]/g, '') // Remove control characters
+      .replace(/[＂＇｀]/g, '"') // Replace fullwidth quotes with regular quotes
+      .replace(/[^\x20-\x7E]/g, '_'); // Replace other non-ASCII with underscore
 
     // Set headers
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}"`);
     res.setHeader('Content-Length', stats.size);
 
     // Stream file

@@ -1,203 +1,280 @@
 const express = require('express');
-const router = express.Router();
-const fs = require('fs').promises;
-const path = require('path');
-const { exec } = require('child_process');
-const util = require('util');
-const execPromise = util.promisify(exec);
+const { getCookiePool } = require('../services/cookie-pool');
+const { getMetadataCache } = require('../services/metadata-cache');
 const logger = require('../utils/logger');
-const { readWorkerIP } = require('../utils/warp-ip');
 
-// Admin authentication middleware
-// Your main admin panel should send the token in Authorization header
-const adminAuth = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const adminTokens = (process.env.ADMIN_TOKEN || 're.takt').split(',').map(t => t.trim());
-  
-  // Debug logging
-  logger.info('Admin auth attempt', {
-    hasAuthHeader: !!authHeader,
-    envToken: process.env.ADMIN_TOKEN ? `${process.env.ADMIN_TOKEN.substring(0, 10)}...` : 'NOT_SET',
-    tokenCount: adminTokens.length,
-  });
-  
-  if (!authHeader) {
-    logger.warn('Admin auth failed: No authorization header');
-    return res.status(401).json({ error: 'Unauthorized' });
+const router = express.Router();
+
+/**
+ * Middleware to check admin token
+ */
+function requireAdmin(req, res, next) {
+  const token = req.headers['x-admin-token'] || req.query.token;
+  const adminToken = process.env.ADMIN_TOKEN || process.env.YT_ADMIN_TOKEN;
+
+  if (!adminToken) {
+    return res.status(500).json({
+      error: 'Admin token not configured',
+      code: 'NO_ADMIN_TOKEN',
+    });
   }
-  
-  const token = authHeader.replace('Bearer ', '');
-  
-  logger.info('Token comparison', {
-    receivedToken: `${token.substring(0, 10)}...`,
-    receivedLength: token.length,
-    expectedLength: adminTokens[0].length,
-    matches: adminTokens.includes(token),
-  });
-  
-  if (!adminTokens.includes(token)) {
-    logger.warn('Admin auth failed: Token mismatch');
-    return res.status(401).json({ error: 'Unauthorized' });
+
+  if (token !== adminToken) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+      code: 'INVALID_TOKEN',
+    });
   }
-  
-  logger.info('Admin auth successful');
+
   next();
-};
+}
 
-// Get system status - Call this from your main admin panel
-router.get('/status', async (req, res) => {
+/**
+ * GET /api/admin/cookies/health
+ * Get health stats for all cookies
+ */
+router.get('/cookies/health', requireAdmin, async (req, res) => {
   try {
-    const cookiePath = '/app/youtube_cookies.txt';
-    const wgcfPath = '/app/wgcf-account.toml';
-    
-    // Check if files exist
-    const cookieExists = await fs.access(cookiePath).then(() => true).catch(() => false);
-    const wgcfExists = await fs.access(wgcfPath).then(() => true).catch(() => false);
-    
-    // Get file stats and validate cookies
-    let cookieAge = null;
-    let cookieValid = false;
-    let wgcfAge = null;
-    
-    if (cookieExists) {
-      const stats = await fs.stat(cookiePath);
-      cookieAge = Math.floor((Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24)); // days
-      
-      // Validate cookie format
-      try {
-        const cookieContent = await fs.readFile(cookiePath, 'utf8');
-        // Check if it's in Netscape format and has YouTube cookies
-        cookieValid = cookieContent.includes('# Netscape HTTP Cookie File') && 
-                     cookieContent.includes('.youtube.com');
-      } catch (error) {
-        logger.error('Failed to read cookie file', { error: error.message });
-        cookieValid = false;
-      }
-    }
-    
-    if (wgcfExists) {
-      const stats = await fs.stat(wgcfPath);
-      wgcfAge = Math.floor((Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24)); // days
-    }
-    
-    // Check WARP connection by reading worker's IP file
-    // Worker writes its IP to a shared file in /app/logs/
-    let warpIP = null;
-    let warpConnected = false;
-    
-    try {
-      const ipFilePath = path.join(__dirname, '../../logs/worker-ip.json');
-      const ipFileExists = await fs.access(ipFilePath).then(() => true).catch(() => false);
-      
-      if (ipFileExists) {
-        const ipData = JSON.parse(await fs.readFile(ipFilePath, 'utf8'));
-        warpIP = ipData.ip;
-        warpConnected = ipData.connected;
-        
-        // Check if data is stale (older than 10 minutes)
-        const dataAge = Date.now() - new Date(ipData.timestamp).getTime();
-        if (dataAge > 10 * 60 * 1000) {
-          logger.warn('Worker IP data is stale', { ageMinutes: Math.floor(dataAge / 60000) });
-        }
-      } else {
-        logger.warn('Worker IP file not found');
-        // Fallback: if wgcf exists, assume WARP is configured
-        warpConnected = wgcfExists;
-      }
-    } catch (error) {
-      logger.error('Failed to read worker IP', { error: error.message });
-      // Fallback: if wgcf exists, assume WARP is configured
-      warpConnected = wgcfExists;
-    }
-    
+    const cookiePool = getCookiePool();
+    const healthStats = await cookiePool.getAllCookieHealth();
+
+    // Calculate summary stats
+    const summary = {
+      total: healthStats.length,
+      healthy: healthStats.filter(c => c.status === 'healthy').length,
+      degraded: healthStats.filter(c => c.status === 'degraded').length,
+      unhealthy: healthStats.filter(c => c.status === 'unhealthy').length,
+      new: healthStats.filter(c => c.status === 'new').length,
+      inCooldown: healthStats.filter(c => c.inCooldown).length,
+    };
+
     res.json({
-      service: 'youtube-downloader',
-      cookies: {
-        exists: cookieExists,
-        valid: cookieValid,
-        ageInDays: cookieAge,
-        needsRotation: cookieAge > 7 || !cookieValid, // Rotate if old OR invalid
-      },
-      warp: {
-        exists: wgcfExists,
-        ageInDays: wgcfAge,
-        currentIP: warpIP,
-        connected: warpConnected,
-      },
-      timestamp: new Date().toISOString(),
+      summary,
+      cookies: healthStats,
     });
   } catch (error) {
-    logger.error('Failed to get admin status', { error: error.message });
-    res.status(500).json({ error: 'Failed to get status' });
+    logger.error('Failed to get cookie health', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to get cookie health',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
   }
 });
 
-// Upload new cookies - Call this from your main admin panel
-router.post('/cookies', async (req, res) => {
+/**
+ * POST /api/admin/cookies/:cookieFile/reset
+ * Reset health stats for a specific cookie
+ */
+router.post('/cookies/:cookieFile/reset', requireAdmin, async (req, res) => {
   try {
-    const { cookies } = req.body;
-    
-    if (!cookies || typeof cookies !== 'string') {
-      return res.status(400).json({ error: 'Invalid cookies format' });
-    }
-    
-    // Validate Netscape format
-    if (!cookies.includes('# Netscape HTTP Cookie File')) {
-      return res.status(400).json({ error: 'Cookies must be in Netscape format' });
-    }
-    
-    const cookiePath = '/app/youtube_cookies.txt';
-    await fs.writeFile(cookiePath, cookies, 'utf8');
-    
-    logger.info('Admin uploaded new cookies');
-    
+    const { cookieFile } = req.params;
+    const cookiePool = getCookiePool();
+
+    await cookiePool.resetCookieHealth(cookieFile);
+
     res.json({
       success: true,
-      message: 'Cookies updated successfully',
-      timestamp: new Date().toISOString(),
+      message: `Health stats reset for ${cookieFile}`,
     });
   } catch (error) {
-    logger.error('Failed to update cookies', { error: error.message });
-    res.status(500).json({ error: 'Failed to update cookies' });
+    logger.error('Failed to reset cookie health', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to reset cookie health',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
   }
 });
 
-// Get download statistics - Call this from your main admin panel
-router.get('/stats', async (req, res) => {
+/**
+ * POST /api/admin/cookies/reset-all
+ * Reset health stats for all cookies
+ */
+router.post('/cookies/reset-all', requireAdmin, async (req, res) => {
   try {
-    const { downloadQueue } = require('../queue/queue');
-    
-    const [waiting, active, completed, failed] = await Promise.all([
-      downloadQueue.getWaitingCount(),
-      downloadQueue.getActiveCount(),
-      downloadQueue.getCompletedCount(),
-      downloadQueue.getFailedCount(),
-    ]);
-    
+    const cookiePool = getCookiePool();
+    await cookiePool.resetAllHealth();
+
     res.json({
-      service: 'youtube-downloader',
-      queue: {
-        waiting,
-        active,
-        completed,
-        failed,
-        total: waiting + active + completed + failed,
-      },
-      timestamp: new Date().toISOString(),
+      success: true,
+      message: 'Health stats reset for all cookies',
     });
   } catch (error) {
-    logger.error('Failed to get stats', { error: error.message, stack: error.stack });
-    res.status(500).json({ error: 'Failed to get stats', details: error.message });
+    logger.error('Failed to reset all cookie health', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to reset all cookie health',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
   }
 });
 
-// Health check endpoint (no auth required)
-router.get('/health', async (req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'youtube-downloader',
-    timestamp: new Date().toISOString(),
-  });
+/**
+ * GET /api/admin/cookies/list
+ * List all cookie files in pool
+ */
+router.get('/cookies/list', requireAdmin, async (req, res) => {
+  try {
+    const cookiePool = getCookiePool();
+    const cookieFiles = await cookiePool.getCookieFiles();
+
+    res.json({
+      count: cookieFiles.length,
+      cookies: cookieFiles,
+    });
+  } catch (error) {
+    logger.error('Failed to list cookies', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to list cookies',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/admin/cache/stats
+ * Get metadata cache statistics
+ */
+router.get('/cache/stats', requireAdmin, async (req, res) => {
+  try {
+    const metadataCache = getMetadataCache();
+    const stats = await metadataCache.getStats();
+
+    res.json(stats);
+  } catch (error) {
+    logger.error('Failed to get cache stats', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to get cache stats',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/admin/cache/clear
+ * Clear metadata cache
+ */
+router.post('/cache/clear', requireAdmin, async (req, res) => {
+  try {
+    const metadataCache = getMetadataCache();
+    const count = await metadataCache.clear();
+
+    res.json({
+      success: true,
+      message: `Cleared ${count} cached entries`,
+      count,
+    });
+  } catch (error) {
+    logger.error('Failed to clear cache', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to clear cache',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/admin/cookies/:cookieFile/duplicate
+ * Duplicate a cookie file
+ */
+router.post('/cookies/:cookieFile/duplicate', requireAdmin, async (req, res) => {
+  try {
+    const { cookieFile } = req.params;
+    const { count = 1 } = req.body;
+    
+    const cookiePool = getCookiePool();
+    const duplicated = await cookiePool.duplicateCookie(cookieFile, count);
+
+    res.json({
+      success: true,
+      message: `Created ${duplicated.length} duplicate(s)`,
+      duplicated,
+    });
+  } catch (error) {
+    logger.error('Failed to duplicate cookie', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to duplicate cookie',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/cookies/:cookieFile
+ * Delete a cookie file
+ */
+router.delete('/cookies/:cookieFile', requireAdmin, async (req, res) => {
+  try {
+    const { cookieFile } = req.params;
+    const cookiePool = getCookiePool();
+
+    await cookiePool.deleteCookie(cookieFile);
+
+    res.json({
+      success: true,
+      message: `Cookie ${cookieFile} deleted`,
+    });
+  } catch (error) {
+    logger.error('Failed to delete cookie', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to delete cookie',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/admin/system/info
+ * Get system information
+ */
+router.get('/system/info', requireAdmin, async (req, res) => {
+  try {
+    const cookiePool = getCookiePool();
+    const metadataCache = getMetadataCache();
+
+    const [cookieHealth, cacheStats, cookieFiles] = await Promise.all([
+      cookiePool.getAllCookieHealth(),
+      metadataCache.getStats(),
+      cookiePool.getCookieFiles(),
+    ]);
+
+    const healthySummary = {
+      total: cookieHealth.length,
+      healthy: cookieHealth.filter(c => c.status === 'healthy').length,
+      degraded: cookieHealth.filter(c => c.status === 'degraded').length,
+      unhealthy: cookieHealth.filter(c => c.status === 'unhealthy').length,
+      new: cookieHealth.filter(c => c.status === 'new').length,
+    };
+
+    res.json({
+      cookies: {
+        total: cookieFiles.length,
+        health: healthySummary,
+        cooldownMs: cookiePool.minCooldownMs,
+        failureThreshold: cookiePool.failureThreshold,
+      },
+      cache: cacheStats,
+      config: {
+        maxConcurrentDownloads: process.env.MAX_CONCURRENT_DOWNLOADS || 3,
+        jobTimeoutMs: process.env.JOB_TIMEOUT_MS || 300000,
+        cookieCooldownMs: process.env.COOKIE_COOLDOWN_MS || 60000,
+        metadataCacheTTL: process.env.METADATA_CACHE_TTL || 3600,
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to get system info', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to get system info',
+      code: 'INTERNAL_ERROR',
+      message: error.message,
+    });
+  }
 });
 
 module.exports = router;

@@ -5,7 +5,13 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     ffmpeg \
-    && pip3 install --break-system-packages --no-cache-dir "yt-dlp[default]"
+    curl \
+    nodejs \
+    npm \
+    && pip3 install --break-system-packages --no-cache-dir \
+       "yt-dlp[default]" \
+    && pip3 install --break-system-packages --no-cache-dir \
+       "bgutil-ytdlp-pot-provider"
 
 # Create app directory
 WORKDIR /app

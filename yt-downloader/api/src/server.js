@@ -9,6 +9,7 @@ const adminRoutes = require('./routes/admin');
 const storageRoutes = require('./routes/storage');
 const { initWebSocketServer } = require('./websocket/progress');
 const { startCleanupSchedule } = require('./services/cleanup');
+const { getCookiePool } = require('./services/cookie-pool');
 
 // Create Express app
 const app = express();
@@ -104,6 +105,17 @@ initWebSocketServer(server);
 
 // Start cleanup schedule
 startCleanupSchedule();
+
+// Initialize cookie pool
+(async () => {
+  try {
+    const cookiePool = getCookiePool();
+    await cookiePool.initialize();
+    logger.info('Cookie pool initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize cookie pool', { error: error.message });
+  }
+})();
 
 // Start server
 server.listen(config.port, config.host, () => {
