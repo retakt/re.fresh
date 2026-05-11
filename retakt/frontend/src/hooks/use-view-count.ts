@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ensureValidSession } from '@/lib/auth-guard'
 
 type ContentTable = 'posts' | 'tutorials' | 'music'
 
@@ -16,26 +17,43 @@ export function useViewCount(id: string | undefined, table: ContentTable, initia
 
   useEffect(() => {
     if (!id) return
-    const key = `viewed_${table}_${id}`
+    
+    // Ensure session is valid before querying
+    const run = async () => {
+      const isValid = await ensureValidSession();
+      if (!isValid) {
+        console.error('[useViewCount] Session invalid, bailing');
+        return;
+      }
 
-    if (sessionStorage.getItem(key)) return
-    sessionStorage.setItem(key, '1')
+      const key = `viewed_${table}_${id}`
 
-    // Increment then read back the fresh count so the UI is accurate
-    supabase
-      .rpc('increment_view_count', { p_table: table, p_id: id })
-      .then(({ error }) => {
-        if (error) { console.error('[viewCount] rpc error', error); return; }
-        supabase
-          .from(table)
-          .select('view_count')
-          .eq('id', id)
-          .single()
-          .then(({ data, error: e2 }) => {
-            if (e2) { console.error('[viewCount] select error', e2); return; }
-            if (data) setCount(data.view_count)
-          })
-      })
+      if (sessionStorage.getItem(key)) return
+      sessionStorage.setItem(key, '1')
+
+      const { error } = await supabase
+        .rpc('increment_view_count', { p_table: table, p_id: id })
+      
+      if (error) { 
+        console.error('[viewCount] rpc error', error); 
+        return; 
+      }
+      
+      const { data, error: e2 } = await supabase
+        .from(table)
+        .select('view_count')
+        .eq('id', id)
+        .single()
+      
+      if (e2) { 
+        console.error('[viewCount] select error', e2); 
+        return; 
+      }
+      
+      if (data) setCount(data.view_count)
+    };
+    
+    void run();
   }, [id, table])
 
   return count

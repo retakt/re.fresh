@@ -4,8 +4,60 @@ import "./index.css";
 import App from "./App.tsx";
 import { initMonitoring } from "./lib/monitoring.ts";
 import * as Sentry from "@sentry/react";
+import { supabase } from "./lib/supabase";
 
 initMonitoring();
+
+// ── Auth State Debugging & Recovery ───────────────────────────────────────────
+// Listen for auth state changes to track session lifecycle
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[AUTH EVENT]', event, session?.user?.email);
+  
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('[AUTH] Token refreshed successfully');
+  }
+  
+  if (event === 'SIGNED_OUT') {
+    console.log('[AUTH] User signed out');
+  }
+  
+  if (event === 'USER_UPDATED') {
+    console.log('[AUTH] User updated');
+  }
+  
+  if (event === 'TOKEN_EXPIRED') {
+    console.warn('[AUTH] Token expired - refresh should trigger automatically');
+  }
+});
+
+// Auto-refresh token every 5 minutes to prevent silent expiry
+// This is a safety net in case autoRefreshToken fails
+setInterval(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    const { error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.error('[AUTH] Auto-refresh failed:', error.message);
+    } else {
+      console.log('[AUTH] Periodic token refresh successful');
+    }
+  }
+}, 5 * 60 * 1000);
+
+// Debug auth state continuously in development
+if (import.meta.env.DEV) {
+  setInterval(async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    console.log('[AUTH DEBUG]', {
+      hasSession: !!session,
+      user: session?.user?.email,
+      expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+      expiresIn: session?.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : null,
+      error: error?.message,
+      timestamp: new Date().toISOString()
+    });
+  }, 10000); // Check every 10s in dev
+}
 
 // ── Viewport height sync (iOS Safari fix) ────────────────────────────────────
 // Keeps --app-height accurate for address bar changes, but NOT for keyboard.
