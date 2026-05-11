@@ -13,6 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: "retakt-auth",
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: "pkce", // Better for SPAs - prevents token exchange issues
   },
   global: {
     headers: {
@@ -20,6 +21,36 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
   },
 })
+
+/**
+ * Validate and recover from corrupted session on startup.
+ * This runs once when the app loads to ensure we don't start with a bad session.
+ */
+async function validateSession() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      // No session exists, that's OK for public pages
+      return;
+    }
+    
+    // Test that we can actually use the session by attempting a refresh
+    const { error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.warn('[AUTH] Session validation failed - clearing corrupted session:', error.message);
+      await supabase.auth.signOut();
+    } else {
+      console.log('[AUTH] Session validated successfully');
+    }
+  } catch (err) {
+    console.error('[AUTH] Session recovery failed:', err instanceof Error ? err.message : err);
+  }
+}
+
+// Run session validation on startup (browser only)
+if (typeof window !== 'undefined') {
+  void validateSession();
+}
 
 export type Post = {
   id: string
