@@ -128,8 +128,19 @@ deploy_terminal() {
 }
 
 deploy_yt() {
-  echo "--- yt-api + yt-worker"
+  echo "--- yt-api + yt-worker + yt-frontend"
 
+  # Build yt-downloader frontend
+  echo "    building yt-frontend..."
+  cd yt-downloader/frontend
+  npm install --silent
+  npm run build --silent
+  cd ../..
+
+  # Pack yt-frontend
+  pack yt-frontend -C yt-downloader/frontend/dist .
+
+  # Pack yt-api (source + docker files)
   pack yt-api \
     --exclude="node_modules" \
     --exclude="downloads/*" \
@@ -137,49 +148,47 @@ deploy_yt() {
     --exclude="*.log" \
     -C yt-downloader/api .
 
+  upload yt-frontend
   upload yt-api
 
-  # Upload yt .env from master .env values
+  # Upload master .env for token values
   if [ -f ".env" ]; then
     scp ".env" "$SERVER:/tmp/yt-master-env"
   fi
 
   remote '
+    # Deploy yt-frontend — Caddy serves from /opt/yt-downloader/frontend
+    mkdir -p /opt/yt-downloader/frontend
+    rm -rf /opt/yt-downloader/frontend/*
+    tar -xzf /tmp/yt-frontend.tar.gz -C /opt/yt-downloader/frontend
+    rm /tmp/yt-frontend.tar.gz
+    echo "    yt-frontend files deployed to /opt/yt-downloader/frontend"
+
+    # Deploy yt-api source
     mkdir -p /opt/yt-downloader/api
     mkdir -p /opt/yt-downloads
     tar -xzf /tmp/yt-api.tar.gz -C /opt/yt-downloader/api
     rm /tmp/yt-api.tar.gz
 
-    # Write yt-api .env from master env values
+    # Write .env for docker-compose
     if [ -f /tmp/yt-master-env ]; then
       source /tmp/yt-master-env 2>/dev/null || true
       rm /tmp/yt-master-env
     fi
 
     cat > /opt/yt-downloader/api/.env << ENVEOF
-NODE_ENV=production
-PORT=${YT_PORT:-3000}
-HOST=${YT_HOST:-0.0.0.0}
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-ADMIN_TOKEN=${YT_ADMIN_TOKEN:-change-me}
-DOWNLOAD_DIR=${DOWNLOAD_DIR:-/opt/yt-downloads}
-FILE_RETENTION_HOURS=${FILE_RETENTION_HOURS:-1}
-MAX_CONCURRENT_DOWNLOADS=${MAX_CONCURRENT_DOWNLOADS:-3}
-MAX_FILE_SIZE=999G
-JOB_TIMEOUT_MS=${JOB_TIMEOUT_MS:-21600000}
-JOB_MAX_RETRIES=${JOB_MAX_RETRIES:-1}
-RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
-RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
-LOG_LEVEL=info
+YT_ADMIN_TOKEN=${YT_ADMIN_TOKEN:-re.takt}
 ENVEOF
 
+    # Rebuild and restart Docker containers
     cd /opt/yt-downloader/api
-    npm install --production --silent
-    pm2 restart yt-api yt-worker 2>/dev/null || true
+    docker compose down 2>/dev/null || true
+    docker compose build --no-cache
+    docker compose up -d
+    echo "    yt-api + yt-worker Docker containers started"
   '
 
-  echo "    yt-api + yt-worker deployed"
+  echo "    yt-frontend + yt-api + yt-worker deployed"
 }
 
 deploy_services() {
@@ -260,6 +269,8 @@ purge_cache() {
 show_status() {
   echo "--- pm2 status"
   ssh "$SERVER" 'pm2 status'
+  echo "--- docker status"
+  ssh "$SERVER" 'docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" --filter "name=retakt-yt"'
 }
 
 # ── Entry point ───────────────────────────────────────────────────────────────
